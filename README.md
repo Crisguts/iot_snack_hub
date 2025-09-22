@@ -9,7 +9,7 @@ This is an IoT group project built with Flask. It includes a simple web applicat
 
 ## Install SQLite Viewer extension to easily visualize the database file.
 
-### 1. Clone the Repository
+### 1. Clone the Repository (if not already done)
 Clone the project to your local machine:
 ```bash
 git clone <repository-url>
