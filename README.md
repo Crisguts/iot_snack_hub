@@ -1,4 +1,4 @@
-# IoT Example Project
+# IoT Semester Project
 
 ## Project Description
 This is an IoT group project built with Flask. It includes a simple web application to demonstrate IoT-related functionality.
