@@ -9,33 +9,36 @@ def init_db():
     conn = get_db()
     c = conn.cursor()
     c.execute("""
-    CREATE TABLE IF NOT EXISTS items (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL
+    CREATE TABLE IF NOT EXISTS customers (
+        customer_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        first_name TEXT NOT NULL,
+        last_name TEXT NOT NULL,
+        email TEXT UNIQUE NOT NULL,
+        date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     """)
     conn.commit()
     conn.close()
 
-def get_items():
+def get_customers():
     conn = get_db()
     c = conn.cursor()
-    c.execute("SELECT * FROM items")
-    items = c.fetchall()
+    c.execute("SELECT * FROM customers")
+    customers = c.fetchall()
     conn.close()
-    return items
+    return customers
 
-def add_item(name):
+def add_customer(first_name, last_name, email):
     conn = get_db()
     c = conn.cursor()
-    c.execute("INSERT INTO items (name) VALUES (?)", (name,))
+    c.execute("INSERT INTO customers (first_name, last_name, email) VALUES (?,?,?)", (first_name, last_name, email))
     conn.commit()
     conn.close()
 
-def delete_item(item_id):
+def delete_customer(customer_id):
     conn = get_db()
     c = conn.cursor()
-    c.execute("DELETE FROM items WHERE id=?", (item_id,))
+    c.execute("DELETE FROM customers WHERE customer_id=?", (customer_id,))
     conn.commit()
     conn.close()
 
