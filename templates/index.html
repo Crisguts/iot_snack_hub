@@ -1,27 +1,77 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>My IoT Store</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-  <link rel="stylesheet"
+    <title>My IoT Store</title>
+    <link rel="stylesheet"
+        href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
 </head>
 <body class="container-fluid bg-dark text-white" style="margin:0; padding:0;">
+    <div class="row vh-100" style="margin: 0;">
+        <!-- Sidebar -->
+        <div
+            class="col-3 d-flex flex-column justify-content-center p-4 bg-dark text-white">
+            <div>
+                <h1 class="mb-2 text-center">Smart Store</h1>
+                <div id="clock" class="fw-bold text-center"></div>
+            </div>
+            <div id="link-div" class="d-flex flex-column align-items-center"
+                style="gap: 20px;">
+                <a href="" class="Sidebar">Clients</a>
+                <a href="" class="Sidebar">To be Added</a>
+            </div>
+        </div>
+        <!-- Main content -->
 
-  <div class="row vh-100" style="margin: 0;">
+        <div class="col-9 d-flex align-items-center justify-content-center bg-secondary">
+            <div class="w-100 p-4">
+                <!-- Bootstrap Alerts -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show position-absolute top-0 end-0"
+                    role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close"
+                        data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+                {% endif %}
+                {% endwith %}
+                <!-- Form -->
+                <form method="POST" action="/add" class="d-flex mb-3">
+                    <input type="text" name="first_name"
 
-    <!-- Sidebar -->
-    <div class="col-3 d-flex flex-column justify-content-center p-4 bg-dark text-white">
-      <div>
-        <h1 class="mb-2 text-center">Smart Store</h1>
-        <div id="clock" class="fw-bold text-center"></div>
-      </div>
-
-      <div id="link-div" class="d-flex flex-column align-items-center" style="gap: 20px;">
-        <a href="" class="Sidebar">Clients</a>
-        <a href="" class="Sidebar">To be Added</a>
-      </div>
+                        class="form-control me-2 custom-input" 
+                        placeholder="Enter First Name">
+                    <br>
+                    <input type="text" name="last_name"
+                        class="form-control me-2 custom-input" 
+                        placeholder="Enter Last Name">
+                    <br>
+                    <input type="text" name="email"
+                        class="form-control me-2 custom-input"
+                        placeholder="Enter Email">
+                    <br>
+                    <button type="submit" class="btn btn-primary custom-btn">Add
+                        Customer</button>
+                </form>
+                <!-- Item List -->
+                <ul class="list-group">
+                    {% for i in customers %}
+                    <li
+                        class="list-group-item d-flex justify-content-between align-items-center">
+                        {{ i[1] }}
+                        <a href="/delete/{{ i[0] }}"
+                            class="btn btn-sm btn-danger">Delete</a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
     </div>
+
 
   <!-- Main content -->
 <div class="col-9 bg-secondary">
