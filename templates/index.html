@@ -23,8 +23,12 @@
             </div>
         </div>
         <!-- Main content -->
+<<<<<<< Updated upstream
         <div
             class="col-9 d-flex align-items-center justify-content-center bg-secondary">
+=======
+        <div class="col-9 d-flex align-items-center justify-content-center bg-secondary">
+>>>>>>> Stashed changes
             <div class="w-100 p-4">
                 <!-- Bootstrap Alerts -->
                 {% with messages = get_flashed_messages(with_categories=true) %}
@@ -42,6 +46,7 @@
                 <!-- Form -->
                 <form method="POST" action="/add" class="d-flex mb-3">
                     <input type="text" name="first_name"
+<<<<<<< Updated upstream
                         class="form-control me-2 custom-input" required
                         placeholder="Enter First Name">
                     <br>
@@ -51,6 +56,17 @@
                     <br>
                     <input type="text" name="email"
                         class="form-control me-2 custom-input" required
+=======
+                        class="form-control me-2 custom-input" 
+                        placeholder="Enter First Name">
+                    <br>
+                    <input type="text" name="last_name"
+                        class="form-control me-2 custom-input" 
+                        placeholder="Enter Last Name">
+                    <br>
+                    <input type="text" name="email"
+                        class="form-control me-2 custom-input"
+>>>>>>> Stashed changes
                         placeholder="Enter Email">
                     <br>
                     <button type="submit" class="btn btn-primary custom-btn">Add
