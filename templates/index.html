@@ -23,46 +23,63 @@
       </div>
     </div>
 
-    <!-- Main content -->
-    <div class="col-9 d-flex align-items-center justify-content-center bg-secondary">
-      <div class="w-100 p-4">
-
-        <!-- Bootstrap Alerts -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            {% for category, message in messages %}
-              <div class="alert alert-{{ category }} alert-dismissible fade show position-absolute top-0 end-0" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-              </div>
-            {% endfor %}
-          {% endif %}
-        {% endwith %}
-
-        <!-- Form -->
-        <form method="POST" action="/add" class="d-flex mb-3">
-          <input type="text" name="first_name" class="form-control me-2 custom-input" placeholder="Enter First Name">
-          <br>
-          <input type="text" name="last_name" class="form-control me-2 custom-input" placeholder="Enter Last Name">
-          <br>
-          <input type="text" name="email" class="form-control me-2 custom-input" placeholder="Enter Email">
-          <br>
-          <button type="submit" class="btn btn-primary custom-btn">Add Customer</button>
-        </form>
-
-        <!-- Item List -->
-        <ul class="list-group">
-          {% for i in customers %}
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-              {{ i[1] }}
-              <a href="/delete/{{ i[0] }}" class="btn btn-sm btn-danger">Delete</a>
-            </li>
-          {% endfor %}
-        </ul>
-
+  <!-- Main content -->
+<div class="col-9 bg-secondary">
+  <div class="w-100 p-4">
+  
+<!-- Bootstrap Alerts -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
       </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+    <!-- Add Customer Form -->
+    <form method="POST" action="/add" class="row g-2 mb-4 align-items-center mt-2">
+      <div class="col-3">
+        <input type="text" name="first_name" class="form-control" placeholder="Enter First Name">
+      </div>
+      <div class="col-3">
+        <input type="text" name="last_name" class="form-control" placeholder="Enter Last Name">
+      </div>
+      <div class="col-4">
+        <input type="text" name="email" class="form-control" placeholder="Enter Email">
+      </div>
+      <div class="col-2">
+        <button type="submit" class="btn btn-primary w-100">Add Customer</button>
+      </div>
+    </form>
+    <!-- Title -->
+    <h2 class="text-white mb-2">Client List</h2>
+    <!-- Table Headers -->
+    <div class="row fw-bold border-bottom pb-2 mb-2">
+      <div class="col-3">First Name</div>
+      <div class="col-3">Last Name</div>
+      <div class="col-4">Email</div>
+      <div class="col-2">Action</div>
     </div>
+
+    <!-- Customer List -->
+    {% for i in customers %}
+      <div class="row align-items-center mb-2">
+        <div class="col-3">{{ i[1] }}</div>
+        <div class="col-3">{{ i[2] }}</div>
+        <div class="col-4">{{ i[3] }}</div>
+        <div class="col-2">
+          <a href="/delete/{{ i[0] }}" class="btn btn-sm btn-danger w-100">Delete</a>
+        </div>
+      </div>
+    {% endfor %}
+
   </div>
+</div>
+    </div>
+
 
   <!-- Clock Script -->
   <script>
@@ -74,6 +91,14 @@
     }
     setInterval(updateClock, 1000);
     updateClock();
+
+    setTimeout(() => {
+    const alerts = document.querySelectorAll('.alert');
+    alerts.forEach(alert => {
+      const bsAlert = bootstrap.Alert.getOrCreateInstance(alert);
+      bsAlert.close();
+    });
+  }, 3000);
   </script>
 
   <!-- Bootstrap JS for alerts -->
