@@ -41,13 +41,18 @@
 
         <!-- Form -->
         <form method="POST" action="/add" class="d-flex mb-3">
-          <input type="text" name="item" class="form-control me-2 custom-input" placeholder="Add item">
-          <button type="submit" class="btn btn-primary custom-btn">Add</button>
+          <input type="text" name="first_name" class="form-control me-2 custom-input" placeholder="Enter First Name">
+          <br>
+          <input type="text" name="last_name" class="form-control me-2 custom-input" placeholder="Enter Last Name">
+          <br>
+          <input type="text" name="email" class="form-control me-2 custom-input" placeholder="Enter Email">
+          <br>
+          <button type="submit" class="btn btn-primary custom-btn">Add Customer</button>
         </form>
 
         <!-- Item List -->
         <ul class="list-group">
-          {% for i in items %}
+          {% for i in customers %}
             <li class="list-group-item d-flex justify-content-between align-items-center">
               {{ i[1] }}
               <a href="/delete/{{ i[0] }}" class="btn btn-sm btn-danger">Delete</a>

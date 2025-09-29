@@ -6,26 +6,30 @@ app.secret_key = "Cookies"
 
 @app.route("/", methods=["GET"])
 def index():
-    items = db.get_items()
-    return render_template("index.html", items=items)
+    customers = db.get_customers()
+    return render_template("index.html", customers=customers)
 
 @app.route("/add", methods=["POST"])
 def add():
-    item = request.form.get("item")
-    if item:
+
+    first_name = request.form.get("first_name")
+    last_name = request.form.get("last_name")
+    email = request.form.get("email")
+
+    if first_name and last_name and email:
         try:
-            db.add_item(item)
-            flash(f"{item} Client added successfully!", "success")
+            db.add_customer(first_name, last_name, email)
+            flash(f"{first_name} {last_name} Client added successfully!", "success")
         except Exception as e:
             flash(f"Failed to add client {str(e)}", "danger")
     else:
         flash("Client name cannot be empty.", "danger")
     return index()
 
-@app.route("/delete/<int:item_id>")
-def delete(item_id):
+@app.route("/delete/<int:customer_id>")
+def delete(customer_id):
     try:
-        db.delete_item(item_id)
+        db.delete_customer(customer_id)
         flash("Client removed successfully!", "success")
     except Exception as e:
         flash(f"Failed to remove client: {str(e)}", "danger")
