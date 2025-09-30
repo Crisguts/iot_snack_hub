@@ -29,6 +29,7 @@ def get_customers():
     return customers
 
 def add_customer(first_name, last_name, email):
+    conn = None
     try:
         conn = get_db()
         c = conn.cursor()
@@ -39,8 +40,12 @@ def add_customer(first_name, last_name, email):
     except Exception as e:
         print(f"Error adding customer: {e}")
         return False    
+    finally:
+        if conn:
+         conn.close()
 
 def delete_customer(customer_id):
+    conn = None
     try:
         conn = get_db()
         c = conn.cursor()
@@ -51,6 +56,9 @@ def delete_customer(customer_id):
     except Exception as e:
         print(f"Error deleting customer: {e}")
         return False
+    finally:
+        if conn:
+         conn.close()
    
 # Run this once when the app starts
 init_db()
