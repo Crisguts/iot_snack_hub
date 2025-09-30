@@ -19,9 +19,15 @@ cd iot_example
 ### 2. Create and Activate a Virtual Environment
 Create a virtual environment to isolate dependencies:
 ```bash
-python3 -m venv .venv
+python3 -m venv .venv 
 source .venv/bin/activate
+
+OR 
+
+python -m venv .venv
+source .venv/Scripts/activate
 ```
+Depends on your environment.
 
 ### 3. Install Dependencies
 Install the required Python packages:
