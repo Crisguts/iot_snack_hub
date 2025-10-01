@@ -18,10 +18,14 @@
         <div id="clock" class="fw-bold text-center"></div>
       </div>
 
-      <div id="link-div" class="d-flex flex-column align-items-center" style="gap: 20px;">
-        <a href="" class="Sidebar fw-bold">Clients</a>
+      <div class="d-flex flex-column align-items-center link-div" style="gap: 20px;">
+        <a href="index.html" class="Sidebar fw-bold">Clients</a>
         <a href="" class="Sidebar fw-bold">To be Added</a>
       </div>
+
+  <div class="d-flex flex-column align-items-center">
+    <a id="logout" href="" class="Sidebar fw-bold">Logout</a> 
+  </div>
     </div>
 
     <!-- Main content -->
@@ -52,31 +56,33 @@
             <input type="text" name="email" class="form-control" placeholder="Enter Email">
           </div>
           <div class="col-2">
-            <button type="submit" class="btn btn-primary w-100">Add Customer</button>
+            <button id="add-client" type="submit" class="btn btn-primary w-100">Add Customer</button>
           </div>
         </form>
         <!-- Title -->
         <h2 class="text-white mb-2">Client List</h2>
-        <!-- Table Headers -->
-        <div class="row fw-bold border-bottom pb-2 mb-1">
-          <div class="col-3">First Name</div>
-          <div class="col-3">Last Name</div>
-          <div class="col-4">Email</div>
-        </div>
 
-        <!-- Customer List -->
-        {% for i in customers %}
-        <div class="row align-items-center mb-1 mt-1 border-bottom Customer">
-          <div class="col-3 ">{{ i[1] }}</div>
-          <div class="col-3 ">{{ i[2] }}</div>
-          <div class="col-4 ">{{ i[3] }}</div>
-          <div class="col-2">
-            <a href="/delete/{{ i[0] }}" class="btn btn-sm btn-danger w-100 mb-1 mt-1 h-100 ">Delete</a>
-          </div>
-        </div>
-        {% endfor %}
+  <!-- Table Headers -->
+  <div class="row fw-bold border-bottom pb-2 mb-1">
+    <div class="col-3">First Name</div>
+    <div class="col-3">Last Name</div>
+    <div class="col-4">Email</div>
+  </div>
+<!-- Customer List Section -->
+<div class="customer-list-container">
+  <!-- Customer List -->
+  {% for i in customers %}
+  <div class="row align-items-center mb-1 mt-1 border-bottom Customer">
+    <div class="col-3">{{ i[1] }}</div>
+    <div class="col-3">{{ i[2] }}</div>
+    <div class="col-4">{{ i[3] }}</div>
+    <div class="col-2">
+      <a href="/delete/{{ i[0] }}" class="btn btn-sm btn-danger w-100 mb-1 mt-1 h-100">Delete</a>
+    </div>
+  </div>
+  {% endfor %}
+</div>
 
-      </div>
     </div>
   </div>
 
@@ -93,12 +99,23 @@
     updateClock();
 
     setTimeout(() => {
-      const alerts = document.querySelectorAll('.alert');
-      alerts.forEach(alert => {
-        const bsAlert = bootstrap.Alert.getOrCreateInstance(alert);
-        bsAlert.close();
-      });
-    }, 3000);
+    const alerts = document.querySelectorAll('.alert');
+    alerts.forEach(alert => {
+      // Animate slide away
+      alert.classList.add('hide-slide');
+
+      // Remove completely after animation finishes
+      alert.addEventListener('transitionend', () => {
+        alert.remove();
+      }, { once: true });
+    });
+  }, 3000);
+const rows = document.querySelectorAll('.Customer');
+rows.forEach((row, index) => {
+  setTimeout(() => {
+    row.classList.add('visible');
+  }, index * 150); // stagger each row by 150ms
+});
   </script>
 
   <!-- Bootstrap JS for alerts -->
