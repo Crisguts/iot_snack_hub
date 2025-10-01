@@ -19,8 +19,8 @@
       </div>
 
       <div id="link-div" class="d-flex flex-column align-items-center" style="gap: 20px;">
-        <a href="" class="Sidebar">Clients</a>
-        <a href="" class="Sidebar">To be Added</a>
+        <a href="" class="Sidebar fw-bold">Clients</a>
+        <a href="" class="Sidebar fw-bold">To be Added</a>
       </div>
     </div>
 
@@ -58,7 +58,7 @@
         <!-- Title -->
         <h2 class="text-white mb-2">Client List</h2>
         <!-- Table Headers -->
-        <div class="row fw-bold border-bottom pb-2 mb-2">
+        <div class="row fw-bold border-bottom pb-2 mb-1">
           <div class="col-3">First Name</div>
           <div class="col-3">Last Name</div>
           <div class="col-4">Email</div>
@@ -66,12 +66,12 @@
 
         <!-- Customer List -->
         {% for i in customers %}
-        <div class="row align-items-center mb-2 border-bottom">
-          <div class="col-3 mb-2">{{ i[1] }}</div>
-          <div class="col-3 mb-2">{{ i[2] }}</div>
-          <div class="col-4 mb-2">{{ i[3] }}</div>
+        <div class="row align-items-center mb-1 mt-1 border-bottom Customer">
+          <div class="col-3 ">{{ i[1] }}</div>
+          <div class="col-3 ">{{ i[2] }}</div>
+          <div class="col-4 ">{{ i[3] }}</div>
           <div class="col-2">
-            <a href="/delete/{{ i[0] }}" class="btn btn-sm btn-danger w-100 mb-2">Delete</a>
+            <a href="/delete/{{ i[0] }}" class="btn btn-sm btn-danger w-100 mb-1 mt-1 h-100 ">Delete</a>
           </div>
         </div>
         {% endfor %}
