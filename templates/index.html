@@ -1,13 +1,21 @@
 <!DOCTYPE html>
 <html>
 <head>
+<<<<<<< Updated upstream
     <title>My IoT Store</title>
     <link rel="stylesheet"
         href="{{ url_for('static', filename='styles.css') }}">
     <link rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+=======
+  <title>My IoT Store</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  
+>>>>>>> Stashed changes
 </head>
 <body class="container-fluid bg-dark text-white" style="margin:0; padding:0;">
+<<<<<<< Updated upstream
     <div class="row vh-100" style="margin: 0;">
         <!-- Sidebar -->
         <div
@@ -123,5 +131,154 @@
         <script
             src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js">
         </script>
+=======
+
+  <div class="row vh-100" style="margin: 0;">
+
+    <!-- Sidebar -->
+    <div class="col-3 d-flex flex-column justify-content-center p-4 bg-dark text-white">
+      <div>
+        <h1 class="mb-2 text-center">Smart Store</h1>
+        <div id="clock" class="fw-bold text-center"></div>
+      </div>
+
+      <div class="d-flex flex-column align-items-center link-div" style="gap: 20px;">
+        <a href="" class="Sidebar fw-bold">Clients</a>
+        <a href="" class="Sidebar fw-bold">To be Added</a>
+      </div>
+
+  <div class="d-flex flex-column align-items-center">
+    <a id="logout" href="" class="Sidebar fw-bold">Logout</a> 
+  </div>
+    </div>
+
+    <!-- Main content -->
+    <div class="col-9 bg-secondary">
+      <div class="w-100 p-4">
+
+        <!-- Bootstrap Alerts -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <!-- Add Customer Form -->
+        <form method="POST" action="/add" class="row g-2 mb-4 align-items-center mt-2">
+          <div class="col-3">
+            <input type="text" name="first_name" class="form-control" placeholder="Enter First Name">
+          </div>
+          <div class="col-3">
+            <input type="text" name="last_name" class="form-control" placeholder="Enter Last Name">
+          </div>
+          <div class="col-4">
+            <input type="text" name="email" class="form-control" placeholder="Enter Email">
+          </div>
+          <div class="col-2">
+            <button id="add-client" type="submit" class="btn btn-primary w-100">Add Customer</button>
+          </div>
+        </form>
+        <!-- Title -->
+        <h2 class="text-white mb-2">Client List</h2>
+
+  <!-- Table Headers -->
+  <div class="row fw-bold border-bottom pb-2 mb-1">
+    <div class="col-3">First Name</div>
+    <div class="col-3">Last Name</div>
+    <div class="col-4">Email</div>
+  </div>
+<!-- Customer List Section -->
+<div class="customer-list-container">
+  <!-- Customer List -->
+  {% for i in customers %}
+  <div class="row align-items-center mb-1 mt-1 border-bottom Customer">
+    <div class="col-3">{{ i[1] }}</div>
+    <div class="col-3">{{ i[2] }}</div>
+    <div class="col-4">{{ i[3] }}</div>
+    <div class="col-2">
+     <a href="#" 
+   class="btn btn-sm btn-danger w-100 mb-1 mt-1 h-100" 
+   data-bs-toggle="modal" 
+   data-bs-target="#deleteModal" 
+   data-delete-url="/delete/{{ i[0] }}">
+   Delete
+</a>
+
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+    </div>
+  </div>
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-dark text-white rounded-3">
+      <div class="modal-header border-0">
+        <h5 class="modal-title" id="deleteModalLabel">Confirm Delete</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        Are you sure you want to delete this client? You can not revert this decision
+      </div>
+      <div class="modal-footer border-0">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <a id="confirmDeleteBtn" href="#" class="btn btn-danger">Delete</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <!-- Clock Script -->
+  <script>
+    function updateClock() {
+      const now = new Date();
+      const hours = now.getHours().toString().padStart(2, '0');
+      const minutes = now.getMinutes().toString().padStart(2, '0');
+      document.getElementById('clock').textContent = `${hours}:${minutes}`;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    setTimeout(() => {
+    const alerts = document.querySelectorAll('.alert');
+    alerts.forEach(alert => {
+      // Animate slide away
+      alert.classList.add('hide-slide');
+
+      // Remove completely after animation finishes
+      alert.addEventListener('transitionend', () => {
+        alert.remove();
+      }, { once: true });
+    });
+  }, 3000);
+const rows = document.querySelectorAll('.Customer');
+rows.forEach((row, index) => {
+  setTimeout(() => {
+    row.classList.add('visible');
+  }, index * 150); // stagger each row by 150ms
+});
+
+  const deleteModal = document.getElementById('deleteModal');
+  const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+
+  deleteModal.addEventListener('show.bs.modal', event => {
+    const button = event.relatedTarget; // the delete button clicked
+    const deleteUrl = button.getAttribute('data-delete-url');
+    confirmDeleteBtn.setAttribute('href', deleteUrl); // set delete link dynamically
+  });
+
+  </script>
+
+  <!-- Bootstrap JS for alerts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+>>>>>>> Stashed changes
 </body>
 </html>
