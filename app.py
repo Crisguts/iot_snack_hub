@@ -17,10 +17,27 @@ except ImportError:
 app = Flask(__name__)
 app.secret_key = "Cookies"
 
-@app.route("/", methods=["GET"])
-def index():
-    customers = db.get_customers()
-    return render_template("index.html", customers=customers)
+@app.route("/", defaults={"page": 1})
+@app.route("/page/<int:page>")
+def index(page):
+    per_page = 6
+    offset = (page - 1) * per_page
+    search_query = request.args.get("search", "").strip()
+
+    customers = db.get_customers_paginated(limit=per_page, offset=offset, search=search_query)
+    total = db.get_customer_count(search=search_query)
+    total_pages = (total + per_page - 1) // per_page
+
+    return render_template("index.html",
+                           customers=customers,
+                           page=page,
+                           total_pages=total_pages,
+                           search=search_query)
+
+# @app.route("/", methods=["GET"])
+# def index():
+#     customers = db.get_customers()
+#     return render_template("index.html", customers=customers)
 
 @app.route("/add", methods=["POST"])
 def add():
