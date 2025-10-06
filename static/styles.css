@@ -51,10 +51,7 @@ h1 {
   opacity: 1;
   transform: translateY(0); /* slide to original position */
 }
-.Sidebar:hover{ /* Hover allows me to use the transiton animation for the background colour */
-  background-color: rgb(79, 79, 79);
-  color: rgb(218, 217, 217);
-}
+.Sidebar:hover,
 .Customer:hover {
   background-color: rgb(79, 79, 79);
   color: rgb(218, 217, 217);
@@ -78,4 +75,12 @@ h1 {
   max-height: 72vh; /* adjust height to fit your layout */
   overflow-y: auto; /* vertical scroll only */
   padding-right: 10px; /* optional, avoids scrollbar overlap */
+}
+.customer-list-container::-webkit-scrollbar {
+  width: 10px;
+  /* overflow-x: hidden; */
+}
+.customer-list-container::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.3);
+  border-radius: 8px;
 }
