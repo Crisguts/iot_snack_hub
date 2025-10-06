@@ -32,14 +32,14 @@ def add():
     if first_name and last_name and email:
             # Regex for name validation
             name_regex = r"^[a-zA-Z]+([ '-][a-zA-Z]+)*$"
-            if not re.match(name_regex, first_name):
+            if not re.match(name_regex, first_name.strip()):
                 flash("Invalid first name.", "danger")
                 return redirect(url_for("index"))
-            if not re.match(name_regex, last_name):
+            if not re.match(name_regex, last_name.strip()):
                 flash("Invalid last name.", "danger")
                 return redirect(url_for("index"))
             # Regex for basic email validation
-            if not re.match('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
+            if not re.match('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email.strip()):
                 flash("Invalid email address.", "danger")
                 return redirect(url_for("index"))
             
