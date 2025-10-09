@@ -46,6 +46,26 @@ def add_customer(first_name, last_name, email):
         if conn:
             conn.close()
 
+def update_customer(customer_id, first_name, last_name, email):
+    conn = None
+    try:
+        conn = get_db()
+        c = conn.cursor()
+        c.execute("""
+            UPDATE customers
+            SET first_name = ?, last_name = ?, email = ?
+            WHERE customer_id = ?
+        """, (first_name, last_name, email, customer_id))
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"Error updating customer: {e}")
+        return False
+    finally:
+        if conn:
+            conn.close()
+
+
 def delete_customer(customer_id):
     conn = None
     try:
