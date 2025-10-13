@@ -29,18 +29,36 @@ def get_customers():
     return customers
 
 def add_customer(first_name, last_name, email):
-    conn = get_db()
-    c = conn.cursor()
-    c.execute("INSERT INTO customers (first_name, last_name, email) VALUES (?,?,?)", (first_name, last_name, email))
-    conn.commit()
-    conn.close()
+    conn = None
+    try:
+        conn = get_db()
+        c = conn.cursor()
+        c.execute("INSERT INTO customers (first_name, last_name, email) VALUES (?,?,?)", (first_name, last_name, email))
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        print(f"Error adding customer: {e}")
+        return False    
+    finally:
+        if conn:
+         conn.close()
 
 def delete_customer(customer_id):
-    conn = get_db()
-    c = conn.cursor()
-    c.execute("DELETE FROM customers WHERE customer_id=?", (customer_id,))
-    conn.commit()
-    conn.close()
-
+    conn = None
+    try:
+        conn = get_db()
+        c = conn.cursor()
+        c.execute("DELETE FROM customers WHERE customer_id=?", (customer_id,))
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        print(f"Error deleting customer: {e}")
+        return False
+    finally:
+        if conn:
+         conn.close()
+   
 # Run this once when the app starts
 init_db()

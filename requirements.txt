@@ -1,7 +1,11 @@
 blinker==1.9.0
 click==8.3.0
 Flask==3.1.2
+gpiozero
 itsdangerous==2.2.0
 Jinja2==3.1.6
+lgpio
 MarkupSafe==3.0.2
+pigpio
+RPi.GPIO
 Werkzeug==3.1.3

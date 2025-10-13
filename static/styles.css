@@ -3,12 +3,25 @@ html, body {
   margin: 0;
   padding: 0;
   overflow-x: hidden; /* prevents horizontal scroll */
+  overflow-y: hidden;
+}
+
+.Sidebar {
+  font-size: 18px;
+  text-decoration: none;
+  color: white;
+  will-change: background-color;
+  transition: background-color 0.3s ease;
+  width: 100%;
+  text-align: center;
+  border-radius: 8px;
 }
 
 h1 {
   color: #007bff;
 }
-#link-div {
+.link-div {
+  will-change: background-color;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -16,7 +29,58 @@ h1 {
   height: 100%;
   gap: 20px; /* <-- spacing between links */
 }
-.Sidebar {
-  font-size: 18px;
-  text-decoration: none;
+#logout {
+  bottom: 10px !important;
+  height: 100%;
+}
+
+.Customer {
+  will-change: opacity, transform, background-color, color;
+  transition: opacity 0.8s ease, transform 0.8s ease, background-color 0.3s ease;
+  transform: translateY(-50px); /* start higher for bigger slide effect */
+  opacity: 0; /* start hidden for animation */
+  width: 100%;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  background-color: rgb(203, 203, 203); 
+  color: rgb(99, 99, 99);
+}
+
+.Customer.visible {
+  opacity: 1;
+  transform: translateY(0); /* slide to original position */
+}
+.Sidebar:hover,
+.Customer:hover {
+  background-color: rgb(79, 79, 79);
+  color: rgb(218, 217, 217);
+}
+/* cubic-bezier is like a custom speed curve for animations.
+   It controls how fast or slow the alert fades amd shrinks.
+   I think it adds a bit of gliding post alert but I am still working on it.
+   */
+.alert {
+  transition: all 1.5s cubic-bezier(0.4, 0, 0.2, 1); 
+}
+
+.alert.hide-slide {
+  opacity: 0;
+  margin: 0;
+  padding: 0;
+  height: 0;
+  overflow: hidden;
+}
+.customer-list-container {
+  max-height: 72vh; /* adjust height to fit your layout */
+  overflow-y: auto; /* vertical scroll only */
+  padding-right: 10px; /* optional, avoids scrollbar overlap */
+}
+.customer-list-container::-webkit-scrollbar {
+  width: 10px;
+  /* overflow-x: hidden; */
+}
+.customer-list-container::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.3);
+  border-radius: 8px;
 }

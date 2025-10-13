@@ -1,5 +1,18 @@
-from flask import Flask, request, render_template, flash
+import re
+from flask import Flask, request, render_template, flash, url_for, redirect
 import db   # our custom db.py file
+# # Try to import GPIO modules with fallback
+try:
+    import gpioScripts.gpiozeroBlink as gpio  # Try RPi.GPIO first
+    print("GPIOZERO")
+except ImportError:
+    try:
+        import gpioScripts.gpioBlink as gpio  # Fallback to gpiozero
+    except ImportError:
+        from unittest.mock import MagicMock
+        gpio = MagicMock()
+        gpio.blink = MagicMock()
+
 
 app = Flask(__name__)
 app.secret_key = "Cookies"
@@ -17,23 +30,42 @@ def add():
     email = request.form.get("email")
 
     if first_name and last_name and email:
-        try:
-            db.add_customer(first_name, last_name, email)
-            flash(f"{first_name} {last_name} Client added successfully!", "success")
-        except Exception as e:
-            flash(f"Failed to add client {str(e)}", "danger")
+            # Regex for name validation
+            name_regex = r"^[a-zA-Z]+([ '-][a-zA-Z]+)*$"
+            if not re.match(name_regex, first_name.strip()):
+                flash("Invalid first name.", "danger")
+                return redirect(url_for("index"))
+            if not re.match(name_regex, last_name.strip()):
+                flash("Invalid last name.", "danger")
+                return redirect(url_for("index"))
+            # Regex for basic email validation
+            if not re.match('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email.strip()):
+                flash("Invalid email address.", "danger")
+                return redirect(url_for("index"))
+            
+            # Try adding customer to db
+            if db.add_customer(first_name.strip(), last_name.strip(), email.strip()):
+                flash(f"{first_name} {last_name} Client added successfully!", "success")
+                gpio.blink("blue")  # Blink blue LED on success
+            else:
+                flash(f"Failed to add client", "danger")
+                gpio.blink("red")  # Blink red LED and sound buzzer on error
     else:
-        flash("Client name cannot be empty.", "danger")
-    return index()
+        flash("Fields cannot be left blank.", "danger")  # Then show message
+        gpio.blink("red")  # Blink red LED first (screen frozen during blink)
+
+    return redirect(url_for("index"))
 
 @app.route("/delete/<int:customer_id>")
 def delete(customer_id):
     try:
         db.delete_customer(customer_id)
         flash("Client removed successfully!", "success")
+        gpio.blink("blue")  # Blink blue LED on success
     except Exception as e:
         flash(f"Failed to remove client: {str(e)}", "danger")
-    return index()
+        gpio.blink("red")  # Blink red LED and sound buzzer on error
+    return redirect(url_for("index"))
 
 if __name__ == "__main__":
     # app.run(host="0.0.0.0", port=8080, debug=False)
