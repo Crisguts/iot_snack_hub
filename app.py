@@ -28,6 +28,7 @@ def add():
     first_name = request.form.get("first_name")
     last_name = request.form.get("last_name")
     email = request.form.get("email")
+    phone_num = request.form.get("phone_num")
 
     if first_name and last_name and email:
             # Regex for name validation
@@ -43,8 +44,14 @@ def add():
                 flash("Invalid email address.", "danger")
                 return redirect(url_for("index"))
             
+            if phone_num and phone_num.strip():
+                phone_regex = r'^[\d\s\-\(\)\+\.]+$'
+                if not re.match(phone_regex, phone_num.strip()):
+                    flash("Invalid phone number.", "danger")
+                    return redirect(url_for("index"))
+            
             # Try adding customer to db
-            if db.add_customer(first_name.strip(), last_name.strip(), email.strip()):
+            if db.add_customer(first_name.strip(), last_name.strip(), email.strip(), phone_num.strip() if phone_num else None):
                 flash(f"{first_name} {last_name} Client added successfully!", "success")
                 gpio.blink("blue")  # Blink blue LED on success
             else:
@@ -70,5 +77,5 @@ def delete(customer_id):
 if __name__ == "__main__":
     # app.run(host="0.0.0.0", port=8080, debug=False)
     app.run(host="http://127.0.0.1", port=8080, debug=False)
-
+# I removed the http://
    
