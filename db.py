@@ -1,64 +1,34 @@
-import sqlite3
+from supabase import create_client, Client
+from dotenv import load_dotenv
+from flask import Flask, request, jsonify
+import os
 
-DB_NAME = "store.db"
+load_dotenv()
 
-def get_db():
-    return sqlite3.connect(DB_NAME)
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 def init_db():
-    conn = get_db()
-    c = conn.cursor()
-    c.execute("""
-    CREATE TABLE IF NOT EXISTS customers (
-        customer_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        first_name TEXT NOT NULL,
-        last_name TEXT NOT NULL,
-        email TEXT UNIQUE NOT NULL,
-        date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-    """)
-    conn.commit()
-    conn.close()
+    print("Table created in Supabase dashboard")
 
+#  In Supabase there is not Create method, to make a new table, you need to go on the Supabase dashboard online.
 def get_customers():
-    conn = get_db()
-    c = conn.cursor()
-    c.execute("SELECT * FROM customers")
-    customers = c.fetchall()
-    conn.close()
-    return customers
-
-def add_customer(first_name, last_name, email):
-    conn = None
     try:
-        conn = get_db()
-        c = conn.cursor()
-        c.execute("INSERT INTO customers (first_name, last_name, email) VALUES (?,?,?)", (first_name, last_name, email))
-        conn.commit()
-        conn.close()
-        return True
+        response = supabase.table("customers").select("*").order("created_at", desc=True).execute()
+        customers = []
+        for item in response.data:
+            customers.append((
+                item['customer_id'],
+                item['first_name'],
+                item['last_name'],
+                item['email'],
+                item['phone_num'],
+                item['created_at'],
+            ))
+        return customers
     except Exception as e:
-        print(f"Error adding customer: {e}")
-        return False    
-    finally:
-        if conn:
-         conn.close()
+        print("Error fetching Customers: {e}")
+        return []
 
-def delete_customer(customer_id):
-    conn = None
-    try:
-        conn = get_db()
-        c = conn.cursor()
-        c.execute("DELETE FROM customers WHERE customer_id=?", (customer_id,))
-        conn.commit()
-        conn.close()
-        return True
-    except Exception as e:
-        print(f"Error deleting customer: {e}")
-        return False
-    finally:
-        if conn:
-         conn.close()
-   
-# Run this once when the app starts
-init_db()
