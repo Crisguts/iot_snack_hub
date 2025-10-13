@@ -32,3 +32,24 @@ def get_customers():
         print("Error fetching Customers: {e}")
         return []
 
+def add_customer(first_name, last_name, email, phone_num):
+    try:
+        data = {
+            "first_name": first_name,
+            "last_name": last_name,
+            "email": email,
+            "phone_num": phone_num,
+        }
+        response = supabase.table("customers").insert(data).execute()
+        return True
+    except Exception as e:
+        print("Error adding a customer: {e}")
+        return False
+    
+def delete_customer(customer_id):
+    try:
+        response = supabase.table("customers").delete().eq("customer_id", customer_id).execute()
+        return True
+    except Exception as e:
+        print("Error deleting a customer: {e}")
+        return False
