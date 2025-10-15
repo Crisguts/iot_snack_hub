@@ -244,10 +244,10 @@
             <input type="email" name="email" class="form-control" placeholder="Enter Email" required>
           </div>
           <div class="col-12">
-            <input type="phone_num" name="email" class="form-control" placeholder="Enter Phone Number" required>
+            <input type="tel" name="phone_num" class="form-control" pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}" placeholder="Enter Phone Number" required>
           </div>
           <div class="col-12">
-            <input type="DOB" name="email" class="form-control" placeholder="Date of Birth" required>
+            <input type="date" name="dob" class="form-control" placeholder="Date of Birth" required>
           </div>
           <div class="col-12 text-end">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -255,7 +255,7 @@
           </div>
         </form>
       </div>
-
+d
     </div>
   </div>
 </div>
@@ -322,9 +322,8 @@
 
 
  <script>
-// -----------------------------
+
 // Clock & Date
-// -----------------------------
 function updateDateTime() {
     const now = new Date();
 
@@ -351,9 +350,8 @@ function updateDateTime() {
 setInterval(updateDateTime, 1000);
 updateDateTime();
 
-// -----------------------------
+
 // Alerts auto-hide
-// -----------------------------
 setTimeout(() => {
     document.querySelectorAll('.alert').forEach(alert => {
         alert.classList.add('hide-slide');
@@ -361,16 +359,13 @@ setTimeout(() => {
     });
 }, 3000);
 
-// -----------------------------
 // Animate Customer Rows
-// -----------------------------
+
 document.querySelectorAll('.Customer').forEach((row, index) => {
     setTimeout(() => row.classList.add('visible'), index * 150);
 });
 
-// -----------------------------
 // Delete Modal Setup
-// -----------------------------
 const deleteModal = document.getElementById('deleteModal');
 const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
 
@@ -380,9 +375,7 @@ deleteModal.addEventListener('show.bs.modal', event => {
     confirmDeleteBtn.setAttribute('href', deleteUrl);
 });
 
-// -----------------------------
 // View & Edit Modals
-// -----------------------------
 const viewClientModal = document.getElementById('viewClientModal');
 const editClientModal = document.getElementById('editClientModal');
 const editClientForm = document.getElementById('editClientForm');
@@ -433,6 +426,11 @@ editCancelBtn.addEventListener('click', () => {
   // Show View modal
   const viewModalInstance = new bootstrap.Modal(viewModal);
   viewModalInstance.show();
+});
+
+document.addEventListener('shown.bs.modal', function (e) {
+  const dateInput = e.target.querySelector('input[type="date"]');
+  if (dateInput) dateInput.focus(); // triggers the Edge calendar icon
 });
 </script>
 

@@ -33,6 +33,7 @@ def get_customers():
                 item.get('email'),
                 item.get('phone_num'),
                 item.get('created_at'),
+                item.get('date_of_birth')
             ))
         return customers
     except Exception as e:
@@ -40,13 +41,14 @@ def get_customers():
         return []
 
 
-def add_customer(first_name, last_name, email, phone_num=None):
+def add_customer(first_name, last_name, email, dob, phone_num=None):
     try:
         data = {
             "first_name": first_name,
             "last_name": last_name,
             "email": email,
             "phone_num": phone_num,
+            "date_of_birth": dob
         }
         response = supabase.table("customers").insert(data).execute()
         print("Insert response:", response)
@@ -115,12 +117,13 @@ def get_customers_paginated(limit, offset, search=None):
         rows = response.data or []
         return [
             (
-                row["customer_id"],        # 0: customer_id
-                row["first_name"],         # 1: first_name
-                row["last_name"],          # 2: last_name
-                row["email"],              # 3: email
-                row.get("phone_num", "N/A"),   # 4: phone number
-                row.get("created_at", "N/A")   # 5: created_at
+                row["customer_id"],        
+                row["first_name"],         
+                row["last_name"],         
+                row["email"],             
+                row.get("phone_num", "N/A"),  
+                row.get("date_of_birth", "N/A"),
+                row.get("created_at", "N/A")   
             )
             for row in rows
         ]
