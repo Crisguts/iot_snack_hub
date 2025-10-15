@@ -51,6 +51,7 @@ def add():
 
     first_name = request.form.get("first_name")
     last_name = request.form.get("last_name")
+    phone_num = request.form.get("phone_num")
     email = request.form.get("email")
 
     if first_name and last_name and email:
@@ -68,7 +69,7 @@ def add():
                 return redirect(url_for("client"))
             
             # Try adding customer to db
-            if db.add_customer(first_name.strip(), last_name.strip(), email.strip()):
+            if db.add_customer(first_name.strip(), last_name.strip(), email.strip(), phone_num.strip() if phone_num else None):
                 flash(f"{first_name} {last_name} Client added successfully!", "success")
                 gpio.blink("blue")  # Blink blue LED on success
             else:
