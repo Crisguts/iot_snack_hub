@@ -51,7 +51,16 @@ def add_customer(first_name, last_name, email, dob, phone_num=None):
             "date_of_birth": dob
         }
         response = supabase.table("customers").insert(data).execute()
+
+        # Check for 204 No Content
+        if response.status_code == 204:
+            print("Insert successful with no content returned.")
+            return True
         print("Insert response:", response)
+        return True
+    except ValueError as ve:
+        # Handle empty response body
+        print("Insert successful, but received empty response body.")
         return True
     except Exception as e:
         print(f"Error adding customer: {e}")
@@ -68,11 +77,15 @@ def update_customer(customer_id, first_name, last_name, email, phone_num=None):
                 "email": email,
                 "phone_num": phone_num,
             })
-            .eq("customer_id", customer_id)
+            .filter("customer_id", "eq", customer_id)
             .execute()
         )
         print("Update response:", response)
         return True
+    except ValueError as ve:
+        # Handle empty response body
+        print("Update successful, but received empty response body.")
+        return True 
     except Exception as e:
         print(f"Error updating customer: {e}")
         return False
@@ -80,8 +93,18 @@ def update_customer(customer_id, first_name, last_name, email, phone_num=None):
 
 def delete_customer(customer_id):
     try:
-        response = supabase.table("customers").delete().eq("customer_id", customer_id).execute()
+        response = supabase.table("customers").delete().filter("customer_id", "eq", customer_id).execute()
         print("Delete response:", response)
+
+           # Check for 204 No Content
+        if response.status_code == 204:
+            print("Delete successful with no content returned.")
+            return True
+        
+        return True
+    except ValueError as ve:
+        # Handle empty response body
+        print("Delete successful, but received empty response body.")
         return True
     except Exception as e:
         print(f"Error deleting customer: {e}")

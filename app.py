@@ -53,6 +53,7 @@ def add():
     last_name = request.form.get("last_name")
     phone_num = request.form.get("phone_num")
     email = request.form.get("email")
+    dob = request.form.get("dob")
 
     if first_name and last_name and email:
             # Regex for name validation
@@ -69,7 +70,7 @@ def add():
                 return redirect(url_for("client"))
             
             # Try adding customer to db
-            if db.add_customer(first_name.strip(), last_name.strip(), email.strip(), phone_num.strip() if phone_num else None):
+            if db.add_customer(first_name.strip(), last_name.strip(), email.strip(),dob.strip(), phone_num.strip() if phone_num else None):
                 flash(f"{first_name} {last_name} Client added successfully!", "success")
                 gpio.blink("blue")  # Blink blue LED on success
             else:
@@ -84,6 +85,7 @@ def add():
 @app.route("/delete/<int:customer_id>")
 def delete(customer_id):
     try:
+        print(f"Attempting to delete customer with ID: {customer_id} (type: {type(customer_id)})")
         db.delete_customer(customer_id)
         flash("Client removed successfully!", "success")
         gpio.blink("blue")  # Blink blue LED on success
@@ -134,4 +136,4 @@ if __name__ == "__main__":
     # app.run(host="0.0.0.0", port=8080, debug=False)
     app.run(host="http://127.0.0.1", port=8080, debug=False)
 
-   
+
