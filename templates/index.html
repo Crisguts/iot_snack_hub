@@ -2,15 +2,13 @@
 <html>
 <head>
   <title>My IoT Store</title>
-  <!-- <link rel="preload" href="{{ url_for('static', filename='styles.css') }}" as="style"> -->
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
-  
 </head>
+
 <body class="container-fluid bg-dark text-white" style="margin:0; padding:0;">
 
   <div class="row vh-100" style="margin: 0;">
-
     <!-- Sidebar -->
     <div class="col-3 d-flex flex-column justify-content-center p-4 bg-dark text-white">
       <div>
@@ -25,15 +23,15 @@
         <a href="" class="Sidebar fw-bold">To be Added</a>
       </div>
 
-  <div class="d-flex flex-column align-items-center">
-    <a id="logout" href="" class="Sidebar fw-bold">Logout</a> 
-  </div>
+      <div class="d-flex flex-column align-items-center mt-auto">
+        <a id="logout" href="" class="Sidebar fw-bold">Logout</a> 
+      </div>
     </div>
 
     <!-- Main content -->
     <div class="col-9 bg-secondary">
-      <div class="w-100 p-4">
 
+      <div class="w-100 p-4">
         <!-- Bootstrap Alerts -->
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
@@ -45,250 +43,201 @@
         {% endfor %}
         {% endif %}
         {% endwith %}
+      </div>
+
+      <!-- Title -->
+
+      <h2 class="text-white mb-3">Readings</h2>
 
 
+      <div class="container">
+        <!-- Top Row: Gauges -->
+        <div class="row text-center">
+          <!-- Temperature Gauge -->
+          <div class="col-md-6 mb-3">
+            <div class="card bg-dark text-white p-4 shadow-lg border-0 rounded-4">
+              <h5 class="text-secondary mb-3">Current Temperature</h5>
+              <canvas id="tempGauge" height="100"></canvas>
+              <h1 id="currentTemp" class="fw-bold display-5 text-danger mt-3">{{ current_temp }}°C</h1>
+                          <!-- Fan Control Toggle -->
+      <div class="d-flex justify-content-center align-items-center mb-4">
+        <label class="form-switch">
+          <input type="checkbox" id="fanToggle">
+          <i></i>
+          <span>Fan Control</span>
+        </label>
+      </div>
+            </div>
+          </div>
 
-        <!-- IKE THIS IS FOR YOU, MAKE THIS CUTE PLS, BUT KEEP ID NAME -->
-        <!-- Fan Control Toggle -->
-        <div class="d-flex justify-content-center align-items-center" style="height: 100%;">
-          <label class="form-switch">
-            <input type="checkbox" id="fanToggle">
-            <i></i>
-            <span class="ms-2">Fan Control</span>
-          </label>
+          <!-- Humidity Gauge -->
+          <div class="col-md-6 mb-3">
+            <div class="card bg-dark text-white p-4 shadow-lg border-0 rounded-4">
+              <h5 class="text-secondary mb-3">Current Humidity</h5>
+              <canvas id="humidityGauge" height="auto"></canvas>
+              <h1 id="currentHumidity" class="fw-bold display-5 text-info mt-3">{{ current_humidity }}%</h1>
+            </div>
+          </div>
         </div>
 
-        <style>
-          .form-switch {
-            position: relative;
-            display: inline-block;
-            width: 60px;
-            height: 34px;
-          }
-
-          .form-switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-          }
-
-          .form-switch i {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #ccc;
-            transition: 0.4s;
-            border-radius: 34px;
-          }
-
-          .form-switch i:before {
-            position: absolute;
-            content: "";
-            height: 26px;
-            width: 26px;
-            left: 4px;
-            bottom: 4px;
-            background-color: white;
-            transition: 0.4s;
-            border-radius: 50%;
-          }
-
-          .form-switch input:checked + i {
-            background-color: #4caf50;
-          }
-
-          .form-switch input:checked + i:before {
-            transform: translateX(26px);
-          }
-        </style>
+        <!-- Bottom Row: Historical chart -->
+        <div class="card bg-dark text-white p-3 shadow mt-4">
+          <h5 class="text-center mb-3">Temperature & Humidity Over Time</h5>
+          <canvas id="iotChart" height="250"></canvas>
+        </div>
       </div>
-              <!-- Title -->
-        <h2 class="text-white mb-1">Readings</h2>
-<div class="container mt-4">
-
-<div class="row text-center mt-4">
-  <!-- Temperature Gauge -->
-  <div class="col-md-6 mb-3">
-    <div class="card bg-dark text-white p-4 shadow-lg border-0 rounded-4">
-      <h5 class="text-secondary mb-3">Current Temperature</h5>
-      <canvas id="tempGauge"  height="100"></canvas>
-      <h1 id="currentTemp" class="fw-bold display-5 text-danger mt-3">{{ current_temp }}°C</h1>
     </div>
   </div>
 
-  <!-- Humidity Gauge -->
-  <div class="col-md-6 mb-3">
-    <div class="card bg-dark text-white p-4 shadow-lg border-0 rounded-4">
-      <h5 class="text-secondary mb-3">Current Humidity</h5>
-      <canvas id="humidityGauge" height="100"></canvas>
-      <h1 id="currentHumidity" class="fw-bold display-5 text-info mt-3">{{ current_humidity }}%</h1>
-    </div>
-  </div>
-</div>
+  <!-- Chart.js and Data -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <!-- Bottom Row: Combined historical chart -->
-  <div class="card bg-dark text-white p-3 shadow">
-    <h5 class="text-center mb-3">Temperature & Humidity Over Time</h5>
-    <canvas id="iotChart" height="250"></canvas>
-  </div>
-</div>
+  <script id="chart-data" type="application/json">
+    {{ data | tojson | safe }}
+  </script>
 
-    </div>
-  </div>
+  <script id="current-data" type="application/json">
+  {
+    "temperature": {{ current_temp }},
+    "humidity": {{ current_humidity }}
+  }
+  </script>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<script id="chart-data" type="application/json">
-  {{ data | tojson | safe }}
-</script>
-<script id="current-data" type="application/json">
-{
-  "temperature": {{ current_temp }},
-  "humidity": {{ current_humidity }}
-}
-</script>
- <script>
-// -----------------------------
-// Clock & Date
-// -----------------------------
-function updateDateTime() {
-    const now = new Date();
-
-    // Date
-    const day = now.getDate();
-    const daySuffix = (d) => {
+  <script>
+    // -----------------------------
+    // Clock & Date
+    // -----------------------------
+    function updateDateTime() {
+      const now = new Date();
+      const day = now.getDate();
+      const daySuffix = (d) => {
         if (d > 3 && d < 21) return 'th';
         switch (d % 10) {
-            case 1: return "st";
-            case 2: return "nd";
-            case 3: return "rd";
-            default: return "th";
+          case 1: return "st";
+          case 2: return "nd";
+          case 3: return "rd";
+          default: return "th";
         }
-    };
-    const options = { year: 'numeric', month: 'long', day: 'numeric' };
-    const formattedDate = now.toLocaleDateString('en-US', options).replace(/\d+/, day + daySuffix(day));
-    document.getElementById('date').textContent = formattedDate;
+      };
+      const options = { year: 'numeric', month: 'long', day: 'numeric' };
+      const formattedDate = now.toLocaleDateString('en-US', options).replace(/\d+/, day + daySuffix(day));
+      document.getElementById('date').textContent = formattedDate;
 
-    // Time
-    const hours = now.getHours().toString().padStart(2, '0');
-    const minutes = now.getMinutes().toString().padStart(2, '0');
-    document.getElementById('clock').textContent = `${hours}:${minutes}`;
-}
-setInterval(updateDateTime, 1000);
-updateDateTime();
+      const hours = now.getHours().toString().padStart(2, '0');
+      const minutes = now.getMinutes().toString().padStart(2, '0');
+      document.getElementById('clock').textContent = `${hours}:${minutes}`;
+    }
+    setInterval(updateDateTime, 1000);
+    updateDateTime();
 
-// -----------------------------
-// Alerts auto-hide
-// -----------------------------
-setTimeout(() => {
-    document.querySelectorAll('.alert').forEach(alert => {
+    // -----------------------------
+    // Alerts auto-hide
+    // -----------------------------
+    setTimeout(() => {
+      document.querySelectorAll('.alert').forEach(alert => {
         alert.classList.add('hide-slide');
         alert.addEventListener('transitionend', () => alert.remove(), { once: true });
+      });
+    }, 3000);
+
+    // -----------------------------
+    // Read JSON Data
+    // -----------------------------
+    const chartData = JSON.parse(document.getElementById('chart-data').textContent);
+    const currentData = JSON.parse(document.getElementById('current-data').textContent);
+
+    const tempValue = currentData.temperature;
+    const humidityValue = currentData.humidity;
+
+    // -----------------------------
+    // Top Gauges
+    // -----------------------------
+    const tempCtx = document.getElementById('tempGauge').getContext('2d');
+    new Chart(tempCtx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Temp', 'Remaining'],
+        datasets: [{
+          data: [tempValue, 50 - tempValue],
+          backgroundColor: ['rgba(255, 99, 132, 1)', 'rgba(255,255,255,0.1)'],
+          borderWidth: 0,
+          cutout: '80%',
+          rotation: -90,
+          circumference: 180
+        }]
+      },
+      options: {
+        responsive: false,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+      }
     });
-}, 3000);
 
+    const humCtx = document.getElementById('humidityGauge').getContext('2d');
+    new Chart(humCtx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Humidity', 'Remaining'],
+        datasets: [{
+          data: [humidityValue, 100 - humidityValue],
+          backgroundColor: ['rgba(54, 162, 235, 1)', 'rgba(255,255,255,0.1)'],
+          borderWidth: 0,
+          cutout: '80%',
+          rotation: -90,
+          circumference: 180
+        }]
+      },
+      options: {
+        responsive: false,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+      }
+    });
 
+    // -----------------------------
+    // Bottom Historical Chart
+    // -----------------------------
+    const ctx = document.getElementById('iotChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: chartData.timestamps,
+        datasets: [
+          {
+            label: 'Temperature (°C)',
+            data: chartData.temperature,
+            borderColor: 'rgba(255, 99, 132, 1)',
+            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+            tension: 0.4,
+            fill: true,
+            yAxisID: 'y1'
+          },
+          {
+            label: 'Humidity (%)',
+            data: chartData.humidity,
+            borderColor: 'rgba(54, 162, 235, 1)',
+            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+            tension: 0.4,
+            fill: true,
+            yAxisID: 'y2'
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        interaction: { mode: 'index', intersect: false },
+        stacked: false,
+        scales: {
+          y1: { type: 'linear', position: 'left', title: { display: true, text: 'Temperature (°C)' } },
+          y2: { type: 'linear', position: 'right', title: { display: true, text: 'Humidity (%)' }, grid: { drawOnChartArea: false } },
+          x: { title: { display: true, text: 'Time' } }
+        },
+        plugins: { legend: { labels: { color: '#fff' } } }
+      }
+    });
+  </script>
 
-  const chartData = JSON.parse(document.getElementById('chart-data').textContent);
-  document.getElementById('currentTemp').textContent = chartData.temperature.at(-1) + '°C';
-document.getElementById('currentHumidity').textContent = chartData.humidity.at(-1) + '%';
-
-  const currentData = JSON.parse(document.getElementById('current-data').textContent);
-  const tempValue = currentData.temperature;
-  const humidityValue = currentData.humidity;
-
-  // ---- Temperature Gauge ----
-  const tempCtx = document.getElementById('tempGauge').getContext('2d');
-  new Chart(tempCtx, {
-    type: 'doughnut',
-    data: {
-      labels: ['Temp', 'Remaining'],
-      datasets: [{
-        data: [tempValue, 50 - tempValue], // assuming 0–50°C scale
-        backgroundColor: ['rgba(255, 99, 132, 1)', 'rgba(255,255,255,0.1)'],
-        borderWidth: 0,
-        cutout: '80%',
-        rotation: -90,
-        circumference: 180
-      }]
-    },
-options: {
-  responsive: false,
-  animation: { duration: 1500, easing: 'easeOutCubic' },
-  plugins: { legend: { display: false } },
-}
-  });
-
-  // ---- Humidity Gauge ----
-  const humCtx = document.getElementById('humidityGauge').getContext('2d');
-  new Chart(humCtx, {
-    type: 'doughnut',
-    data: {
-      labels: ['Humidity', 'Remaining'],
-      datasets: [{
-        data: [humidityValue, 100 - humidityValue], // 0–100% range
-        backgroundColor: ['rgba(54, 162, 235, 1)', 'rgba(255,255,255,0.1)'],
-        borderWidth: 0,
-        cutout: '80%',
-        rotation: -90,
-        circumference: 180
-      }]
-    },
-options: {
-  responsive: false,
-  animation: { duration: 1500, easing: 'easeOutCubic' },
-  plugins: { legend: { display: false } },
-}
-  });
-
-  const ctx = document.getElementById('iotChart').getContext('2d');
-  const iotChart = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: chartData.timestamps,
-datasets: [
-  {
-    label: 'Temperature (°C)',
-    data: chartData.temperature,        // Temperature values
-    borderColor: 'rgba(255, 99, 132, 1)',
-    backgroundColor: 'rgba(255, 99, 132, 0.2)',
-    tension: 0.4,
-    fill: true,
-    yAxisID: 'y1'
-  },
-  {
-    label: 'Humidity (%)',
-    data: chartData.humidity,           // Humidity values
-    borderColor: 'rgba(54, 162, 235, 1)',
-    backgroundColor: 'rgba(54, 162, 235, 0.2)',
-    tension: 0.4,
-    fill: true,
-    yAxisID: 'y2'
-  }
-]}});
-
-
-// -----------------------------
-// Fan Toggle Control
-// -----------------------------
-document.getElementById("fanToggle").addEventListener("change", function () {
-  const isChecked = this.checked; // true if the toggle is ON, false if OFF
-  const action = isChecked ? "on" : "off";
-
-  // Send a POST request to the backend (our app.py)
-  fetch(`/fan/${action}`, { method: "POST" })
-    .then(response => response.json())
-    .then(data => console.log(data.message))
-    .catch(error => console.error("Error:", error));
-});
-</script>
-
-
-  <!-- Bootstrap JS for alerts -->
+  <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
 </body>
 </html>
