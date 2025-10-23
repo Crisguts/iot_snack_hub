@@ -119,7 +119,10 @@
            data-lastname="{{ i[2] }}"
            data-email="{{ i[3] }}"
            data-phone="{{ i[4]|default('N/A') }}"
-           data-date="{{ i[5]|default('N/A') }}">
+           data-dob="{{ i[5]|default('N/A') }}"
+           data-date="{{ i[6]|default('N/A') }}">
+           <!-- data-phone="{{ i[4]| default('N/A') }}"
+           data-date="{{ i[5]|default('N/A') }}"> -->
          
         <div class="col-3">{{ i[1] }}</div>
         <div class="col-3">{{ i[2] }}</div>
@@ -387,12 +390,16 @@ viewClientModal.addEventListener('show.bs.modal', event => {
     const firstName = row.getAttribute('data-firstname');
     const lastName = row.getAttribute('data-lastname');
     const email = row.getAttribute('data-email');
+    const phone = row.getAttribute('data-phone');
+    const dob = row.getAttribute('data-dob');
     const dateStr = row.getAttribute('data-date');
 
     // Fill View Modal
     document.getElementById('modalFirstName').textContent = firstName;
     document.getElementById('modalLastName').textContent = lastName;
     document.getElementById('modalEmail').textContent = email;
+    document.getElementById('modalPhone').textContent = phone || 'N/A';
+    document.getElementById('modalDob').textContent = dob || 'N/A';
     document.getElementById('modalDate').textContent = dateStr
         ? new Date(dateStr).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
         : 'N/A';
