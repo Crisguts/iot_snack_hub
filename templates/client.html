@@ -117,9 +117,11 @@
            data-id="{{ i[0] }}"
            data-firstname="{{ i[1] }}"
            data-lastname="{{ i[2] }}"
+
            data-email="{{ i[3] }}"
            data-phone="{{ i[4]|default('N/A') }}"
-           data-date="{{ i[5]|default('N/A') }}">
+           data-dob="{{ i[5]|default('N/A') }}"
+           data-date="{{ i[6]|default('N/A') }}">
          
         <div class="col-3">{{ i[1] }}</div>
         <div class="col-3">{{ i[2] }}</div>
@@ -255,7 +257,7 @@
           </div>
         </form>
       </div>
-d
+
     </div>
   </div>
 </div>
@@ -290,12 +292,12 @@ d
 
         <div class="row mb-2">
           <div class="col-5 fw-bold text-end">Phone Number:</div>
-          <div class="col-7" id="modalPhone">N/A</div>
+          <div class="col-7" id="modalPhone"></div>
         </div>
 
         <div class="row mb-2">
           <div class="col-5 fw-bold text-end">Date of Birth:</div>
-          <div class="col-7" id="modalDob">N/A</div>
+          <div class="col-7" id="modalDob"></div>
         </div>
 
         <div class="row mb-2">
@@ -387,15 +389,22 @@ viewClientModal.addEventListener('show.bs.modal', event => {
     const firstName = row.getAttribute('data-firstname');
     const lastName = row.getAttribute('data-lastname');
     const email = row.getAttribute('data-email');
+    const phone_num = row.getAttribute('data-phone');
+    const dob = row.getAttribute('data-dob');
     const dateStr = row.getAttribute('data-date');
 
     // Fill View Modal
     document.getElementById('modalFirstName').textContent = firstName;
     document.getElementById('modalLastName').textContent = lastName;
     document.getElementById('modalEmail').textContent = email;
-    document.getElementById('modalDate').textContent = dateStr
-        ? new Date(dateStr).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+    document.getElementById('modalPhone').textContent = phone_num;
+    document.getElementById('modalDob').textContent = dob
+                ? new Date(dob).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
         : 'N/A';
+    document.getElementById('modalDate').textContent = dateStr
+            ? new Date(dateStr).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+        : 'N/A';
+
 
     // Set hidden ID for Edit modal
     document.getElementById('editCustomerId').value = customerId;

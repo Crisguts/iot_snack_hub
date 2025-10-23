@@ -47,11 +47,51 @@
         {% endwith %}
 
       </div>
+              <!-- Title -->
+        <h2 class="text-white mb-1">Readings</h2>
+<div class="container mt-4">
+
+<div class="row text-center mt-4">
+  <!-- Temperature Gauge -->
+  <div class="col-md-6 mb-3">
+    <div class="card bg-dark text-white p-4 shadow-lg border-0 rounded-4">
+      <h5 class="text-secondary mb-3">Current Temperature</h5>
+      <canvas id="tempGauge"  height="100"></canvas>
+      <h1 id="currentTemp" class="fw-bold display-5 text-danger mt-3">{{ current_temp }}°C</h1>
     </div>
   </div>
 
+  <!-- Humidity Gauge -->
+  <div class="col-md-6 mb-3">
+    <div class="card bg-dark text-white p-4 shadow-lg border-0 rounded-4">
+      <h5 class="text-secondary mb-3">Current Humidity</h5>
+      <canvas id="humidityGauge" height="100"></canvas>
+      <h1 id="currentHumidity" class="fw-bold display-5 text-info mt-3">{{ current_humidity }}%</h1>
+    </div>
+  </div>
+</div>
 
+  <!-- Bottom Row: Combined historical chart -->
+  <div class="card bg-dark text-white p-3 shadow">
+    <h5 class="text-center mb-3">Temperature & Humidity Over Time</h5>
+    <canvas id="iotChart" height="250"></canvas>
+  </div>
+</div>
 
+    </div>
+  </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script id="chart-data" type="application/json">
+  {{ data | tojson | safe }}
+</script>
+<script id="current-data" type="application/json">
+{
+  "temperature": {{ current_temp }},
+  "humidity": {{ current_humidity }}
+}
+</script>
  <script>
 // -----------------------------
 // Clock & Date
@@ -92,79 +132,116 @@ setTimeout(() => {
     });
 }, 3000);
 
-// -----------------------------
-// Animate Customer Rows
-// -----------------------------
-document.querySelectorAll('.Customer').forEach((row, index) => {
-    setTimeout(() => row.classList.add('visible'), index * 150);
-});
 
-// -----------------------------
-// Delete Modal Setup
-// -----------------------------
-const deleteModal = document.getElementById('deleteModal');
-const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
 
-deleteModal.addEventListener('show.bs.modal', event => {
-    const button = event.relatedTarget;
-    const deleteUrl = button.getAttribute('data-delete-url');
-    confirmDeleteBtn.setAttribute('href', deleteUrl);
-});
+  const chartData = JSON.parse(document.getElementById('chart-data').textContent);
+  document.getElementById('currentTemp').textContent = chartData.temperature.at(-1) + '°C';
+document.getElementById('currentHumidity').textContent = chartData.humidity.at(-1) + '%';
 
-// -----------------------------
-// View & Edit Modals
-// -----------------------------
-const viewClientModal = document.getElementById('viewClientModal');
-const editClientModal = document.getElementById('editClientModal');
-const editClientForm = document.getElementById('editClientForm');
-const editFromViewBtn = document.getElementById('editFromViewBtn');
+  const currentData = JSON.parse(document.getElementById('current-data').textContent);
+  const tempValue = currentData.temperature;
+  const humidityValue = currentData.humidity;
 
-viewClientModal.addEventListener('show.bs.modal', event => {
-    const row = event.relatedTarget;
-    const customerId = row.getAttribute('data-id');
-    const firstName = row.getAttribute('data-firstname');
-    const lastName = row.getAttribute('data-lastname');
-    const email = row.getAttribute('data-email');
-    const dateStr = row.getAttribute('data-date');
+  // ---- Temperature Gauge ----
+  const tempCtx = document.getElementById('tempGauge').getContext('2d');
+  new Chart(tempCtx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Temp', 'Remaining'],
+      datasets: [{
+        data: [tempValue, 50 - tempValue], // assuming 0–50°C scale
+        backgroundColor: ['rgba(255, 99, 132, 1)', 'rgba(255,255,255,0.1)'],
+        borderWidth: 0,
+        cutout: '80%',
+        rotation: -90,
+        circumference: 180
+      }]
+    },
+options: {
+  responsive: false,
+  animation: { duration: 1500, easing: 'easeOutCubic' },
+  plugins: { legend: { display: false } },
+}
+  });
 
-    // Fill View Modal
-    document.getElementById('modalFirstName').textContent = firstName;
-    document.getElementById('modalLastName').textContent = lastName;
-    document.getElementById('modalEmail').textContent = email;
-    document.getElementById('modalDate').textContent = dateStr
-        ? new Date(dateStr).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
-        : 'N/A';
+  // ---- Humidity Gauge ----
+  const humCtx = document.getElementById('humidityGauge').getContext('2d');
+  new Chart(humCtx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Humidity', 'Remaining'],
+      datasets: [{
+        data: [humidityValue, 100 - humidityValue], // 0–100% range
+        backgroundColor: ['rgba(54, 162, 235, 1)', 'rgba(255,255,255,0.1)'],
+        borderWidth: 0,
+        cutout: '80%',
+        rotation: -90,
+        circumference: 180
+      }]
+    },
+options: {
+  responsive: false,
+  animation: { duration: 1500, easing: 'easeOutCubic' },
+  plugins: { legend: { display: false } },
+}
+  });
 
-    // Set hidden ID for Edit modal
-    document.getElementById('editCustomerId').value = customerId;
-});
+  const ctx = document.getElementById('iotChart').getContext('2d');
+  const iotChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: chartData.timestamps,
+datasets: [
+  {
+    label: 'Temperature (°C)',
+    data: chartData.temperature,        // Temperature values
+    borderColor: 'rgba(255, 99, 132, 1)',
+    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+    tension: 0.4,
+    fill: true,
+    yAxisID: 'y1'
+  },
+  {
+    label: 'Humidity (%)',
+    data: chartData.humidity,           // Humidity values
+    borderColor: 'rgba(54, 162, 235, 1)',
+    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+    tension: 0.4,
+    fill: true,
+    yAxisID: 'y2'
+  }
+]
 
-// Fill Edit Modal when clicking "Edit Client" in View Modal
-editFromViewBtn.addEventListener('click', () => {
-    const customerId = document.getElementById('editCustomerId').value;
-
-    // Set form action dynamically
-    editClientForm.action = `/update/${customerId}`;
-
-    // Fill form fields
-    document.getElementById('editFirstName').value = document.getElementById('modalFirstName').textContent;
-    document.getElementById('editLastName').value = document.getElementById('modalLastName').textContent;
-    document.getElementById('editEmail').value = document.getElementById('modalEmail').textContent;
-});
-
-const editCancelBtn = document.getElementById('editBackButton');
-const editModal = document.getElementById('editClientModal');
-const viewModal = document.getElementById('viewClientModal');
-
-editCancelBtn.addEventListener('click', () => {
-  // Hide Edit modal
-  const editModalInstance = bootstrap.Modal.getInstance(editModal);
-  editModalInstance.hide();
-
-  // Show View modal
-  const viewModalInstance = new bootstrap.Modal(viewModal);
-  viewModalInstance.show();
-});
+    },
+    options: {
+      interaction: {
+        mode: 'index',
+        intersect: false
+      },
+      stacked: false,
+      scales: {
+        y1: {
+          type: 'linear',
+          position: 'left',
+          title: { display: true, text: 'Temperature (°C)' }
+        },
+        y2: {
+          type: 'linear',
+          position: 'right',
+          title: { display: true, text: 'Humidity (%)' },
+          grid: { drawOnChartArea: false }
+        },
+        x: {
+          title: { display: true, text: 'Time' }
+        }
+      },
+      plugins: {
+        legend: {
+          labels: { color: '#fff' }
+        }
+      }
+    }
+  });
 </script>
 
 
