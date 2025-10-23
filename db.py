@@ -144,7 +144,7 @@ def get_customers_paginated(limit, offset, search=None):
                 row["customer_id"],        
                 row["first_name"],         
                 row["last_name"],         
-                row["email"],             
+                row["email"],           
                 row.get("phone_num", "N/A"),  
                 row.get("date_of_birth", "N/A"),
                 row.get("created_at", "N/A")   
