@@ -14,6 +14,7 @@ def init_db():
     print("Table managed in Supabase dashboard (no local creation needed)")
 
 
+#  In Supabase there is not Create method, to make a new table, you need to go on the Supabase dashboard online.
 def get_customers():
     try:
         response = (
