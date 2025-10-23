@@ -50,35 +50,38 @@
       <h2 class="text-white mb-3">Readings</h2>
 
 
-      <div class="container">
-        <!-- Top Row: Gauges -->
-        <div class="row text-center">
-          <!-- Temperature Gauge -->
-          <div class="col-md-6 mb-3">
-            <div class="card bg-dark text-white p-4 shadow-lg border-0 rounded-4">
-              <h5 class="text-secondary mb-3">Current Temperature</h5>
-              <canvas id="tempGauge" height="100"></canvas>
-              <h1 id="currentTemp" class="fw-bold display-5 text-danger mt-3">{{ current_temp }}°C</h1>
-                          <!-- Fan Control Toggle -->
-      <div class="d-flex justify-content-center align-items-center mb-4">
-        <label class="form-switch">
-          <input type="checkbox" id="fanToggle">
-          <i></i>
-          <span>Fan Control</span>
-        </label>
-      </div>
-            </div>
-          </div>
+    <div class="container">
+  <!-- Top Row: Gauges -->
+  <div class="row text-center gx-3"> <!-- gx-3 adds horizontal gap -->
+    <!-- Temperature Gauge -->
+    <div class="col-md-6 mb-3 d-flex">
+      <div class="card bg-dark text-white p-4 shadow-lg border-0 rounded-4 flex-fill d-flex flex-column justify-content-between w-100">
+        <h5 class="text-secondary mb-3">Current Temperature</h5>
+        <canvas id="tempGauge" height="100"></canvas>
+        <h1 id="currentTemp" class="fw-bold display-5 text-danger mt-3">{{ current_temp }}°C</h1>
 
-          <!-- Humidity Gauge -->
-          <div class="col-md-6 mb-3">
-            <div class="card bg-dark text-white p-4 shadow-lg border-0 rounded-4">
-              <h5 class="text-secondary mb-3">Current Humidity</h5>
-              <canvas id="humidityGauge" height="auto"></canvas>
-              <h1 id="currentHumidity" class="fw-bold display-5 text-info mt-3">{{ current_humidity }}%</h1>
-            </div>
-          </div>
+        <!-- Fan Control Toggle -->
+        <div class="d-flex justify-content-center align-items-center mt-3">
+          <label class="form-switch d-flex align-items-center" style="gap: 10px; margin:0;">
+            <input type="checkbox" id="fanToggle">
+            <i></i>
+            <span id="fan_cont_text" class="fw-bold text-white">Fan Control</span>
+          </label>
         </div>
+      </div>
+    </div>
+
+    <!-- Humidity Gauge -->
+    <div class="col-md-6 mb-3 d-flex">
+      <div class="card bg-dark text-white p-4 shadow-lg border-0 rounded-4 flex-fill d-flex flex-column justify-content-between w-100">
+        <h5 class="text-secondary mb-3">Current Humidity</h5>
+        <canvas id="humidityGauge" height="100"></canvas>
+        <h1 id="currentHumidity" class="fw-bold display-5 text-info mt-3">{{ current_humidity }}%</h1>
+      </div>
+    </div>
+  </div>
+</div>
+
 
         <!-- Bottom Row: Historical chart -->
         <div class="card bg-dark text-white p-3 shadow mt-4">
@@ -87,7 +90,8 @@
         </div>
       </div>
     </div>
-  </div>
+
+  
 
   <!-- Chart.js and Data -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
