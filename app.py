@@ -1,10 +1,11 @@
 import re
-from flask import Flask, request, render_template, flash, url_for, redirect
+from flask import Flask, jsonify, request, render_template, flash, url_for, redirect
 import db   # our custom db.py file
 # # Try to import GPIO modules with fallback
 try:
     import gpioScripts.gpiozeroBlink as gpio  # Try RPi.GPIO first
     print("GPIOZERO")
+    import gpioScripts.motor as motor
 except ImportError:
     try:
         import gpioScripts.gpioBlink as gpio  # Fallback to gpiozero
@@ -140,6 +141,21 @@ def update(customer_id):
         gpio.blink("red")
 
     return redirect(url_for("client"))
+
+
+
+# Motor Routes
+@app.route('/fan/on', methods=['POST'])
+def turn_fan_on():
+    motor.turnFanOn()
+    return redirect('/')
+
+@app.route('/fan/off', methods=['POST'])
+def turn_fan_off():
+    motor.turnFanOff()
+    return redirect('/')
+
+
 
 
 if __name__ == "__main__":

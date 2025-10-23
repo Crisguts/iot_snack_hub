@@ -46,6 +46,64 @@
         {% endif %}
         {% endwith %}
 
+
+
+        <!-- IKE THIS IS FOR YOU, MAKE THIS CUTE PLS, BUT KEEP ID NAME -->
+        <!-- Fan Control Toggle -->
+        <div class="d-flex justify-content-center align-items-center" style="height: 100%;">
+          <label class="form-switch">
+            <input type="checkbox" id="fanToggle">
+            <i></i>
+            <span class="ms-2">Fan Control</span>
+          </label>
+        </div>
+
+        <style>
+          .form-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+          }
+
+          .form-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+          }
+
+          .form-switch i {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.4s;
+            border-radius: 34px;
+          }
+
+          .form-switch i:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: 0.4s;
+            border-radius: 50%;
+          }
+
+          .form-switch input:checked + i {
+            background-color: #4caf50;
+          }
+
+          .form-switch input:checked + i:before {
+            transform: translateX(26px);
+          }
+        </style>
       </div>
               <!-- Title -->
         <h2 class="text-white mb-1">Readings</h2>
@@ -210,38 +268,22 @@ datasets: [
     fill: true,
     yAxisID: 'y2'
   }
-]
+]}});
 
-    },
-    options: {
-      interaction: {
-        mode: 'index',
-        intersect: false
-      },
-      stacked: false,
-      scales: {
-        y1: {
-          type: 'linear',
-          position: 'left',
-          title: { display: true, text: 'Temperature (°C)' }
-        },
-        y2: {
-          type: 'linear',
-          position: 'right',
-          title: { display: true, text: 'Humidity (%)' },
-          grid: { drawOnChartArea: false }
-        },
-        x: {
-          title: { display: true, text: 'Time' }
-        }
-      },
-      plugins: {
-        legend: {
-          labels: { color: '#fff' }
-        }
-      }
-    }
-  });
+
+// -----------------------------
+// Fan Toggle Control
+// -----------------------------
+document.getElementById("fanToggle").addEventListener("change", function () {
+  const isChecked = this.checked; // true if the toggle is ON, false if OFF
+  const action = isChecked ? "on" : "off";
+
+  // Send a POST request to the backend (our app.py)
+  fetch(`/fan/${action}`, { method: "POST" })
+    .then(response => response.json())
+    .then(data => console.log(data.message))
+    .catch(error => console.error("Error:", error));
+});
 </script>
 
 
