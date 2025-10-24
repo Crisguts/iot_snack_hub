@@ -18,14 +18,24 @@ except ImportError:
 app = Flask(__name__)
 app.secret_key = "Cookies"
 
+
 @app.route("/")
 def index():
-    return render_template("index.html")
+    data = {
+        "timestamps": ["10:00", "10:05", "10:10", "10:15"],
+        "temperature": [22.5, 23.1, 23.4, 23.0],
+        "humidity": [45, 47, 49, 46]
+    }
+        # Get latest readings (last items in each list)
+    current_temp = data["temperature"][-1]
+    current_humidity = data["humidity"][-1]
 
-# @app.route("/", methods=["GET"])
-# def index():
-#     customers = db.get_customers()
-#     return render_template("index.html", customers=customers)
+    return render_template(
+        "index.html",
+        data=data,
+        current_temp=current_temp,
+        current_humidity=current_humidity
+    )
 
 @app.route("/client", defaults={"page": 1})
 @app.route("/client/page/<int:page>")

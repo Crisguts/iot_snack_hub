@@ -84,3 +84,54 @@ h1 {
   background: rgba(255,255,255,0.3);
   border-radius: 8px;
 }
+    /* Fan toggle styling */
+    .form-switch {
+      position: relative;
+      display: inline-block;
+      width: 60px;
+      height: 34px;
+    }
+    .form-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .form-switch i {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: 0.4s;
+      border-radius: 34px;
+    }
+    .form-switch i:before {
+      position: absolute;
+      content: "";
+      height: 26px;
+      width: 26px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: 0.4s;
+      border-radius: 50%;
+    }
+    .form-switch input:checked + i {
+      background-color: #4caf50;
+    }
+    .form-switch input:checked + i:before {
+      transform: translateX(26px);
+    }
+
+    /* Center gauges */
+    #tempGauge, #humidityGauge {
+      display: block;
+      margin: 0 auto;
+      max-width: 150px;
+      max-height: 75px;
+    }
+    #fan_cont_text{
+      margin-left: 10px;
+    }
