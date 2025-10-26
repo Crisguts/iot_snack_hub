@@ -19,23 +19,29 @@ app = Flask(__name__)
 app.secret_key = "Cookies"
 
 
-@app.route("/")
+@app.route('/')
 def index():
-    data = {
-        "timestamps": ["10:00", "10:05", "10:10", "10:15"],
-        "temperature": [22.5, 23.1, 23.4, 23.0],
-        "humidity": [45, 47, 49, 46]
+    # Current sensor readings for each fridge
+    fridge_data = {
+        1: {"temperature": 4, "humidity": 60},
+        2: {"temperature": -2, "humidity": 55}
     }
-        # Get latest readings (last items in each list)
-    current_temp = data["temperature"][-1]
-    current_humidity = data["humidity"][-1]
 
-    return render_template(
-        "index.html",
-        data=data,
-        current_temp=current_temp,
-        current_humidity=current_humidity
-    )
+    # Historical data for charts (optional)
+    historical_data = {
+        1: {
+            "timestamps": ["10:00", "10:05", "10:10"],
+            "temperature": [4, 4.1, 3.9],
+            "humidity": [60, 62, 59]
+        },
+        2: {
+            "timestamps": ["10:00", "10:05", "10:10"],
+            "temperature": [-2, -1.8, -2.2],
+            "humidity": [55, 54, 56]
+        }
+    }
+
+    return render_template("index.html", fridge_data=fridge_data, historical_data=historical_data)
 
 @app.route("/client", defaults={"page": 1})
 @app.route("/client/page/<int:page>")

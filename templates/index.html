@@ -51,61 +51,78 @@
 
 
     <div class="container">
-  <!-- Top Row: Gauges -->
-  <div class="row text-center gx-3"> <!-- gx-3 adds horizontal gap -->
-    <!-- Temperature Gauge -->
-    <div class="col-md-6 mb-3 d-flex">
-      <div class="card bg-dark text-white p-4 shadow-lg border-0 rounded-4 flex-fill d-flex flex-column justify-content-between w-100">
-        <h5 class="text-secondary mb-3">Current Temperature</h5>
-        <canvas id="tempGauge" height="100"></canvas>
-        <h1 id="currentTemp" class="fw-bold display-5 text-danger mt-3">{{ current_temp }}°C</h1>
-
-        <!-- Fan Control Toggle -->
-        <div class="d-flex justify-content-center align-items-center mt-3">
-          <label class="form-switch d-flex align-items-center" style="gap: 10px; margin:0;">
-            <input type="checkbox" id="fanToggle">
-            <i></i>
-            <span id="fan_cont_text" class="fw-bold text-white">Fan Control</span>
-          </label>
-        </div>
+      <div class="d-flex justify-content-center mb-4" style="gap:20px;">
+  <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#fridgeModal" data-fridge="1">
+    Refrigerator 1
+  </button>
+  <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#fridgeModal" data-fridge="2">
+    Refrigerator 2
+  </button>
+</div>
+ <!-- Fridge Modal -->
+<div class="modal fade" id="fridgeModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content bg-dark text-white">
+      <div class="modal-header">
+        <h5 class="modal-title">Fridge Details</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
-    </div>
+      <div class="modal-body">
 
-    <!-- Humidity Gauge -->
-    <div class="col-md-6 mb-3 d-flex">
-      <div class="card bg-dark text-white p-4 shadow-lg border-0 rounded-4 flex-fill d-flex flex-column justify-content-between w-100">
-        <h5 class="text-secondary mb-3">Current Humidity</h5>
-        <canvas id="humidityGauge" height="100"></canvas>
-        <h1 id="currentHumidity" class="fw-bold display-5 text-info mt-3">{{ current_humidity }}%</h1>
+        <!-- Page 1: Current readings -->
+        <div id="modalPage1">
+          <div class="row text-center">
+            <div class="col-md-6 mb-3">
+              <h5 class="text-secondary">Current Temperature</h5>
+              <canvas id="tempGaugeModal" height="100"></canvas>
+              <h1 id="currentTempModal" class="fw-bold display-5 text-danger mt-3"></h1>
+            </div>
+            <div class="col-md-6 mb-3">
+              <h5 class="text-secondary">Current Humidity</h5>
+              <canvas id="humidityGaugeModal" height="100"></canvas>
+              <h1 id="currentHumidityModal" class="fw-bold display-5 text-info mt-3"></h1>
+            </div>
+          </div>
+
+          <!-- Fan Toggle -->
+          <div class="d-flex justify-content-center align-items-center mt-3">
+            <label class="form-switch d-flex align-items-center" style="gap: 10px; margin:0;">
+              <input type="checkbox" id="fanToggleModal">
+              <i></i>
+              <span class="fw-bold text-white">Fan Control</span>
+            </label>
+          </div>
+
+          <!-- Switch to page 2 -->
+          <div class="text-center mt-4">
+            <button class="btn btn-outline-light" id="toHistoryBtn">View History</button>
+          </div>
+        </div>
+
+        <!-- Page 2: Historical chart -->
+        <div id="modalPage2" style="display:none;">
+          <h5 class="text-center mb-3">Temperature & Humidity History</h5>
+          <canvas id="iotChartModal" height="250"></canvas>
+          <div class="text-center mt-4">
+            <button class="btn btn-outline-light" id="toCurrentBtn">Back to Current</button>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
 </div>
-
-
-        <!-- Bottom Row: Historical chart -->
-        <div class="card bg-dark text-white p-3 shadow mt-4">
-          <h5 class="text-center mb-3">Temperature & Humidity Over Time</h5>
-          <canvas id="iotChart" height="250"></canvas>
-        </div>
-      </div>
-    </div>
-
   
-
   <!-- Chart.js and Data -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <script id="chart-data" type="application/json">
-    {{ data | tojson | safe }}
-  </script>
+<script id="fridge-data" type="application/json">
+  {{ fridge_data | tojson | safe }}
+</script>
 
-  <script id="current-data" type="application/json">
-  {
-    "temperature": {{ current_temp }},
-    "humidity": {{ current_humidity }}
-  }
-  </script>
+<script id="historical-data" type="application/json">
+  {{ historical_data | tojson | safe }}
+</script>
 
   <script>
     // -----------------------------
@@ -143,102 +160,99 @@
         alert.addEventListener('transitionend', () => alert.remove(), { once: true });
       });
     }, 3000);
+    const toHistoryBtn = document.getElementById('toHistoryBtn');
+const toCurrentBtn = document.getElementById('toCurrentBtn');
+const modalPage1 = document.getElementById('modalPage1');
+const modalPage2 = document.getElementById('modalPage2');
 
-    // -----------------------------
-    // Read JSON Data
-    // -----------------------------
-    const chartData = JSON.parse(document.getElementById('chart-data').textContent);
-    const currentData = JSON.parse(document.getElementById('current-data').textContent);
+toHistoryBtn.addEventListener('click', () => {
+  modalPage1.style.display = 'none';
+  modalPage2.style.display = 'block';
+});
 
-    const tempValue = currentData.temperature;
-    const humidityValue = currentData.humidity;
+toCurrentBtn.addEventListener('click', () => {
+  modalPage2.style.display = 'none';
+  modalPage1.style.display = 'block';
+});
 
-    // -----------------------------
-    // Top Gauges
-    // -----------------------------
-    const tempCtx = document.getElementById('tempGauge').getContext('2d');
-    new Chart(tempCtx, {
-      type: 'doughnut',
-      data: {
-        labels: ['Temp', 'Remaining'],
-        datasets: [{
-          data: [tempValue, 50 - tempValue],
-          backgroundColor: ['rgba(255, 99, 132, 1)', 'rgba(255,255,255,0.1)'],
-          borderWidth: 0,
-          cutout: '80%',
-          rotation: -90,
-          circumference: 180
-        }]
-      },
-      options: {
-        responsive: false,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-      }
-    });
 
-    const humCtx = document.getElementById('humidityGauge').getContext('2d');
-    new Chart(humCtx, {
-      type: 'doughnut',
-      data: {
-        labels: ['Humidity', 'Remaining'],
-        datasets: [{
-          data: [humidityValue, 100 - humidityValue],
-          backgroundColor: ['rgba(54, 162, 235, 1)', 'rgba(255,255,255,0.1)'],
-          borderWidth: 0,
-          cutout: '80%',
-          rotation: -90,
-          circumference: 180
-        }]
-      },
-      options: {
-        responsive: false,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-      }
-    });
+const fridgeData = JSON.parse(document.getElementById('fridge-data').textContent);
+const historicalData = JSON.parse(document.getElementById('historical-data').textContent);
 
-    // -----------------------------
-    // Bottom Historical Chart
-    // -----------------------------
-    const ctx = document.getElementById('iotChart').getContext('2d');
-    new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: chartData.timestamps,
-        datasets: [
-          {
-            label: 'Temperature (°C)',
-            data: chartData.temperature,
-            borderColor: 'rgba(255, 99, 132, 1)',
-            backgroundColor: 'rgba(255, 99, 132, 0.2)',
-            tension: 0.4,
-            fill: true,
-            yAxisID: 'y1'
-          },
-          {
-            label: 'Humidity (%)',
-            data: chartData.humidity,
-            borderColor: 'rgba(54, 162, 235, 1)',
-            backgroundColor: 'rgba(54, 162, 235, 0.2)',
-            tension: 0.4,
-            fill: true,
-            yAxisID: 'y2'
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        interaction: { mode: 'index', intersect: false },
-        stacked: false,
-        scales: {
-          y1: { type: 'linear', position: 'left', title: { display: true, text: 'Temperature (°C)' } },
-          y2: { type: 'linear', position: 'right', title: { display: true, text: 'Humidity (%)' }, grid: { drawOnChartArea: false } },
-          x: { title: { display: true, text: 'Time' } }
+const fridgeModal = document.getElementById('fridgeModal');
+
+fridgeModal.addEventListener('show.bs.modal', (event) => {
+  const button = event.relatedTarget;
+  const fridgeId = button.getAttribute('data-fridge');
+
+  const data = fridgeData[fridgeId];
+  const history = historicalData[fridgeId];
+
+  // Update numbers
+  document.getElementById('currentTempModal').textContent = data.temperature + '°C';
+  document.getElementById('currentHumidityModal').textContent = data.humidity + '%';
+  document.getElementById('fanToggleModal').checked = data.fan_on || false;
+
+  // Load gauges
+  if (window.tempGaugeInstance) window.tempGaugeInstance.destroy();
+  if (window.humidityGaugeInstance) window.humidityGaugeInstance.destroy();
+
+  const ctxTemp = document.getElementById('tempGaugeModal').getContext('2d');
+  window.tempGaugeInstance = new Chart(ctxTemp, {
+    type: 'doughnut',
+    data: { datasets: [{ data: [data.temperature, 50 - data.temperature], backgroundColor: ['#ff4d4d', '#555'] }] },
+    options: { responsive: true, cutout: '70%', plugins: { legend: { display: false } } }
+  });
+
+  const ctxHumidity = document.getElementById('humidityGaugeModal').getContext('2d');
+  window.humidityGaugeInstance = new Chart(ctxHumidity, {
+    type: 'doughnut',
+    data: { datasets: [{ data: [data.humidity, 100 - data.humidity], backgroundColor: ['#3399ff', '#555'] }] },
+    options: { responsive: true, cutout: '70%', plugins: { legend: { display: false } } }
+  });
+
+  // Load historical chart
+  const ctxHistory = document.getElementById('iotChartModal').getContext('2d');
+  if (window.historyChartInstance) window.historyChartInstance.destroy();
+  window.historyChartInstance = new Chart(ctxHistory, {
+    type: 'line',
+    data: {
+      labels: history.timestamps,
+      datasets: [
+        {
+          label: 'Temperature (°C)',
+          data: history.temperature,
+          borderColor: 'rgba(255, 99, 132, 1)',
+          backgroundColor: 'rgba(255, 99, 132, 0.2)',
+          tension: 0.4,
+          fill: true,
+          yAxisID: 'y1'
         },
-        plugins: { legend: { labels: { color: '#fff' } } }
-      }
-    });
+        {
+          label: 'Humidity (%)',
+          data: history.humidity,
+          borderColor: 'rgba(54, 162, 235, 1)',
+          backgroundColor: 'rgba(54, 162, 235, 0.2)',
+          tension: 0.4,
+          fill: true,
+          yAxisID: 'y2'
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      interaction: { mode: 'index', intersect: false },
+      stacked: false,
+      scales: {
+        y1: { type: 'linear', position: 'left', title: { display: true, text: 'Temperature (°C)' } },
+        y2: { type: 'linear', position: 'right', title: { display: true, text: 'Humidity (%)' }, grid: { drawOnChartArea: false } },
+        x: { title: { display: true, text: 'Time' } }
+      },
+      plugins: { legend: { labels: { color: '#fff' } } }
+    }
+  });
+});
+
   </script>
 
   <!-- Bootstrap JS -->
