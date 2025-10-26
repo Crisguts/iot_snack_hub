@@ -50,14 +50,52 @@
       <h2 class="text-white mb-3">Readings</h2>
 
 
-    <div class="container">
-      <div class="d-flex justify-content-center mb-4" style="gap:20px;">
-  <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#fridgeModal" data-fridge="1">
-    Refrigerator 1
-  </button>
-  <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#fridgeModal" data-fridge="2">
-    Refrigerator 2
-  </button>
+<div class="container mt-4">
+  <div class="row g-4 justify-content-center">
+    <!-- Refrigerator 1 -->
+    <div class="col-md-6">
+      <div class="card bg-dark border-0 shadow-lg text-white p-4 text-center">
+        <h4 class="fw-bold mb-3">Refrigerator 1</h4>
+        <button class="btn btn-primary w-100 mb-3 fw-bold"
+                data-bs-toggle="modal"
+                data-bs-target="#fridgeModal"
+                data-fridge="1">
+          View Details
+        </button>
+
+        <!-- Fan Control 1 -->
+        <div class="d-flex justify-content-center align-items-center">
+          <label class="form-switch d-flex align-items-center" style="gap: 10px;">
+            <input type="checkbox" class="fanToggle" data-fridge="1">
+            <i></i>
+            <span class="fw-bold text-white ms-3">Fan Control</span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Refrigerator 2 -->
+    <div class="col-md-6">
+      <div class="card bg-dark border-0 shadow-lg text-white p-4 text-center">
+        <h4 class="fw-bold mb-3">Refrigerator 2</h4>
+        <button class="btn btn-primary w-100 mb-3 fw-bold"
+                data-bs-toggle="modal"
+                data-bs-target="#fridgeModal"
+                data-fridge="2">
+          View Details
+        </button>
+
+        <!-- Fan Control 2 -->
+        <div class="d-flex justify-content-center align-items-center">
+          <label class="form-switch d-flex align-items-center" style="gap: 10px;">
+            <input type="checkbox" class="fanToggle" data-fridge="2">
+            <i></i>
+            <span class="fw-bold text-white ms-3">Fan Control</span>
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
  <!-- Fridge Modal -->
 <div class="modal fade" id="fridgeModal" tabindex="-1" aria-hidden="true">
@@ -84,14 +122,6 @@
             </div>
           </div>
 
-          <!-- Fan Toggle -->
-          <div class="d-flex justify-content-center align-items-center mt-3">
-            <label class="form-switch d-flex align-items-center" style="gap: 10px; margin:0;">
-              <input type="checkbox" id="fanToggleModal">
-              <i></i>
-              <span class="fw-bold text-white">Fan Control</span>
-            </label>
-          </div>
 
           <!-- Switch to page 2 -->
           <div class="text-center mt-4">
@@ -191,7 +221,6 @@ fridgeModal.addEventListener('show.bs.modal', (event) => {
   // Update numbers
   document.getElementById('currentTempModal').textContent = data.temperature + '°C';
   document.getElementById('currentHumidityModal').textContent = data.humidity + '%';
-  document.getElementById('fanToggleModal').checked = data.fan_on || false;
 
   // Load gauges
   if (window.tempGaugeInstance) window.tempGaugeInstance.destroy();
