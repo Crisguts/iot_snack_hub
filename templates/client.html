@@ -397,10 +397,8 @@ viewClientModal.addEventListener('show.bs.modal', event => {
     document.getElementById('modalFirstName').textContent = firstName;
     document.getElementById('modalLastName').textContent = lastName;
     document.getElementById('modalEmail').textContent = email;
-    document.getElementById('modalPhone').textContent = phone_num;
-    document.getElementById('modalDob').textContent = dob
-                ? new Date(dob).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
-        : 'N/A';
+    document.getElementById('modalPhone').textContent = phone || 'N/A';
+    document.getElementById('modalDob').textContent = dob || 'N/A';
     document.getElementById('modalDate').textContent = dateStr
             ? new Date(dateStr).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
         : 'N/A';
