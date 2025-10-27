@@ -4,6 +4,61 @@
   <title>My IoT Store</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  
+  <style>
+    /* Fan Animation Styles */
+    .fan-container {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .fan-icon {
+      width: 35px;
+      height: 35px;
+      position: relative;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+    }
+    
+    .fan-blade {
+      position: absolute;
+      width: 14px;
+      height: 3px;
+      background: #fff;
+      border-radius: 8px;
+      top: 50%;
+      left: 50%;
+      transform-origin: 2px 50%;
+    }
+    
+    .fan-blade:nth-child(1) { transform: translate(-2px, -50%) rotate(0deg); }
+    .fan-blade:nth-child(2) { transform: translate(-2px, -50%) rotate(120deg); }
+    .fan-blade:nth-child(3) { transform: translate(-2px, -50%) rotate(240deg); }
+    
+    .fan-center {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      background: #fff;
+      border-radius: 50%;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 2;
+    }
+    
+    @keyframes fanSpin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    
+    .fan-spinning { animation: fanSpin 0.5s linear infinite; }
+    .fan-off { animation: none; opacity: 0.5; }
+  </style>
 </head>
 
 <body class="container-fluid bg-dark text-white" style="margin:0; padding:0;">
@@ -45,246 +100,467 @@
         {% endwith %}
       </div>
 
-      <!-- Title -->
-
       <h2 class="text-white mb-3">Readings</h2>
 
+      <!-- Refrigerator Dashboard -->
+      <div class="container mt-4">
+        <div class="row g-4 justify-content-center">
+          
+          <!-- Refrigerator 1 -->
+          <div class="col-md-6">
+            <div class="card bg-dark border-0 shadow-lg text-white p-4 text-center">
+              <h4 class="fw-bold mb-3">Refrigerator 1</h4>
+              <button class="btn btn-primary w-100 mb-3 fw-bold"
+                      data-bs-toggle="modal"
+                      data-bs-target="#fridgeModal"
+                      data-fridge="1">
+                View Details
+              </button>
 
-<div class="container mt-4">
-  <div class="row g-4 justify-content-center">
-    <!-- Refrigerator 1 -->
-    <div class="col-md-6">
-      <div class="card bg-dark border-0 shadow-lg text-white p-4 text-center">
-        <h4 class="fw-bold mb-3">Refrigerator 1</h4>
-        <button class="btn btn-primary w-100 mb-3 fw-bold"
-                data-bs-toggle="modal"
-                data-bs-target="#fridgeModal"
-                data-fridge="1">
-          View Details
-        </button>
-
-        <!-- Fan Control 1 -->
-        <div class="d-flex justify-content-center align-items-center">
-          <label class="form-switch d-flex align-items-center" style="gap: 10px;">
-            <input type="checkbox" class="fanToggle" data-fridge="1">
-            <i></i>
-            <span class="fw-bold text-white ms-3">Fan Control</span>
-          </label>
-        </div>
-      </div>
-    </div>
-
-    <!-- Refrigerator 2 -->
-    <div class="col-md-6">
-      <div class="card bg-dark border-0 shadow-lg text-white p-4 text-center">
-        <h4 class="fw-bold mb-3">Refrigerator 2</h4>
-        <button class="btn btn-primary w-100 mb-3 fw-bold"
-                data-bs-toggle="modal"
-                data-bs-target="#fridgeModal"
-                data-fridge="2">
-          View Details
-        </button>
-
-        <!-- Fan Control 2 -->
-        <div class="d-flex justify-content-center align-items-center">
-          <label class="form-switch d-flex align-items-center" style="gap: 10px;">
-            <input type="checkbox" class="fanToggle" data-fridge="2">
-            <i></i>
-            <span class="fw-bold text-white ms-3">Fan Control</span>
-          </label>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
- <!-- Fridge Modal -->
-<div class="modal fade" id="fridgeModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-centered">
-    <div class="modal-content bg-dark text-white">
-      <div class="modal-header">
-        <h5 class="modal-title">Fridge Details</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-
-        <!-- Page 1: Current readings -->
-        <div id="modalPage1">
-          <div class="row text-center">
-            <div class="col-md-6 mb-3">
-              <h5 class="text-secondary">Current Temperature</h5>
-              <canvas id="tempGaugeModal" height="100"></canvas>
-              <h1 id="currentTempModal" class="fw-bold display-5 text-danger mt-3"></h1>
-            </div>
-            <div class="col-md-6 mb-3">
-              <h5 class="text-secondary">Current Humidity</h5>
-              <canvas id="humidityGaugeModal" height="100"></canvas>
-              <h1 id="currentHumidityModal" class="fw-bold display-5 text-info mt-3"></h1>
+              <!-- Fan Control 1 -->
+              <div class="d-flex justify-content-center align-items-center">
+                <div class="fan-container me-3">
+                  <div class="fan-icon" id="fanIcon1">
+                    <div class="fan-blade"></div>
+                    <div class="fan-blade"></div>
+                    <div class="fan-blade"></div>
+                    <div class="fan-center"></div>
+                  </div>
+                </div>
+                <label class="form-switch d-flex align-items-center" style="gap: 10px;">
+                  <input type="checkbox" class="fanToggle" data-fridge="1">
+                  <i></i>
+                  <span class="fw-bold text-white ms-3">Fan Control</span>
+                </label>
+              </div>
             </div>
           </div>
 
+          <!-- Refrigerator 2 -->
+          <div class="col-md-6">
+            <div class="card bg-dark border-0 shadow-lg text-white p-4 text-center">
+              <h4 class="fw-bold mb-3">Refrigerator 2</h4>
+              <button class="btn btn-primary w-100 mb-3 fw-bold"
+                      data-bs-toggle="modal"
+                      data-bs-target="#fridgeModal"
+                      data-fridge="2">
+                View Details
+              </button>
 
-          <!-- Switch to page 2 -->
-          <div class="text-center mt-4">
-            <button class="btn btn-outline-light" id="toHistoryBtn">View History</button>
+              <!-- Fan Control 2 -->
+              <div class="d-flex justify-content-center align-items-center">
+                <div class="fan-container me-3">
+                  <div class="fan-icon" id="fanIcon2">
+                    <div class="fan-blade"></div>
+                    <div class="fan-blade"></div>
+                    <div class="fan-blade"></div>
+                    <div class="fan-center"></div>
+                  </div>
+                </div>
+                <label class="form-switch d-flex align-items-center" style="gap: 10px;">
+                  <input type="checkbox" class="fanToggle" data-fridge="2">
+                  <i></i>
+                  <span class="fw-bold text-white ms-3">Fan Control</span>
+                </label>
+              </div>
+            </div>
           </div>
         </div>
-
-        <!-- Page 2: Historical chart -->
-        <div id="modalPage2" style="display:none;">
-          <h5 class="text-center mb-3">Temperature & Humidity History</h5>
-          <canvas id="iotChartModal" height="250"></canvas>
-          <div class="text-center mt-4">
-            <button class="btn btn-outline-light" id="toCurrentBtn">Back to Current</button>
-          </div>
-        </div>
-
       </div>
-    </div>
-  </div>
-</div>
-  
-  <!-- Chart.js and Data -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<script id="fridge-data" type="application/json">
-  {{ fridge_data | tojson | safe }}
-</script>
+      <!-- Email Test Section -->
+      <div class="container mt-4">
+        <div class="row justify-content-center">
+          <div class="col-md-6">
+            <div class="card bg-dark border-0 shadow-lg text-white p-4 text-center">
+              <h5 class="fw-bold mb-3">Email Control</h5>
+              <button class="btn btn-warning w-100" id="testEmailBtn">
+                Send Test Email
+              </button>
+              <small class="text-muted mt-2">
+                Reply 'YES' to the email - fan will turn on automatically!
+              </small>
+              <div class="mt-2">
+                <span class="badge bg-success">Real-time monitoring active</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-<script id="historical-data" type="application/json">
-  {{ historical_data | tojson | safe }}
-</script>
+      <!-- Fridge Details Modal -->
+      <div class="modal fade" id="fridgeModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+          <div class="modal-content bg-dark text-white">
+            <div class="modal-header">
+              <h5 class="modal-title">Fridge Details</h5>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
 
-  <script>
-    // -----------------------------
-    // Clock & Date
-    // -----------------------------
-    function updateDateTime() {
-      const now = new Date();
-      const day = now.getDate();
-      const daySuffix = (d) => {
-        if (d > 3 && d < 21) return 'th';
-        switch (d % 10) {
-          case 1: return "st";
-          case 2: return "nd";
-          case 3: return "rd";
-          default: return "th";
+              <!-- Current Readings -->
+              <div id="modalPage1">
+                <div class="row text-center">
+                  <div class="col-md-6 mb-3">
+                    <h5 class="text-secondary">Current Temperature</h5>
+                    <canvas id="tempGaugeModal" height="100"></canvas>
+                    <h1 id="currentTempModal" class="fw-bold display-5 text-danger mt-3"></h1>
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <h5 class="text-secondary">Current Humidity</h5>
+                    <canvas id="humidityGaugeModal" height="100"></canvas>
+                    <h1 id="currentHumidityModal" class="fw-bold display-5 text-info mt-3"></h1>
+                  </div>
+                </div>
+
+                <div class="text-center mt-4">
+                  <button class="btn btn-outline-light" id="toHistoryBtn">View History</button>
+                </div>
+              </div>
+
+              <!-- Historical Chart -->
+              <div id="modalPage2" style="display:none;">
+                <h5 class="text-center mb-3">Temperature & Humidity History</h5>
+                <canvas id="iotChartModal" height="250"></canvas>
+                <div class="text-center mt-4">
+                  <button class="btn btn-outline-light" id="toCurrentBtn">Back to Current</button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scripts -->
+      <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+      <!-- Data passed from Flask backend -->
+      <script id="fridge-data" type="application/json">
+        {{ fridge_data | tojson | safe }}
+      </script>
+
+      <script id="historical-data" type="application/json">
+        {{ historical_data | tojson | safe }}
+      </script>
+
+      <script>
+        // ===== Date and Time Display =====
+        function updateDateTime() {
+          const now = new Date();
+          const day = now.getDate();
+          const daySuffix = (d) => {
+            if (d > 3 && d < 21) return 'th';
+            switch (d % 10) {
+              case 1: return "st";
+              case 2: return "nd";
+              case 3: return "rd";
+              default: return "th";
+            }
+          };
+          const options = { year: 'numeric', month: 'long', day: 'numeric' };
+          const formattedDate = now.toLocaleDateString('en-US', options).replace(/\d+/, day + daySuffix(day));
+          document.getElementById('date').textContent = formattedDate;
+
+          const hours = now.getHours().toString().padStart(2, '0');
+          const minutes = now.getMinutes().toString().padStart(2, '0');
+          document.getElementById('clock').textContent = `${hours}:${minutes}`;
         }
-      };
-      const options = { year: 'numeric', month: 'long', day: 'numeric' };
-      const formattedDate = now.toLocaleDateString('en-US', options).replace(/\d+/, day + daySuffix(day));
-      document.getElementById('date').textContent = formattedDate;
+        
+        // Update time every second
+        setInterval(updateDateTime, 1000);
+        updateDateTime();
 
-      const hours = now.getHours().toString().padStart(2, '0');
-      const minutes = now.getMinutes().toString().padStart(2, '0');
-      document.getElementById('clock').textContent = `${hours}:${minutes}`;
-    }
-    setInterval(updateDateTime, 1000);
-    updateDateTime();
+        // ===== Alert Auto-dismiss =====
+        setTimeout(() => {
+          document.querySelectorAll('.alert').forEach(alert => {
+            alert.classList.add('hide-slide');
+            alert.addEventListener('transitionend', () => alert.remove(), { once: true });
+          });
+        }, 3000);
+        // ===== Modal Navigation =====
+        const toHistoryBtn = document.getElementById('toHistoryBtn');
+        const toCurrentBtn = document.getElementById('toCurrentBtn');
+        const modalPage1 = document.getElementById('modalPage1');
+        const modalPage2 = document.getElementById('modalPage2');
 
-    // -----------------------------
-    // Alerts auto-hide
-    // -----------------------------
-    setTimeout(() => {
-      document.querySelectorAll('.alert').forEach(alert => {
-        alert.classList.add('hide-slide');
-        alert.addEventListener('transitionend', () => alert.remove(), { once: true });
-      });
-    }, 3000);
-    const toHistoryBtn = document.getElementById('toHistoryBtn');
-const toCurrentBtn = document.getElementById('toCurrentBtn');
-const modalPage1 = document.getElementById('modalPage1');
-const modalPage2 = document.getElementById('modalPage2');
+        toHistoryBtn.addEventListener('click', () => {
+          modalPage1.style.display = 'none';
+          modalPage2.style.display = 'block';
+        });
 
-toHistoryBtn.addEventListener('click', () => {
-  modalPage1.style.display = 'none';
-  modalPage2.style.display = 'block';
-});
+        toCurrentBtn.addEventListener('click', () => {
+          modalPage2.style.display = 'none';
+          modalPage1.style.display = 'block';
+        });
 
-toCurrentBtn.addEventListener('click', () => {
-  modalPage2.style.display = 'none';
-  modalPage1.style.display = 'block';
-});
+        // ===== Modal Chart Initialization =====
+        const fridgeData = JSON.parse(document.getElementById('fridge-data').textContent);
+        const historicalData = JSON.parse(document.getElementById('historical-data').textContent);
+        const fridgeModal = document.getElementById('fridgeModal');
 
+        fridgeModal.addEventListener('show.bs.modal', (event) => {
+          const button = event.relatedTarget;
+          const fridgeId = button.getAttribute('data-fridge');
+          const data = fridgeData[fridgeId];
+          const history = historicalData[fridgeId];
 
-const fridgeData = JSON.parse(document.getElementById('fridge-data').textContent);
-const historicalData = JSON.parse(document.getElementById('historical-data').textContent);
+          // Update current readings display
+          document.getElementById('currentTempModal').textContent = data.temperature + '°C';
+          document.getElementById('currentHumidityModal').textContent = data.humidity + '%';
 
-const fridgeModal = document.getElementById('fridgeModal');
+          // Destroy existing gauge charts if they exist
+          if (window.tempGaugeInstance) window.tempGaugeInstance.destroy();
+          if (window.humidityGaugeInstance) window.humidityGaugeInstance.destroy();
 
-fridgeModal.addEventListener('show.bs.modal', (event) => {
-  const button = event.relatedTarget;
-  const fridgeId = button.getAttribute('data-fridge');
+          // Create temperature gauge
+          const ctxTemp = document.getElementById('tempGaugeModal').getContext('2d');
+          window.tempGaugeInstance = new Chart(ctxTemp, {
+            type: 'doughnut',
+            data: { 
+              datasets: [{ 
+                data: [data.temperature, 50 - data.temperature], 
+                backgroundColor: ['#ff4d4d', '#555'] 
+              }] 
+            },
+            options: { 
+              responsive: true, 
+              cutout: '70%', 
+              plugins: { legend: { display: false } } 
+            }
+          });
 
-  const data = fridgeData[fridgeId];
-  const history = historicalData[fridgeId];
+          // Create humidity gauge
+          const ctxHumidity = document.getElementById('humidityGaugeModal').getContext('2d');
+          window.humidityGaugeInstance = new Chart(ctxHumidity, {
+            type: 'doughnut',
+            data: { 
+              datasets: [{ 
+                data: [data.humidity, 100 - data.humidity], 
+                backgroundColor: ['#3399ff', '#555'] 
+              }] 
+            },
+            options: { 
+              responsive: true, 
+              cutout: '70%', 
+              plugins: { legend: { display: false } } 
+            }
+          });
 
-  // Update numbers
-  document.getElementById('currentTempModal').textContent = data.temperature + '°C';
-  document.getElementById('currentHumidityModal').textContent = data.humidity + '%';
+          // Create historical trends chart
+          const ctxHistory = document.getElementById('iotChartModal').getContext('2d');
+          if (window.historyChartInstance) window.historyChartInstance.destroy();
+          
+          window.historyChartInstance = new Chart(ctxHistory, {
+            type: 'line',
+            data: {
+              labels: history.timestamps,
+              datasets: [
+                {
+                  label: 'Temperature (°C)',
+                  data: history.temperature,
+                  borderColor: 'rgba(255, 99, 132, 1)',
+                  backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                  tension: 0.4,
+                  fill: true,
+                  yAxisID: 'y1'
+                },
+                {
+                  label: 'Humidity (%)',
+                  data: history.humidity,
+                  borderColor: 'rgba(54, 162, 235, 1)',
+                  backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                  tension: 0.4,
+                  fill: true,
+                  yAxisID: 'y2'
+                }
+              ]
+            },
+            options: {
+              responsive: true,
+              interaction: { mode: 'index', intersect: false },
+              stacked: false,
+              scales: {
+                y1: { 
+                  type: 'linear', 
+                  position: 'left', 
+                  title: { display: true, text: 'Temperature (°C)' } 
+                },
+                y2: { 
+                  type: 'linear', 
+                  position: 'right', 
+                  title: { display: true, text: 'Humidity (%)' }, 
+                  grid: { drawOnChartArea: false } 
+                },
+                x: { title: { display: true, text: 'Time' } }
+              },
+              plugins: { legend: { labels: { color: '#fff' } } }
+            }
+          });
+        });
 
-  // Load gauges
-  if (window.tempGaugeInstance) window.tempGaugeInstance.destroy();
-  if (window.humidityGaugeInstance) window.humidityGaugeInstance.destroy();
-
-  const ctxTemp = document.getElementById('tempGaugeModal').getContext('2d');
-  window.tempGaugeInstance = new Chart(ctxTemp, {
-    type: 'doughnut',
-    data: { datasets: [{ data: [data.temperature, 50 - data.temperature], backgroundColor: ['#ff4d4d', '#555'] }] },
-    options: { responsive: true, cutout: '70%', plugins: { legend: { display: false } } }
-  });
-
-  const ctxHumidity = document.getElementById('humidityGaugeModal').getContext('2d');
-  window.humidityGaugeInstance = new Chart(ctxHumidity, {
-    type: 'doughnut',
-    data: { datasets: [{ data: [data.humidity, 100 - data.humidity], backgroundColor: ['#3399ff', '#555'] }] },
-    options: { responsive: true, cutout: '70%', plugins: { legend: { display: false } } }
-  });
-
-  // Load historical chart
-  const ctxHistory = document.getElementById('iotChartModal').getContext('2d');
-  if (window.historyChartInstance) window.historyChartInstance.destroy();
-  window.historyChartInstance = new Chart(ctxHistory, {
-    type: 'line',
-    data: {
-      labels: history.timestamps,
-      datasets: [
-        {
-          label: 'Temperature (°C)',
-          data: history.temperature,
-          borderColor: 'rgba(255, 99, 132, 1)',
-          backgroundColor: 'rgba(255, 99, 132, 0.2)',
-          tension: 0.4,
-          fill: true,
-          yAxisID: 'y1'
-        },
-        {
-          label: 'Humidity (%)',
-          data: history.humidity,
-          borderColor: 'rgba(54, 162, 235, 1)',
-          backgroundColor: 'rgba(54, 162, 235, 0.2)',
-          tension: 0.4,
-          fill: true,
-          yAxisID: 'y2'
+        // ===== Fan Control System =====
+        
+        // Initialize fan toggle states when page loads
+        function initializeFanToggles() {
+          fetch('/fan/states')
+            .then(response => response.json())
+            .then(data => {
+              if (data.success) {
+                document.querySelectorAll('.fanToggle').forEach(toggle => {
+                  const fridgeId = parseInt(toggle.getAttribute('data-fridge'));
+                  toggle.checked = data.fan_states[fridgeId] || false;
+                  updateFanAnimation(fridgeId, data.fan_states[fridgeId] || false);
+                });
+              }
+            })
+            .catch(error => console.error('Error loading fan states:', error));
         }
-      ]
-    },
-    options: {
-      responsive: true,
-      interaction: { mode: 'index', intersect: false },
-      stacked: false,
-      scales: {
-        y1: { type: 'linear', position: 'left', title: { display: true, text: 'Temperature (°C)' } },
-        y2: { type: 'linear', position: 'right', title: { display: true, text: 'Humidity (%)' }, grid: { drawOnChartArea: false } },
-        x: { title: { display: true, text: 'Time' } }
-      },
-      plugins: { legend: { labels: { color: '#fff' } } }
-    }
-  });
-});
 
-  </script>
+        // Control fan blade animation based on state
+        function updateFanAnimation(fridgeId, isOn) {
+          const fanIcon = document.getElementById(`fanIcon${fridgeId}`);
+          if (fanIcon) {
+            if (isOn) {
+              fanIcon.classList.add('fan-spinning');
+              fanIcon.classList.remove('fan-off');
+            } else {
+              fanIcon.classList.remove('fan-spinning');
+              fanIcon.classList.add('fan-off');
+            }
+          }
+        }
 
-  <!-- Bootstrap JS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+        // Initialize fan states on page load
+        initializeFanToggles();
+
+        // Set up fan toggle event handlers
+        document.querySelectorAll('.fanToggle').forEach(toggle => {
+          toggle.addEventListener('change', function() {
+            const fridgeId = this.getAttribute('data-fridge');
+            const isChecked = this.checked;
+            
+            // Disable toggle during request to prevent double-clicks
+            this.disabled = true;
+            
+            fetch(`/fan/${fridgeId}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' }
+            })
+            .then(response => response.json())
+            .then(data => {
+              if (data.success) {
+                console.log(`Fan ${fridgeId} ${data.fan_state ? 'ON' : 'OFF'}, Motor: ${data.motor_running ? 'RUNNING' : 'STOPPED'}`);
+                this.checked = data.fan_state;
+                updateFanAnimation(fridgeId, data.fan_state);
+              } else {
+                console.error('Error:', data.error);
+                this.checked = !isChecked;
+                alert('Failed to control fan: ' + data.error);
+              }
+            })
+            .catch(error => {
+              console.error('Network error:', error);
+              this.checked = !isChecked;
+              alert('Network error occurred while controlling fan');
+            })
+            .finally(() => {
+              this.disabled = false;
+            });
+          });
+        });
+
+        // ===== Notification System =====
+        function showNotification(message, type = 'info') {
+          // Create notification element
+          const notification = document.createElement('div');
+          notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+          notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; max-width: 300px;';
+          notification.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          `;
+          
+          // Add to page
+          document.body.appendChild(notification);
+          
+          // Auto-remove after 5 seconds
+          setTimeout(() => {
+            if (notification.parentNode) {
+              notification.classList.add('hide-slide');
+              setTimeout(() => notification.remove(), 500);
+            }
+          }, 5000);
+        }
+
+        // ===== Email Test System =====
+        const testEmailBtn = document.getElementById('testEmailBtn');
+        
+        testEmailBtn.addEventListener('click', () => {
+          testEmailBtn.disabled = true;
+          testEmailBtn.textContent = 'Sending...';
+
+          fetch('/api/email/test', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              alert('Test email sent! Reply "YES" and the fan will turn on automatically.');
+            } else {
+              alert('Failed to send test email: ' + data.error);
+            }
+          })
+          .catch(error => {
+            console.error('Error sending test email:', error);
+            alert('Network error occurred while sending test email');
+          })
+          .finally(() => {
+            testEmailBtn.disabled = false;
+            testEmailBtn.textContent = 'Send Test Email';
+          });
+        });
+
+        // ===== Email Signal Monitoring =====
+        function checkEmailSignals() {
+          fetch('/api/email/check-signals')
+          .then(response => response.json())
+          .then(data => {
+            if (data.success && data.fan_activated) {
+              console.log('Fan activated via email!', data);
+              
+              // Update BOTH fan animation AND toggle state in UI
+              const fridgeId = data.fridge_id;
+              const toggle = document.querySelector(`.fanToggle[data-fridge="${fridgeId}"]`);
+              
+              if (toggle) {
+                toggle.checked = true;  // Check the toggle
+                updateFanAnimation(fridgeId, true);  // Update animation
+                
+                console.log(`Updated UI for Fridge ${fridgeId}: toggle checked and animation started`);
+              } else {
+                console.error(`Could not find toggle for Fridge ${fridgeId}`);
+              }
+              
+              // Show notification
+              showNotification(`Fan activated for Fridge ${fridgeId} via email reply!`, 'success');
+            }
+          })
+          .catch(error => {
+            console.error('Error checking email signals:', error);
+          });
+        }
+
+        // Check for email signals every 10 seconds
+        setInterval(checkEmailSignals, 10000);
+        
+        // Check immediately on page load
+        setTimeout(checkEmailSignals, 2000);
+
+      </script>
+
+      <!-- Bootstrap JavaScript -->
+      <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    </body>
+  </html>

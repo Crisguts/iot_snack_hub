@@ -117,7 +117,6 @@
            data-id="{{ i[0] }}"
            data-firstname="{{ i[1] }}"
            data-lastname="{{ i[2] }}"
-
            data-email="{{ i[3] }}"
            data-phone="{{ i[4]|default('N/A') }}"
            data-dob="{{ i[5]|default('N/A') }}"
@@ -397,10 +396,8 @@ viewClientModal.addEventListener('show.bs.modal', event => {
     document.getElementById('modalFirstName').textContent = firstName;
     document.getElementById('modalLastName').textContent = lastName;
     document.getElementById('modalEmail').textContent = email;
-    document.getElementById('modalPhone').textContent = phone_num;
-    document.getElementById('modalDob').textContent = dob
-                ? new Date(dob).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
-        : 'N/A';
+    document.getElementById('modalPhone').textContent = phone || 'N/A';
+    document.getElementById('modalDob').textContent = dob || 'N/A';
     document.getElementById('modalDate').textContent = dateStr
             ? new Date(dateStr).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
         : 'N/A';
