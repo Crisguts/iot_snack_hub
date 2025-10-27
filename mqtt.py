@@ -35,7 +35,7 @@ def on_message(client, userdata, msg):
     try:
         topic = msg.topic
         payload = msg.payload.decode()
-        print("Message Received")
+        print("Message Received:", payload)
 
         data = json.loads(payload)
 
@@ -49,10 +49,10 @@ def on_message(client, userdata, msg):
 
         fridge_id = fridge_id_map.get(topic)
 
-        if(fridge_id is None):
-            print ("Unknown fridge")
+        if fridge_id is None:
+            print("Unknown fridge for topic:", topic)
             return
-        
+
         latest_readings[topic] = {
             "temperature": temperature,
             "humidity": humidity,
@@ -61,29 +61,48 @@ def on_message(client, userdata, msg):
         }
 
         save_to_db(fridge_id, temperature, humidity)
-
-
+        # temperature_alert(fridge_id, temperature)
 
     except json.JSONDecodeError:
-        print("Invalid JSON Error: "+ payload)
+        print("Invalid JSON Error. payload:", msg.payload)
     except Exception as e:
-        print("Error processing message "+ payload)
+        print("Error processing message. payload:", getattr(msg, "payload", None), "error:", repr(e))
 
-# -----------------Save to db
+
 def save_to_db(fridge_id, temperature, humidity):
     try:
+        # Ensure numeric types (avoid inserting strings)
+        temp_val = float(temperature) if temperature is not None else None
+        hum_val = float(humidity) if humidity is not None else None
+
         data = {
             "fridge_id": fridge_id,
-            "temperature": temperature,
-            "humidity": humidity,
-            "timestamp": datetime.now().isoformat()
+            "temperature": temp_val,
+            "humidity": hum_val,
+            # use created_at if your table expects that column, or remove it to let DB set default
+            "created_at": datetime.now().isoformat()
         }
 
+        print("Inserting to DB:", data)
         response = supabase.table("temperature_readings").insert(data).execute()
-        print("Successfully saved to db.")
-        return True
+
+        # Inspect response fully
+        print("Supabase insert response:", getattr(response, "status_code", None), getattr(response, "data", None), getattr(response, "error", None))
+
+        # Basic success check
+        if getattr(response, "data", None):
+            print("Successfully saved to db. row:", response.data)
+            return True
+        # some clients return no data but still succeed
+        if getattr(response, "status_code", None) in (200, 201, 204):
+            print("Insert reported success (status_code).")
+            return True
+
+        print("Insert may have failed. Check dashboard and Supabase logs.")
+        return False
+
     except Exception as e:
-        print("Did not save to db")
+        print("Did not save to db. error:", repr(e))
         return False
     
 # ------------Checking the fridge temperature
@@ -102,7 +121,7 @@ def temperature_alert(fridge_id, temperature):
             
             if temperature > threshold:
                 print(f"ALERT: {fridge_name} (ID: {fridge_id}) temperature ({temperature}°C) exceeds threshold ({threshold}°C)")
-                # TODO: Send email alert
+                # TODO: Send email alert !!!!!!!!!!!!!!
                 # use code from lab
     except Exception as e:
         print("Error Checking the threshold. Error: " +  e)

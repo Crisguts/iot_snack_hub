@@ -193,33 +193,39 @@ def get_customer_count(search=None):
 # For the temperature reading
 def get_latest_temperature_readings(fridge_id):
     try:
-        response = supabase.table("temperature_readings")\
-            .select("*")\
-            .eq("fridge_id", fridge_id)\
-            .order("created_at", desc=True)\
-            .limit(1)\
+        print(f"get_latest_temperature_readings called with fridge_id={fridge_id} ({type(fridge_id)})")
+        fridge_id = int(fridge_id)
+        response = (
+            supabase.table("temperature_readings")
+            .select("*")
+            .filter("fridge_id", "eq", fridge_id)
+            .order("created_at", desc=True)
+            .limit(1)
             .execute()
-        
+        )
+        # Debug: print raw response info
+        print("Supabase response (latest):", getattr(response, "status_code", None), getattr(response, "data", None))
         if response.data and len(response.data) > 0:
             return response.data[0]
         return None
-        
     except Exception as e:
         print(f"Error fetching temperature: {e}")
         return None
 
 def get_temperature_history(fridge_id, limit=50):
-    
     try:
-        response = supabase.table("temperature_readings")\
-            .select("*")\
-            .eq("fridge_id", fridge_id)\
-            .order("created_at", desc=True)\
-            .limit(limit)\
+        print(f"get_temperature_history called with fridge_id={fridge_id} ({type(fridge_id)}) limit={limit}")
+        fridge_id = int(fridge_id)
+        response = (
+            supabase.table("temperature_readings")
+            .select("*")
+            .filter("fridge_id", "eq", fridge_id)
+            .order("created_at", desc=True)
+            .limit(limit)
             .execute()
-        
+        )
+        print("Supabase response (history):", getattr(response, "status_code", None), getattr(response, "data", None))
         return response.data if response.data else []
-        
     except Exception as e:
         print(f"Error fetching temperature history: {e}")
         return []
