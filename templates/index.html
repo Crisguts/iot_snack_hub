@@ -302,6 +302,7 @@
         fridgeModal.addEventListener('show.bs.modal', (event) => {
           const button = event.relatedTarget;
           const fridgeId = button.getAttribute('data-fridge');
+           fridgeModal.setAttribute('data-current-fridge', fridgeId); 
           const data = fridgeData[fridgeId];
           const history = historicalData[fridgeId];
 
@@ -562,5 +563,44 @@
 
       <!-- Bootstrap JavaScript -->
       <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+  async function refreshFridgeData() {
+    try {
+      const response = await fetch('/api/latest');
+      const result = await response.json();
+
+      if (result.success && result.data) {
+        for (const fridgeId in result.data) {
+          const entry = result.data[fridgeId];
+          if (!entry) continue;
+
+          // Update modal data if it’s open for that fridge
+          const isModalOpen = document.querySelector('.modal.show');
+          if (isModalOpen) {
+            const currentFridge = document.querySelector('#fridgeModal').getAttribute('data-current-fridge');
+            if (currentFridge == fridgeId) {
+              document.getElementById('currentTempModal').textContent = entry.temperature + '°C';
+              document.getElementById('currentHumidityModal').textContent = entry.humidity + '%';
+
+              // Update gauge charts if modal is showing current readings
+              if (window.tempGaugeInstance && window.humidityGaugeInstance) {
+                window.tempGaugeInstance.data.datasets[0].data = [entry.temperature, 50 - entry.temperature];
+                window.humidityGaugeInstance.data.datasets[0].data = [entry.humidity, 100 - entry.humidity];
+                window.tempGaugeInstance.update();
+                window.humidityGaugeInstance.update();
+              }
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Error refreshing fridge data:', err);
+    }
+  }
+
+  // Refresh every 3 seconds
+  setInterval(refreshFridgeData, 3000);
+</script>
+
     </body>
   </html>

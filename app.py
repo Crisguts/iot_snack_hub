@@ -271,6 +271,34 @@ def toggle_fan(fridge_id):
     except Exception as e:
         fan_states[fridge_id] = not fan_states[fridge_id]
         return jsonify({"success": False, "error": str(e)}), 500
+    
+@app.route('/api/latest')
+def get_latest_readings():
+    from supabase import create_client, Client
+    from dotenv import load_dotenv
+    import os
+    load_dotenv()
+
+    url = os.environ.get("SUPABASE_URL")
+    key = os.environ.get("SUPABASE_KEY")
+    print("SUPABASE_URL:", url)
+    print("SUPABASE_KEY exists:", bool(key))
+
+    supabase: Client = create_client(url, key)
+
+    # Get the latest entry per fridge
+    data = {}
+    for fridge_id in [1, 2]:
+        response = supabase.table("temperature_readings") \
+            .select("temperature, humidity, created_at") \
+            .eq("fridge_id", fridge_id) \
+            .order("created_at", desc=True) \
+            .limit(1) \
+            .execute()
+        data[fridge_id] = response.data[0] if response.data else None
+
+    return jsonify({"success": True, "data": data})
+
 
 @app.route('/fan/states', methods=['GET'])
 def get_fan_states():
