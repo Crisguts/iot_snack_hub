@@ -190,3 +190,62 @@ def get_customer_count(search=None):
         print(f"Error counting customers: {e}")
         return 0
 
+# For the temperature reading
+def get_latest_temperature_readings(fridge_id):
+    try:
+        response = supabase.table("temperature_readings")\
+            .select("*")\
+            .eq("fridge_id", fridge_id)\
+            .order("created_at", desc=True)\
+            .limit(1)\
+            .execute()
+        
+        if response.data and len(response.data) > 0:
+            return response.data[0]
+        return None
+        
+    except Exception as e:
+        print(f"Error fetching temperature: {e}")
+        return None
+
+def get_temperature_history(fridge_id, limit=50):
+    
+    try:
+        response = supabase.table("temperature_readings")\
+            .select("*")\
+            .eq("fridge_id", fridge_id)\
+            .order("created_at", desc=True)\
+            .limit(limit)\
+            .execute()
+        
+        return response.data if response.data else []
+        
+    except Exception as e:
+        print(f"Error fetching temperature history: {e}")
+        return []
+
+def get_fridge_threshold(fridge_id):
+    try:
+        response = supabase.table("refrigerators")\
+            .select("temperature_threshold")\
+            .eq("fridge_id", fridge_id)\
+            .execute()
+        
+        if response.data and len(response.data) > 0:
+            return response.data[0].get("temperature_threshold", 25.0)
+        return 25.0
+        
+    except Exception as e:
+        print(f"Error fetching threshold: {e}")
+        return 25.0
+
+def update_fridge_threshold(fridge_id, new_threshold):
+    try:
+        response = supabase.table("refrigerators")\
+            .update({"temperature_threshold": new_threshold})\
+            .eq("fridge_id", fridge_id)\
+            .execute()
+        return True
+    except Exception as e:
+        print(f"Error updating threshold: {e}")
+        return False

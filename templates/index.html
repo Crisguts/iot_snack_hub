@@ -9,28 +9,30 @@
 <body class="container-fluid bg-dark text-white" style="margin:0; padding:0;">
 
   <div class="row vh-100" style="margin: 0;">
-    <!-- Sidebar -->
-    <div class="col-3 d-flex flex-column justify-content-center p-4 bg-dark text-white">
-      <div>
-        <h1 class="mb-2 text-center">Smart Store</h1>
-        <div id="date" class="fw-bold text-center"></div>
-        <div id="clock" class="fw-bold text-center"></div>
-      </div>
+    <!-- Sidebar start here!!!!!!!!!! -->
+    <div class="col-2 bg-dark text-white" style="position: fixed; height: 100vh;">
+      <div class="d-flex flex-column h-100 p-4">
+        <div>
+          <h1 class="mb-2 text-center">Smart Store</h1>
+          <div id="date" class="fw-bold text-center"></div>
+          <div id="clock" class="fw-bold text-center"></div>
+        </div>
 
-      <div class="d-flex flex-column align-items-center link-div" style="gap: 20px;">
-        <a href="{{ url_for('index') }}" class="Sidebar fw-bold">Home</a>
-        <a href="{{ url_for('client') }}" class="Sidebar fw-bold">Clients</a>
-        <a href="" class="Sidebar fw-bold">To be Added</a>
-      </div>
+        <div class="d-flex flex-column align-items-center link-div my-5" style="gap: 20px;">
+          <a href="{{ url_for('index') }}" class="Sidebar fw-bold">Home</a>
+          <a href="{{ url_for('client') }}" class="Sidebar fw-bold">Clients</a>
+          <a href="" class="Sidebar fw-bold">To be Added</a>
+        </div>
 
-      <div class="d-flex flex-column align-items-center mt-auto">
-        <a id="logout" href="" class="Sidebar fw-bold">Logout</a> 
+        <div class="d-flex flex-column align-items-center mt-auto mb-4">
+          <a id="logout" href="" class="Sidebar fw-bold">Logout</a> 
+        </div>
       </div>
     </div>
 
     <!-- Main content -->
-    <div class="col-9 bg-secondary">
-
+    <div class="col-2"><!-- Spacer for fixed sidebar --></div>
+    <div class="col-10 bg-secondary">
       <div class="w-100 p-4">
         <!-- Bootstrap Alerts -->
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -43,11 +45,7 @@
         {% endfor %}
         {% endif %}
         {% endwith %}
-      </div>
 
-      <!-- Title -->
-
-        <!-- IKE THIS IS FOR YOU, MAKE THIS CUTE PLS, BUT KEEP ID NAME -->
         <!-- Fan Control Toggle -->
         <div class="d-flex justify-content-center align-items-center mt-3">
           <label class="form-switch d-flex align-items-center" style="gap: 10px; margin:0;">
@@ -56,20 +54,35 @@
             <span id="fan_cont_text" class="fw-bold text-white">Fan Control</span>
           </label>
         </div>
-      </div>
-    </div>
 
-    <!-- Humidity Gauge -->
-    <div class="col-md-6 mb-3 d-flex">
-      <div class="card bg-dark text-white p-4 shadow-lg border-0 rounded-4 flex-fill d-flex flex-column justify-content-between w-100">
-        <h5 class="text-secondary mb-3">Current Humidity</h5>
-        <canvas id="humidityGauge" height="100"></canvas>
-        <h1 id="currentHumidity" class="fw-bold display-5 text-info mt-3">{{ current_humidity }}%</h1>
-      </div>
-    </div>
-  </div>
-</div>
+        <!-- Gauges Row -->
+        <div class="row mt-4">
+          <!-- Temperature Gauge -->
+          <div class="col-md-6 mb-3">
+            <div class="card bg-dark text-white p-4 shadow-lg border-0 rounded-4">
+              <h5 class="text-secondary mb-3">Current Temperature</h5>
+              <div class="gauge-container" style="position: relative; height: 180px; width: 100%; margin: auto;">
+                <canvas id="temperatureGauge"></canvas>
+              </div>
+              <h1 id="currentTemperature" class="fw-bold display-5 text-danger mt-3 text-center">
+                {{ fridge_data[1].temperature if fridge_data[1].temperature is not none else '--' }}°C
+              </h1>
+            </div>
+          </div>
 
+          <!-- Humidity Gauge -->
+          <div class="col-md-6 mb-3">
+            <div class="card bg-dark text-white p-4 shadow-lg border-0 rounded-4">
+              <h5 class="text-secondary mb-3">Current Humidity</h5>
+              <div class="gauge-container" style="position: relative; height: 180px; width: 100%; margin: auto;">
+                <canvas id="humidityGauge"></canvas>
+              </div>
+              <h1 id="currentHumidity" class="fw-bold display-5 text-info mt-3 text-center">
+                {{ fridge_data[1].humidity if fridge_data[1].humidity is not none else '--' }}%
+              </h1>
+            </div>
+          </div>
+        </div>
 
         <!-- Bottom Row: Historical chart -->
         <div class="card bg-dark text-white p-3 shadow mt-4">
@@ -78,20 +91,24 @@
         </div>
       </div>
     </div>
+  </div>
 
   
 
   <!-- Chart.js and Data -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <script id="chart-data" type="application/json">
-    {{ data | tojson | safe }}
+  <script id="fridge1-chart-data" type="application/json">
+    {{ historical_data[1] | tojson | safe }}
   </script>
 
+  <script id="fridge2-chart-data" type="application/json">
+    {{ historical_data[2] | tojson | safe }}
+</script>
   <script id="current-data" type="application/json">
   {
-    "temperature": {{ current_temp }},
-    "humidity": {{ current_humidity }}
+    "temperature": {{ fridge_data[1].temperature if fridge_data[1].temperature is not none else 0 }},
+    "humidity": {{ fridge_data[1].humidity if fridge_data[1].humidity is not none else 0 }}
   }
   </script>
 
@@ -135,7 +152,8 @@
     // -----------------------------
     // Read JSON Data
     // -----------------------------
-    const chartData = JSON.parse(document.getElementById('chart-data').textContent);
+    const fridge1Data = JSON.parse(document.getElementById('fridge1-chart-data').textContent);
+    const fridge2Data = JSON.parse(document.getElementById('fridge2-chart-data').textContent);
     const currentData = JSON.parse(document.getElementById('current-data').textContent);
 
     const tempValue = currentData.temperature;
@@ -144,47 +162,50 @@
     // -----------------------------
     // Top Gauges
     // -----------------------------
-    const tempCtx = document.getElementById('tempGauge').getContext('2d');
-    new Chart(tempCtx, {
-      type: 'doughnut',
-      data: {
-        labels: ['Temp', 'Remaining'],
-        datasets: [{
-          data: [tempValue, 50 - tempValue],
-          backgroundColor: ['rgba(255, 99, 132, 1)', 'rgba(255,255,255,0.1)'],
-          borderWidth: 0,
-          cutout: '80%',
+    function createGauge(ctx, value, maxValue, color) {
+      // Ensure canvas is visible with a border for debugging
+      ctx.canvas.style.display = 'block';
+      ctx.canvas.style.width = '100%';
+      
+      return new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Value', 'Remaining'],
+          datasets: [{
+            data: [value, maxValue - value],
+            backgroundColor: [color, 'rgba(255,255,255,0.1)'],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          circumference: 180,
           rotation: -90,
-          circumference: 180
-        }]
-      },
-      options: {
-        responsive: false,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-      }
-    });
+          plugins: {
+            legend: { display: false },
+            tooltip: { enabled: false }
+          },
+          cutout: '75%',
+          layout: {
+            padding: {
+              bottom: 30,
+              top: 30
+            }
+          }
+        }
+      });
+    }
 
+    // Create Temperature Gauge
+    const tempCtx = document.getElementById('temperatureGauge').getContext('2d');
+    const maxTemp = 50;
+    const tempGauge = createGauge(tempCtx, tempValue, maxTemp, 'rgba(255, 99, 132, 1)');
+
+    // Create Humidity Gauge
     const humCtx = document.getElementById('humidityGauge').getContext('2d');
-    new Chart(humCtx, {
-      type: 'doughnut',
-      data: {
-        labels: ['Humidity', 'Remaining'],
-        datasets: [{
-          data: [humidityValue, 100 - humidityValue],
-          backgroundColor: ['rgba(54, 162, 235, 1)', 'rgba(255,255,255,0.1)'],
-          borderWidth: 0,
-          cutout: '80%',
-          rotation: -90,
-          circumference: 180
-        }]
-      },
-      options: {
-        responsive: false,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-      }
-    });
+    const maxHumidity = 100;
+    const humGauge = createGauge(humCtx, humidityValue, maxHumidity, 'rgba(54, 162, 235, 1)');
 
     // -----------------------------
     // Bottom Historical Chart
@@ -193,11 +214,11 @@
     new Chart(ctx, {
       type: 'line',
       data: {
-        labels: chartData.timestamps,
+        labels: fridge1Data.timestamps,
         datasets: [
           {
-            label: 'Temperature (°C)',
-            data: chartData.temperature,
+            label: 'Fridge 1 Temperature (°C)',
+            data: fridge1Data.temperature,
             borderColor: 'rgba(255, 99, 132, 1)',
             backgroundColor: 'rgba(255, 99, 132, 0.2)',
             tension: 0.4,
@@ -205,8 +226,8 @@
             yAxisID: 'y1'
           },
           {
-            label: 'Humidity (%)',
-            data: chartData.humidity,
+            label: 'Fridge 1 Humidity (%)',
+            data: fridge1Data.humidity,
             borderColor: 'rgba(54, 162, 235, 1)',
             backgroundColor: 'rgba(54, 162, 235, 0.2)',
             tension: 0.4,
@@ -228,6 +249,43 @@
       }
     });
   </script>
+
+    <script>
+// Auto-refresh temperature data every 5 seconds
+setInterval(() => {
+    fetch('/api/temperature/1')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update text displays
+                document.getElementById('currentTemperature').textContent = 
+                    data.temperature + '°C';
+                document.getElementById('currentHumidity').textContent = 
+                    data.humidity + '%';
+                
+                // Update gauge charts
+                const temp = parseFloat(data.temperature) || 0;
+                const humidity = parseFloat(data.humidity) || 0;
+                
+                tempGauge.data.datasets[0].data = [temp, maxTemp - temp];
+                tempGauge.update('none');
+                
+                humGauge.data.datasets[0].data = [humidity, maxHumidity - humidity];
+                humGauge.update('none');
+            }
+        })
+        .catch(error => console.error('Error fetching temperature:', error));
+    
+    // Fetch Fridge 2 data if you have it displayed
+    fetch('/api/temperature/2')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update Fridge 2 display
+            }
+        });
+}, 5000); // Every 5 seconds
+</script>
 
   <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
