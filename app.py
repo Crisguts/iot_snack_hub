@@ -1,47 +1,35 @@
 import re
 from flask import Flask, jsonify, request, render_template, flash, url_for, redirect
-import db   # our custom db.py file
-# # Try to import GPIO modules with fallback
+import db
+
+# Import email system
 try:
-    import gpioScripts.gpiozeroBlink as gpio  # Try RPi.GPIO first
-    print("GPIOZERO")
+    from emailSystem.integrated_email import email_system
+    EMAIL_ALERTS_ENABLED = True
+    print("✅ Email system loaded")
+except ImportError:
+    EMAIL_ALERTS_ENABLED = False
+    print("❌ Email alerts disabled - emailSystem not found")
+
+try:
+    import gpioScripts.gpiozeroBlink as gpio
     import gpioScripts.motor as motor
 except ImportError:
     try:
-        import gpioScripts.gpioBlink as gpio  # Fallback to gpiozero
+        import gpioScripts.gpioBlink as gpio
     except ImportError:
         from unittest.mock import MagicMock
         gpio = MagicMock()
         gpio.blink = MagicMock()
 
-
 app = Flask(__name__)
 app.secret_key = "Cookies"
 
+fan_states = {
+    1: False,
+    2: False
+}
 
-# @app.route('/')
-# def index():
-#     # Current sensor readings for each fridge
-#     fridge_data = {
-#         1: {"temperature": 4, "humidity": 60},
-#         2: {"temperature": -2, "humidity": 55}
-#     }
-
-#     # Historical data for charts (optional)
-#     historical_data = {
-#         1: {
-#             "timestamps": ["10:00", "10:05", "10:10"],
-#             "temperature": [4, 4.1, 3.9],
-#             "humidity": [60, 62, 59]
-#         },
-#         2: {
-#             "timestamps": ["10:00", "10:05", "10:10"],
-#             "temperature": [-2, -1.8, -2.2],
-#             "humidity": [55, 54, 56]
-#         }
-#     }
-
-#     return render_template("index.html", fridge_data=fridge_data, historical_data=historical_data)
 
 @app.route('/')
 def index():
@@ -75,8 +63,7 @@ def index():
         temperatures = []
         humidities = []
         
-        for reading in reversed(history_list):  # Reverse to show oldest first
-            # Format timestamp
+        for reading in reversed(history_list):
             ts = reading.get("timestamp") or reading.get("created_at")
             if ts:
                 try:
@@ -99,9 +86,6 @@ def index():
         1: format_history(fridge_1_history),
         2: format_history(fridge_2_history)
     }
-
-    print("Fridge Data:", fridge_data)
-    print("Historical Data:", historical_data)
     
     return render_template("index.html", fridge_data=fridge_data, historical_data=historical_data)
 
@@ -212,18 +196,54 @@ def update(customer_id):
 
 
 
-# Motor Routes
+# Motor Routes - Individual fan control for each fridge
+@app.route('/fan/<int:fridge_id>', methods=['POST'])
+def toggle_fan(fridge_id):
+    if fridge_id not in [1, 2]:
+        return jsonify({"success": False, "error": "Invalid fridge ID"}), 400
+    fan_states[fridge_id] = not fan_states[fridge_id]
+    
+    try:
+        if fan_states[fridge_id]:
+            motor.turnFanOn(fridge_id)
+            message = f"Fan {fridge_id} turned ON"
+        else:
+            motor.turnFanOff(fridge_id)
+            message = f"Fan {fridge_id} turned OFF"
+        
+        return jsonify({
+            "success": True, 
+            "fan_state": fan_states[fridge_id],
+            "motor_running": motor.getMotorState(),
+            "message": message
+        })
+    except Exception as e:
+        fan_states[fridge_id] = not fan_states[fridge_id]
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/fan/states', methods=['GET'])
+def get_fan_states():
+    try:
+        return jsonify({
+            "success": True,
+            "fan_states": fan_states,
+            "motor_running": motor.getMotorState(),
+            "all_fan_states": motor.getFanState()
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+# Legacy routes for backwards compatibility
 @app.route('/fan/on', methods=['POST'])
 def turn_fan_on():
-    motor.turnFanOn()
+    motor.turnFanOn(1)
     return redirect('/')
 
 @app.route('/fan/off', methods=['POST'])
 def turn_fan_off():
-    motor.turnFanOff()
+    motor.turnFanOff(1)
     return redirect('/')
 
-# Temperature
 @app.route("/api/temperature/<fridge_id>")
 def get_temperature(fridge_id):
     try:
@@ -244,7 +264,6 @@ def get_temperature(fridge_id):
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
-# essentially this has the ability to look for the json data with no UI
 @app.route("/api/temperature/<fridge_id>/history")
 def get_temperature_history(fridge_id):
     try:
@@ -258,12 +277,65 @@ def get_temperature_history(fridge_id):
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
-# @app.route("/dashboard")
-# def dashboard():
-#     # page with the gauges
-#     return render_template("")# to decide?
+# Simple Email Test Route
+@app.route("/api/email/test", methods=["POST"])
+def test_email():
+    """Send a simple test email"""
+    if not EMAIL_ALERTS_ENABLED:
+        return jsonify({"success": False, "error": "Email system not configured"}), 500
+    
+    try:
+        success = email_system.send_test_email()
+        if success:
+            # Start email monitoring to listen for replies
+            if not email_system.monitoring:
+                email_system.start_monitoring()
+                print("🔄 Started email monitoring for test email replies")
+            
+            flash("Test email sent successfully! Reply 'YES' for automatic fan control.", "success")
+            return jsonify({"success": True, "message": "Test email sent successfully"})
+        else:
+            return jsonify({"success": False, "error": "Failed to send test email"}), 500
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+# Check for email signals and activate fan
+@app.route("/api/email/check-signals", methods=["GET"])
+def check_email_signals():
+    """Check for email signals from background monitor"""
+    if not EMAIL_ALERTS_ENABLED:
+        return jsonify({"success": False, "error": "Email system not configured"}), 500
+    
+    try:
+        # Check if there's a signal from email system
+        state = email_system.get_and_clear_state()
+        
+        if state and state.get("action") == "activate_fan":
+            fridge_id = state.get("fridge_id", 1)
+            
+            # Activate the fan
+            fan_states[fridge_id] = True
+            motor.turnFanOn(fridge_id)
+            
+            message = f"Fan activated for Fridge {fridge_id} via email reply!"
+            
+            return jsonify({
+                "success": True,
+                "fan_activated": True,
+                "fridge_id": fridge_id,
+                "message": message,
+                "timestamp": state.get("timestamp")
+            })
+        else:
+            return jsonify({
+                "success": True,
+                "fan_activated": False,
+                "message": "No email signals"
+            })
+            
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 if __name__ == "__main__":
-    # app.run(host="0.0.0.0", port=8080, debug=False)
     app.run(host="http://127.0.0.1", port=8080, debug=False)
 
