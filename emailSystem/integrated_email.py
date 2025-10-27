@@ -1,11 +1,3 @@
-#!/usr/bin/env python3
-"""
-Integrated Email System for IoT Smart Store
-
-This system integrates email monitoring with the Flask app's fan control.
-It shares state through a simple file-based communication system.
-"""
-
 import smtplib
 import ssl
 import imaplib
@@ -45,8 +37,11 @@ class IntegratedEmailSystem:
     def send_test_email(self):
         """Send a simple test email"""
         try:
-            subject = "IoT Test Email"
-            body = f"""This is a test email from your IoT Smart Store system.
+            print(f"📧 Connecting to {self.smtp_host}:{self.smtp_port}")
+            print(f"📧 Using credentials: {self.login}")
+            
+            subject = " Test Email"
+            body = f"""This is a test email from our IoT Smart Store system.
 
 Test Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 
@@ -58,15 +53,70 @@ This is an automated message from your IoT monitoring system.
             
             email_message = f"Subject: {subject}\nTo: {self.recipient}\nFrom: {self.login}\n\n{body}"
             
-            with smtplib.SMTP_SSL(self.smtp_host, self.smtp_port, context=self.context) as server:
+            print("📤 Attempting SMTP connection...")
+            # Add timeout to prevent hanging
+            with smtplib.SMTP_SSL(self.smtp_host, self.smtp_port, context=self.context, timeout=30) as server:
+                print("🔐 Logging in...")
                 server.login(self.login, self.password)
+                print("📨 Sending email...")
                 server.sendmail(self.login, self.recipient, email_message.encode('utf-8'))
                 
             print("✅ Test email sent successfully!")
             return True
             
+        except smtplib.SMTPAuthenticationError as e:
+            print(f"❌ Authentication failed: {e}")
+            return False
+        except smtplib.SMTPException as e:
+            print(f"❌ SMTP error: {e}")
+            return False
         except Exception as e:
             print(f"❌ Email test failed: {e}")
+            return False
+    
+    def send_temperature_alert_email(self, fridge_id, current_temp, threshold, fridge_name):
+        """Send temperature alert email that waits for YES reply (same behavior as test email)"""
+        try:
+            print(f"📧 Connecting to {self.smtp_host}:{self.smtp_port}")
+            print(f"📧 Using credentials: {self.login}")
+            
+            subject = f"🚨 IoT Temperature Alert - {fridge_name}"
+            body = f"""TEMPERATURE ALERT!
+
+{fridge_name} temperature has exceeded the safe threshold.
+
+Current Temperature: {current_temp}°C
+Safe Threshold: {threshold}°C
+Alert Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+IMMEDIATE ACTION REQUIRED:
+Reply 'YES' to this email to activate the cooling fan for {fridge_name}.
+Reply 'NO' to acknowledge without action.
+
+This is an automated alert from your IoT Smart Store system.
+"""
+            
+            email_message = f"Subject: {subject}\nTo: {self.recipient}\nFrom: {self.login}\n\n{body}"
+            
+            print("📤 Attempting SMTP connection...")
+            # Add timeout to prevent hanging
+            with smtplib.SMTP_SSL(self.smtp_host, self.smtp_port, context=self.context, timeout=30) as server:
+                print("🔐 Logging in...")
+                server.login(self.login, self.password)
+                print("📨 Sending temperature alert email...")
+                server.sendmail(self.login, self.recipient, email_message.encode('utf-8'))
+                
+            print(f"✅ Temperature alert email sent successfully for {fridge_name}!")
+            return True
+            
+        except smtplib.SMTPAuthenticationError as e:
+            print(f"❌ Authentication failed: {e}")
+            return False
+        except smtplib.SMTPException as e:
+            print(f"❌ SMTP error: {e}")
+            return False
+        except Exception as e:
+            print(f"❌ Temperature alert email failed: {e}")
             return False
     
     def check_for_yes_replies(self):
@@ -85,8 +135,8 @@ This is an automated message from your IoT monitoring system.
                 mail.logout()
                 return False
             
-            # Check last 5 emails for YES replies
-            for email_id in reversed(email_ids[-5:]):
+            # Check last email for YES replies
+            for email_id in reversed(email_ids[-1:]):
                 email_id_str = email_id.decode()
                 
                 # Skip processed emails

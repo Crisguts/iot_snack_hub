@@ -470,6 +470,29 @@
           });
         });
 
+        // ===== Notification System =====
+        function showNotification(message, type = 'info') {
+          // Create notification element
+          const notification = document.createElement('div');
+          notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+          notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; max-width: 300px;';
+          notification.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          `;
+          
+          // Add to page
+          document.body.appendChild(notification);
+          
+          // Auto-remove after 5 seconds
+          setTimeout(() => {
+            if (notification.parentNode) {
+              notification.classList.add('hide-slide');
+              setTimeout(() => notification.remove(), 500);
+            }
+          }, 5000);
+        }
+
         // ===== Email Test System =====
         const testEmailBtn = document.getElementById('testEmailBtn');
         

@@ -30,6 +30,53 @@ fan_states = {
     2: False
 }
 
+def check_temperature_thresholds(fridge_data, fridge_id):
+    """
+    Check if temperature exceeds threshold and send email alert
+    
+    Args:
+        fridge_data (dict): Latest temperature data from database
+        fridge_id (int): Fridge ID (1 or 2)
+    """
+    if not fridge_data or not fridge_data.get("temperature"):
+        return  # No data to check
+    
+    if not EMAIL_ALERTS_ENABLED:
+        return  # Email alerts disabled
+    
+    try:
+        current_temp = float(fridge_data.get("temperature"))
+        
+        # Get threshold from database
+        threshold_data = db.get_fridge_threshold(fridge_id)
+        threshold = threshold_data if threshold_data else 25.0
+        
+        # Get fridge name from database or use default
+        fridge_name = f"Refrigerator {fridge_id}"
+        
+        # Check if temperature exceeds threshold
+        if current_temp > threshold:
+            print(f"🚨 THRESHOLD ALERT: {fridge_name} temp ({current_temp}°C) > threshold ({threshold}°C)")
+            
+            # Use the integrated email system that waits for YES replies (same as test email)
+            try:
+                success = email_system.send_temperature_alert_email(fridge_id, current_temp, threshold, fridge_name)
+                if success:
+                    # Start email monitoring to listen for replies (same as test email)
+                    if not email_system.monitoring:
+                        email_system.start_monitoring()
+                        print("🔄 Started email monitoring for threshold alert replies")
+                    print(f"📧 Temperature alert email sent for {fridge_name}")
+                else:
+                    print(f"⚠️  Failed to send email alert for {fridge_name}")
+            except Exception as email_error:
+                print(f"❌ Email alert error for {fridge_name}: {email_error}")
+        else:
+            print(f"✅ {fridge_name} temperature ({current_temp}°C) within threshold ({threshold}°C)")
+            
+    except Exception as e:
+        print(f"❌ Error checking temperature threshold for fridge {fridge_id}: {e}")
+
 
 @app.route('/')
 def index():
@@ -37,6 +84,10 @@ def index():
     # Fetch REAL data from database instead of hardcoded values
     fridge_1_data = db.get_latest_temperature_readings(1)
     fridge_2_data = db.get_latest_temperature_readings(2)
+    
+    # Check temperature thresholds and send alerts if needed
+    check_temperature_thresholds(fridge_1_data, 1)
+    check_temperature_thresholds(fridge_2_data, 2)
     
     # Get historical data
     fridge_1_history = db.get_temperature_history(1, limit=10)
@@ -281,11 +332,17 @@ def get_temperature_history(fridge_id):
 @app.route("/api/email/test", methods=["POST"])
 def test_email():
     """Send a simple test email"""
+    print("📧 Test email route called")
+    
     if not EMAIL_ALERTS_ENABLED:
+        print("❌ Email alerts disabled")
         return jsonify({"success": False, "error": "Email system not configured"}), 500
     
     try:
+        print("📤 Attempting to send test email...")
         success = email_system.send_test_email()
+        print(f"📧 Email send result: {success}")
+        
         if success:
             # Start email monitoring to listen for replies
             if not email_system.monitoring:
@@ -293,10 +350,13 @@ def test_email():
                 print("🔄 Started email monitoring for test email replies")
             
             flash("Test email sent successfully! Reply 'YES' for automatic fan control.", "success")
+            print("✅ Test email sent successfully")
             return jsonify({"success": True, "message": "Test email sent successfully"})
         else:
+            print("❌ Failed to send test email")
             return jsonify({"success": False, "error": "Failed to send test email"}), 500
     except Exception as e:
+        print(f"❌ Exception in test email: {str(e)}")
         return jsonify({"success": False, "error": str(e)}), 500
 
 # Check for email signals and activate fan
