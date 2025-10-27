@@ -5,6 +5,15 @@ from supabase import create_client, Client
 from dotenv import load_dotenv
 import os
 
+# Import email system for temperature alerts
+try:
+    from emailSystem.integrated_email import email_system
+    EMAIL_ALERTS_ENABLED = True
+    print("✅ Email alerts system loaded for MQTT monitoring")
+except ImportError as e:
+    EMAIL_ALERTS_ENABLED = False
+    print(f"⚠️  Email alerts disabled for MQTT: {e}")
+
 load_dotenv()
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
@@ -61,7 +70,9 @@ def on_message(client, userdata, msg):
         }
 
         save_to_db(fridge_id, temperature, humidity)
-        # temperature_alert(fridge_id, temperature)
+        
+        # Check temperature alerts
+        temperature_alert(fridge_id, temperature)
 
     except json.JSONDecodeError:
         print("Invalid JSON Error. payload:", msg.payload)
@@ -105,11 +116,17 @@ def save_to_db(fridge_id, temperature, humidity):
         print("Did not save to db. error:", repr(e))
         return False
     
-# ------------Checking the fridge temperature
+# Temperature Alert System
 def temperature_alert(fridge_id, temperature):
+    """
+    Check temperature against threshold and send email alert if exceeded
+    
+    Args:
+        fridge_id (int): ID of the refrigerator (1 or 2)
+        temperature (float): Current temperature reading
+    """
     try:
-        response = supabase.table("refrigerators").select("temperature_threshold").eq("fridge_id", fridge_id).execute()
-
+        # Get threshold and fridge info from database
         response = supabase.table("refrigerators")\
             .select("temperature_threshold, name")\
             .eq("fridge_id", fridge_id)\
@@ -117,14 +134,100 @@ def temperature_alert(fridge_id, temperature):
         
         if response.data and len(response.data) > 0:
             threshold = response.data[0].get("temperature_threshold", 25.0)
-            fridge_name = response.data[0].get("name", f"Fridge {fridge_id}")
+            fridge_name = response.data[0].get("name", f"Refrigerator {fridge_id}")
             
+            # Check if temperature exceeds threshold
             if temperature > threshold:
-                print(f"ALERT: {fridge_name} (ID: {fridge_id}) temperature ({temperature}°C) exceeds threshold ({threshold}°C)")
-                # TODO: Send email alert !!!!!!!!!!!!!!
-                # use code from lab
+                print(f"🚨 ALERT: {fridge_name} (ID: {fridge_id}) temperature ({temperature}°C) exceeds threshold ({threshold}°C)")
+                
+                # Send email alert if enabled
+                if EMAIL_ALERTS_ENABLED:
+                    try:
+                        success = send_temperature_email_alert(fridge_id, temperature, threshold, fridge_name)
+                        if success:
+                            print(f"📧 Temperature alert email sent for {fridge_name}")
+                        else:
+                            print(f"⚠️  Failed to send email alert for {fridge_name}")
+                    except Exception as email_error:
+                        print(f"❌ Email alert error for {fridge_name}: {email_error}")
+                else:
+                    print(f"📧 Email alerts disabled - would send alert for {fridge_name}")
+                    
+            else:
+                print(f"✅ {fridge_name} temperature ({temperature}°C) within threshold ({threshold}°C)")
+                
+        else:
+            print(f"⚠️  No threshold configuration found for fridge {fridge_id}")
+            # Use default threshold if no configuration found
+            default_threshold = 25.0
+            if temperature > default_threshold:
+                print(f"🚨 ALERT: Fridge {fridge_id} temperature ({temperature}°C) exceeds default threshold ({default_threshold}°C)")
+                
+                if EMAIL_ALERTS_ENABLED:
+                    send_temperature_email_alert(fridge_id, temperature, default_threshold, f"Refrigerator {fridge_id}")
+                    
     except Exception as e:
-        print("Error Checking the threshold. Error: " +  e)
+        print(f"❌ Error checking temperature threshold for fridge {fridge_id}: {e}")
+
+def send_temperature_email_alert(fridge_id, current_temp, threshold, fridge_name):
+    """
+    Send temperature alert email for specific fridge using integrated email system
+    """
+    if not EMAIL_ALERTS_ENABLED:
+        print("❌ Email alerts disabled")
+        return False
+    
+    try:
+        # Get email credentials
+        login = os.getenv("EMAIL_LOGIN")
+        password = os.getenv("EMAIL_APP_PASSWORD")
+        recipient = os.getenv("EMAIL_RECIPIENT", login)
+        
+        if not login or not password:
+            print("❌ Email credentials not configured")
+            return False
+        
+        # Create alert email
+        subject = f"TEMPERATURE ALERT - {fridge_name}"
+        body = f"""TEMPERATURE ALERT!
+
+{fridge_name} has exceeded the temperature threshold:
+
+Current Temperature: {current_temp}°C
+Threshold Setting: {threshold}°C
+Alert Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+The temperature is too high! Would you like to turn on the fan?
+
+Reply 'YES' to this email to automatically activate the fan for {fridge_name}.
+Reply 'NO' to take no action.
+
+This is an automated alert from your IoT Smart Store monitoring system.
+"""
+        
+        # Use integrated email system
+        import smtplib
+        import ssl
+        
+        email_message = f"Subject: {subject}\nTo: {recipient}\nFrom: {login}\n\n{body}"
+        
+        context = ssl.create_default_context()
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as server:
+            server.login(login, password)
+            server.sendmail(login, recipient, email_message.encode('utf-8'))
+            
+        print(f"📧 Temperature alert email sent for {fridge_name}")
+        
+        # Start email monitoring if not already running
+        if not email_system.monitoring:
+            email_system.start_monitoring()
+            print("🔄 Started email monitoring for replies")
+            
+        return True
+        
+    except Exception as e:
+        print(f"❌ Failed to send temperature alert email: {e}")
+        return False
     
 def on_disconnect(client, userdata, rc):
         if(rc != 0):
