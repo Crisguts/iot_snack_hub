@@ -18,14 +18,92 @@ except ImportError:
 app = Flask(__name__)
 app.secret_key = "Cookies"
 
-@app.route("/")
-def index():
-    return render_template("index.html")
 
-# @app.route("/", methods=["GET"])
+# @app.route('/')
 # def index():
-#     customers = db.get_customers()
-#     return render_template("index.html", customers=customers)
+#     # Current sensor readings for each fridge
+#     fridge_data = {
+#         1: {"temperature": 4, "humidity": 60},
+#         2: {"temperature": -2, "humidity": 55}
+#     }
+
+#     # Historical data for charts (optional)
+#     historical_data = {
+#         1: {
+#             "timestamps": ["10:00", "10:05", "10:10"],
+#             "temperature": [4, 4.1, 3.9],
+#             "humidity": [60, 62, 59]
+#         },
+#         2: {
+#             "timestamps": ["10:00", "10:05", "10:10"],
+#             "temperature": [-2, -1.8, -2.2],
+#             "humidity": [55, 54, 56]
+#         }
+#     }
+
+#     return render_template("index.html", fridge_data=fridge_data, historical_data=historical_data)
+
+@app.route('/')
+def index():
+
+    # Fetch REAL data from database instead of hardcoded values
+    fridge_1_data = db.get_latest_temperature_readings(1)
+    fridge_2_data = db.get_latest_temperature_readings(2)
+    
+    # Get historical data
+    fridge_1_history = db.get_temperature_history(1, limit=10)
+    fridge_2_history = db.get_temperature_history(2, limit=10)
+    
+    # Format data for template
+    fridge_data = {
+        1: {
+            "temperature": fridge_1_data.get("temperature") if fridge_1_data else None,
+            "humidity": fridge_1_data.get("humidity") if fridge_1_data else None
+        },
+        2: {
+            "temperature": fridge_2_data.get("temperature") if fridge_2_data else None,
+            "humidity": fridge_2_data.get("humidity") if fridge_2_data else None
+        }
+    }
+    
+    # Format historical data for charts
+    def format_history(history_list):
+        if not history_list:
+            return {"timestamps": [], "temperature": [], "humidity": []}
+        
+        timestamps = []
+        temperatures = []
+        humidities = []
+        
+        for reading in reversed(history_list):  # Reverse to show oldest first
+            # Format timestamp
+            ts = reading.get("timestamp") or reading.get("created_at")
+            if ts:
+                try:
+                    from datetime import datetime
+                    dt = datetime.fromisoformat(ts.replace('Z', '+00:00'))
+                    timestamps.append(dt.strftime("%H:%M"))
+                except:
+                    timestamps.append("--:--")
+            
+            temperatures.append(reading.get("temperature"))
+            humidities.append(reading.get("humidity"))
+        
+        return {
+            "timestamps": timestamps,
+            "temperature": temperatures,
+            "humidity": humidities
+        }
+    
+    historical_data = {
+        1: format_history(fridge_1_history),
+        2: format_history(fridge_2_history)
+    }
+
+    print("Fridge Data:", fridge_data)
+    print("Historical Data:", historical_data)
+    
+    return render_template("index.html", fridge_data=fridge_data, historical_data=historical_data)
 
 @app.route("/client", defaults={"page": 1})
 @app.route("/client/page/<int:page>")
@@ -145,8 +223,45 @@ def turn_fan_off():
     motor.turnFanOff()
     return redirect('/')
 
+# Temperature
+@app.route("/api/temperature/<fridge_id>")
+def get_temperature(fridge_id):
+    try:
+        reading = db.get_latest_temperature_readings(fridge_id)
+        if reading:
+            return jsonify({
+                "success": True,
+                "fridge_id": fridge_id,
+                "temperature": reading.get("temperature"),
+                "humidity": reading.get("humidity"),
+                "timestamp": reading.get("timestamp")
+            })
+        else:
+            return jsonify({
+                "success": False,
+                "message": "No data available"
+            }), 404
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
+# essentially this has the ability to look for the json data with no UI
+@app.route("/api/temperature/<fridge_id>/history")
+def get_temperature_history(fridge_id):
+    try:
+        limit = request.args.get("limit", 50, type=int)
+        history = db.get_temperature_history(fridge_id, limit)
+        return jsonify({
+            "success": True,
+            "fridge_id": fridge_id,
+            "data": history
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
+# @app.route("/dashboard")
+# def dashboard():
+#     # page with the gauges
+#     return render_template("")# to decide?
 
 if __name__ == "__main__":
     # app.run(host="0.0.0.0", port=8080, debug=False)
