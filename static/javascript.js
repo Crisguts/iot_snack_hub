@@ -45,6 +45,16 @@ document.querySelectorAll('.Customer').forEach((row, index) => {
 });
 
 
+// ===================== FRIDGE CARD ANIMATION =====================
+document.querySelectorAll('.fridge-card').forEach((card, index) => {
+  setTimeout(() => card.classList.add('visible'), index * 150);
+});
+
+// ===================== EMAIL TEST CARD ANIMATION =====================
+document.querySelectorAll('.email-card').forEach((card, index) => {
+  setTimeout(() => card.classList.add('visible'), index * 150);
+});
+
 // ===================== MODAL NAVIGATION (CURRENT / HISTORY) =====================
 const toHistoryBtn = document.getElementById('toHistoryBtn');
 const toCurrentBtn = document.getElementById('toCurrentBtn');
@@ -144,7 +154,13 @@ if (fridgeModal) {
   fridgeModal.addEventListener('show.bs.modal', (event) => {
     const button = event.relatedTarget;
     const fridgeId = button.getAttribute('data-fridge');
-    fridgeModal.setAttribute('data-current-fridge', fridgeId);
+
+    // Update threshold dynamically
+    const thresholdLabel = fridgeModal.querySelector('.current-threshold-label');
+    const threshold = fridgeData[fridgeId]?.threshold ?? 'N/A';
+    if (thresholdLabel) {
+      thresholdLabel.textContent = "Current Threshold: " + threshold + "°C";
+    }
 
     const data = fridgeData[fridgeId];
     const history = historicalData[fridgeId];
@@ -352,3 +368,4 @@ document.addEventListener('shown.bs.modal', function (e) {
   const dateInput = e.target.querySelector('input[type="date"]');
   if (dateInput) dateInput.focus();
 });
+

@@ -123,6 +123,12 @@ def index():
     fridge_1_data = db.get_latest_temperature_readings(1)
     fridge_2_data = db.get_latest_temperature_readings(2)
     
+    # fetch fridge threshold
+    fridge_1_info = db.get_fridge_threshold(1) 
+    fridge_2_info = db.get_fridge_threshold(2)
+
+
+    
     # Check temperature thresholds and send alerts if needed
     check_temperature_thresholds(fridge_1_data, 1)
     check_temperature_thresholds(fridge_2_data, 2)
@@ -135,11 +141,13 @@ def index():
     fridge_data = {
         1: {
             "temperature": fridge_1_data.get("temperature") if fridge_1_data else None,
-            "humidity": fridge_1_data.get("humidity") if fridge_1_data else None
+            "humidity": fridge_1_data.get("humidity") if fridge_1_data else None,
+            "threshold": fridge_1_info
         },
         2: {
             "temperature": fridge_2_data.get("temperature") if fridge_2_data else None,
-            "humidity": fridge_2_data.get("humidity") if fridge_2_data else None
+            "humidity": fridge_2_data.get("humidity") if fridge_2_data else None,
+            "threshold": fridge_2_info
         }
     }
     

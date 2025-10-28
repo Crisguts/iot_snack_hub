@@ -4,7 +4,6 @@ body {
   margin: 0;
   padding: 0;
   overflow-x: hidden;
-  /* prevents horizontal scroll */
   overflow-y: hidden;
 }
 
@@ -88,7 +87,7 @@ h1 {
   overflow-y: auto;
   /* vertical scroll only */
   padding-right: 10px;
-  /* optional, avoids scrollbar overlap */
+  /* avoids scrollbar overlap */
 }
 
 .customer-list-container::-webkit-scrollbar {
@@ -263,4 +262,41 @@ h1 {
 .fan-off {
   animation: none;
   opacity: 0.5;
+}
+.collapse {
+  transition: all 0.35s ease;
+}
+#fridge-dash {
+  box-sizing:border-box;
+  max-height: inherit;
+}
+#email-test {
+  max-height: 10%;
+}
+.fridge-card{
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.email-card {
+    opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.5s ease, transform 1s ease;
+}
+
+.fridge-card.visible, .email-card.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.modal-header {
+  position: relative;
+}
+
+.current-threshold-label {
+  position: absolute;
+  right: 10%; /* distance from the right edge */
+  top: 50%;
+  transform: translateY(-50%);
+  margin: 0;
 }
