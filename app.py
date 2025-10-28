@@ -1,5 +1,5 @@
 import re
-from flask import Flask, jsonify, request, render_template, flash, url_for, redirect
+from flask import Flask, jsonify, request, render_template, flash, url_for, redirect, session
 import db
 
 # Import email system
@@ -76,9 +76,47 @@ def check_temperature_thresholds(fridge_data, fridge_id):
             
     except Exception as e:
         print(f"❌ Error checking temperature threshold for fridge {fridge_id}: {e}")
+# ToDo: Add Login Logic (Parth)
+# @app.route('/', methods=['GET', 'POST'])
+# @app.route('/login', methods=['GET', 'POST'])
+# def login():
+#     if request.method == "POST":
+#         username = request.form.get("Username")
+#         password = request.form.get("Password")
 
+#         if username in USERS and USERS[username] == password:
+#             session["username"] = username
+#             flash(f"Welcome, {username}!", "success")
+#             return redirect(url_for("index"))
+#         else:
+#             flash("Invalid username or password", "danger")
+#             return redirect(url_for("login"))
 
-@app.route('/')
+#     # GET request: render login page
+#     return render_template("login.html")
+
+@app.route('/', methods=['GET', 'POST'])
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    """
+    Temporary login: any username/password entered goes through.
+    """
+    if request.method == "POST":
+        username = request.form.get("Username", "guest")
+        session["username"] = username  # store in session
+        flash(f"Logged in as {username} (temporary auto-login)", "info")
+        return redirect(url_for("index"))
+
+    # GET request: render login page
+    return render_template("login.html")
+
+@app.route("/logout")
+def logout():
+    session.clear()  # remove all session data
+    flash("You have been logged out.", "info")
+    return redirect(url_for("login"))
+
+@app.route('/index')
 def index():
 
     # Fetch REAL data from database instead of hardcoded values
@@ -158,7 +196,40 @@ def client(page):
         total_pages=total_pages,
         search=search_query
     )
+@app.route("/create_account", methods=["POST"])
+def create_account():
+    first_name = request.form.get("first_name")
+    last_name = request.form.get("last_name")
+    email = request.form.get("email")          # Make sure your modal has an email field!
+    phone_num = request.form.get("phone_num")
+    dob = request.form.get("dob")
 
+    # Basic validation
+    if first_name and last_name and email:
+        name_regex = r"^[a-zA-Z]+([ '-][a-zA-Z]+)*$"
+        if not re.match(name_regex, first_name.strip()):
+            flash("Invalid first name.", "danger")
+            return redirect(url_for("index"))
+        if not re.match(name_regex, last_name.strip()):
+            flash("Invalid last name.", "danger")
+            return redirect(url_for("index"))
+        if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email.strip()):
+            flash("Invalid email address.", "danger")
+            return redirect(url_for("index"))
+        
+        # Attempt to add customer to DB
+        if db.add_customer(first_name.strip(), last_name.strip(), email.strip(), dob.strip(), phone_num.strip() if phone_num else None):
+            flash(f"{first_name} {last_name} added successfully!", "success")
+            gpio.blink("blue")
+        else:
+            flash("Failed to add client", "danger")
+            gpio.blink("red")
+    else:
+        flash("Fields cannot be left blank.", "danger")
+        gpio.blink("red")
+
+    # Redirect to index after handling everything
+    return redirect(url_for("index"))
 
 @app.route("/add", methods=["POST"])
 def add():
@@ -423,6 +494,7 @@ def check_email_signals():
             
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+    
 
 if __name__ == "__main__":
     app.run(host="http://127.0.0.1", port=8080, debug=False)
