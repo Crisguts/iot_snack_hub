@@ -1,8 +1,10 @@
-html, body {
+html,
+body {
   height: 100%;
   margin: 0;
   padding: 0;
-  overflow-x: hidden; /* prevents horizontal scroll */
+  overflow-x: hidden;
+  /* prevents horizontal scroll */
   overflow-y: hidden;
 }
 
@@ -20,6 +22,7 @@ html, body {
 h1 {
   color: #007bff;
 }
+
 .link-div {
   will-change: background-color;
   display: flex;
@@ -27,8 +30,10 @@ h1 {
   align-items: center;
   justify-content: center;
   height: 100%;
-  gap: 20px; /* <-- spacing between links */
+  gap: 20px;
+  /* <-- spacing between links */
 }
+
 #logout {
   bottom: 10px !important;
   height: 100%;
@@ -37,31 +42,36 @@ h1 {
 .Customer {
   will-change: opacity, transform, background-color, color;
   transition: opacity 0.8s ease, transform 0.8s ease, background-color 0.3s ease;
-  transform: translateY(-50px); /* start higher for bigger slide effect */
-  opacity: 0; /* start hidden for animation */
+  transform: translateY(-50px);
+  /* start higher for bigger slide effect */
+  opacity: 0;
+  /* start hidden for animation */
   width: 100%;
   padding: 20px;
   border-radius: 8px;
   margin-bottom: 10px;
-  background-color: rgb(203, 203, 203); 
+  background-color: rgb(203, 203, 203);
   color: rgb(99, 99, 99);
 }
 
 .Customer.visible {
   opacity: 1;
-  transform: translateY(0); /* slide to original position */
+  transform: translateY(0);
+  /* slide to original position */
 }
+
 .Sidebar:hover,
 .Customer:hover {
   background-color: rgb(79, 79, 79);
   color: rgb(218, 217, 217);
 }
+
 /* cubic-bezier is like a custom speed curve for animations.
    It controls how fast or slow the alert fades amd shrinks.
    I think it adds a bit of gliding post alert but I am still working on it.
    */
 .alert {
-  transition: all 1.5s cubic-bezier(0.4, 0, 0.2, 1); 
+  transition: all 1.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .alert.hide-slide {
@@ -71,96 +81,186 @@ h1 {
   height: 0;
   overflow: hidden;
 }
+
 .customer-list-container {
-  max-height: 72vh; /* adjust height to fit your layout */
-  overflow-y: auto; /* vertical scroll only */
-  padding-right: 10px; /* optional, avoids scrollbar overlap */
+  max-height: 72vh;
+  /* adjust height to fit your layout */
+  overflow-y: auto;
+  /* vertical scroll only */
+  padding-right: 10px;
+  /* optional, avoids scrollbar overlap */
 }
+
 .customer-list-container::-webkit-scrollbar {
   width: 10px;
   /* overflow-x: hidden; */
 }
+
 .customer-list-container::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.3);
+  background: rgba(255, 255, 255, 0.3);
   border-radius: 8px;
 }
-    /* Fan toggle styling */
-    .form-switch {
-      position: relative;
-      display: inline-block;
-      width: 60px;
-      height: 34px;
-    }
-    .form-switch input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
-    .form-switch i {
-      position: absolute;
-      cursor: pointer;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: #ccc;
-      transition: 0.4s;
-      border-radius: 34px;
-    }
-    .form-switch i:before {
-      position: absolute;
-      content: "";
-      height: 26px;
-      width: 26px;
-      left: 4px;
-      bottom: 4px;
-      background-color: white;
-      transition: 0.4s;
-      border-radius: 50%;
-    }
-    .form-switch input:checked + i {
-      background-color: #4caf50;
-    }
-    .form-switch input:checked + i:before {
-      transform: translateX(26px);
-    }
 
-    /* Center gauges */
-    #tempGauge, #humidityGauge {
-      display: block;
-      margin: 0 auto;
-      max-width: 150px;
-      max-height: 75px;
-    }
-    #fan_cont_text{
-      margin-left: 10px;
-    }
+/* Fan toggle styling */
+.form-switch {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 34px;
+}
 
-            #loginBody {
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: linear-gradient(135deg, #1a1a1a, #2e2e2e);
-            color: white;
-            margin: 0;
-        }
-        .login-card {
-            background-color: #343a40;
-            padding: 2rem;
-            border-radius: 15px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-            width: 60vw;
-            height: 60vh;
-        }
-        .login-card h3 {
-            margin-bottom: 1.5rem;
-            text-align: center;
-        }
-        .login-card .btn-info {
-            width: 100%;
-        }
-        .form-control {
-          margin-top: 10px;
-          margin-bottom: 1rem;
-        }
+.form-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.form-switch i {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: 0.4s;
+  border-radius: 34px;
+}
+
+.form-switch i:before {
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 26px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: 0.4s;
+  border-radius: 50%;
+}
+
+.form-switch input:checked+i {
+  background-color: #4caf50;
+}
+
+.form-switch input:checked+i:before {
+  transform: translateX(26px);
+}
+
+/* Center gauges */
+#tempGauge,
+#humidityGauge {
+  display: block;
+  margin: 0 auto;
+  max-width: 150px;
+  max-height: 75px;
+}
+
+#fan_cont_text {
+  margin-left: 10px;
+}
+
+#loginBody {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #1a1a1a, #2e2e2e);
+  color: white;
+  margin: 0;
+}
+
+.login-card {
+  background-color: #343a40;
+  padding: 2rem;
+  border-radius: 15px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  width: 60vw;
+  height: 60vh;
+}
+
+.login-card h3 {
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.login-card .btn-info {
+  width: 100%;
+}
+
+.form-control {
+  margin-top: 10px;
+  margin-bottom: 1rem;
+}
+
+/* Fan Animation Styles */
+.fan-container {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fan-icon {
+  width: 35px;
+  height: 35px;
+  position: relative;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.fan-blade {
+  position: absolute;
+  width: 14px;
+  height: 3px;
+  background: #fff;
+  border-radius: 8px;
+  top: 50%;
+  left: 50%;
+  transform-origin: 2px 50%;
+}
+
+.fan-blade:nth-child(1) {
+  transform: translate(-2px, -50%) rotate(0deg);
+}
+
+.fan-blade:nth-child(2) {
+  transform: translate(-2px, -50%) rotate(120deg);
+}
+
+.fan-blade:nth-child(3) {
+  transform: translate(-2px, -50%) rotate(240deg);
+}
+
+.fan-center {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: #fff;
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+}
+
+@keyframes fanSpin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.fan-spinning {
+  animation: fanSpin 0.5s linear infinite;
+}
+
+.fan-off {
+  animation: none;
+  opacity: 0.5;
+}
