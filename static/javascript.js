@@ -180,6 +180,7 @@ if (fridgeModal) {
       data.temperature + "°C";
     document.getElementById("currentHumidityModal").textContent =
       data.humidity + "%";
+    
 
     // Destroy existing charts
     if (window.tempGaugeInstance) window.tempGaugeInstance.destroy();

@@ -48,94 +48,126 @@
 
       <h2 class="text-white">Readings</h2>
 
-      
 
-<!-- Refrigerator Dashboard -->
-<div id="fridge-dash" class="row g-4 justify-content-center mt-1">
-  <!-- Refrigerator 1 -->
-  <div class="col-md-6 fridge-card">
-    <div class="card bg-dark border-0 shadow-lg text-white p-4 text-center position-relative">
-      <h4 class="fw-bold mb-1">Refrigerator 1</h4>
-      <img src="{{ url_for('static', filename='photos/fridge.svg') }}" width="200" height="200" class="d-block mx-auto">
-<button class="btn btn-primary w-100 mb-3 fw-bold" 
-        data-bs-toggle="modal" 
-        data-bs-target="#fridgeModal" 
-        data-fridge="1">
-  View Details
-</button>
+
+      <!-- Refrigerator Dashboard -->
+      <div id="fridge-dash" class="row g-4 justify-content-center mt-1">
+        <!-- Refrigerator 1 -->
+        <div class="col-md-6 fridge-card">
+          <div class="card bg-dark border-0 shadow-lg text-white p-4 text-center position-relative">
+            <h4 class="fw-bold mb-1">Refrigerator 1</h4>
+            <img src="{{ url_for('static', filename='photos/fridge.svg') }}" width="200" height="200"
+              class="d-block mx-auto">
+            <button class="btn btn-primary w-100 mb-3 fw-bold" data-bs-toggle="modal" data-bs-target="#fridgeModal"
+              data-fridge="1">
+              View Details
+            </button>
             <!-- Settings Button -->
-      <button class="btn btn-outline-light w-100 mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#settingsOverlay1">
-       Threshold Settings
-      </button>
-      <!-- Fan Control -->
-      <div class="d-flex justify-content-center align-items-center mb-3">
-        <div class="fan-container me-3">
-          <div class="fan-icon" id="fanIcon1">
-            <div class="fan-blade"></div>
-            <div class="fan-blade"></div>
-            <div class="fan-blade"></div>
-            <div class="fan-center"></div>
+            <button class="btn btn-outline-light w-100 mb-3" type="button" data-bs-toggle="collapse"
+              data-bs-target="#settingsOverlay1">
+              Threshold Settings
+            </button>
+            <!-- Fan Control -->
+            <div class="d-flex justify-content-center align-items-center mb-3">
+              <div class="fan-container me-3">
+                <div class="fan-icon" id="fanIcon1">
+                  <div class="fan-blade"></div>
+                  <div class="fan-blade"></div>
+                  <div class="fan-blade"></div>
+                  <div class="fan-center"></div>
+                </div>
+              </div>
+              <label class="form-switch d-flex align-items-center" style="gap:10px;">
+                <input type="checkbox" class="fanToggle" data-fridge="1">
+                <i></i>
+                <span class="fw-bold text-white ms-3">Fan Status</span>
+              </label>
+            </div>
+
+
+            <!-- Overlay Settings for Refrigerator 1 -->
+            <div class=" card collapse position-absolute top-0 start-0 w-100 h-100 bg-dark bg-opacity-90 p-3 text-white"
+              id="settingsOverlay1" style="z-index:10; overflow-y:auto;">
+
+              <h4 class="fw-bold mb-3">Temperature Threshold (°C)</h4>
+
+              <!-- Fridge Image -->
+              <div class="d-flex justify-content-center mb-3">
+                <img src="{{ url_for('static', filename='photos/fridge.svg') }}" width="200" height="200"
+                  class="mx-auto">
+              </div>
+
+              <!-- Input for threshold -->
+              <input type="number" id="threshold1" class="form-control mb-3" placeholder="Set threshold">
+
+              <!-- Buttons -->
+              <button class="btn btn-primary w-100 mb-2 fw-bold">Apply</button>
+              <button class="btn btn-outline-light w-100" data-bs-toggle="collapse"
+                data-bs-target="#settingsOverlay1">Close</button>
+            </div>
+
           </div>
         </div>
-        <label class="form-switch d-flex align-items-center" style="gap:10px;">
-          <input type="checkbox" class="fanToggle" data-fridge="1">
-          <i></i>
-          <span class="fw-bold text-white ms-3">Fan Status</span>
-        </label>
-      </div>
 
-      <!-- Overlay Settings -->
-      <div class="collapse position-absolute top-0 start-0 w-100 h-100 bg-dark bg-opacity-90 p-3 text-white" id="settingsOverlay1" style="z-index:10;">
-        <label for="threshold1" class="fw-bold mb-1">Temperature Threshold (°C)</label>
-        <input type="number" id="threshold1" class="form-control mb-2" placeholder="Set threshold">
-        <button class="btn btn-primary w-100 mb-2">Apply</button>
-        <button class="btn btn-outline-light w-100" data-bs-toggle="collapse" data-bs-target="#settingsOverlay1">Close</button>
-      </div>
-    </div>
-  </div>
+        <!-- Refrigerator 2 -->
+        <div class="col-md-6 fridge-card">
+          <div class="card bg-dark border-0 shadow-lg text-white p-4 text-center position-relative">
+            <h4 class="fw-bold mb-1">Refrigerator 2</h4>
+            <img src="{{ url_for('static', filename='photos/fridge.svg') }}" width="200" height="200"
+              class="d-block mx-auto">
+            <button class="btn btn-primary w-100 mb-3 fw-bold" data-bs-toggle="modal" data-bs-target="#fridgeModal"
+              data-fridge="2">
+              View Details
+            </button>
 
-  <!-- Refrigerator 2 -->
-  <div class="col-md-6 fridge-card">
-    <div class="card bg-dark border-0 shadow-lg text-white p-4 text-center position-relative">
-      <h4 class="fw-bold mb-1">Refrigerator 2</h4>
-      <img src="{{ url_for('static', filename='photos/fridge.svg') }}" width="200" height="200" class="d-block mx-auto">
-<button class="btn btn-primary w-100 mb-3 fw-bold" 
-        data-bs-toggle="modal" 
-        data-bs-target="#fridgeModal" 
-        data-fridge="2">
-  View Details
-</button>
+            <!-- Settings Button -->
+            <button class="btn btn-outline-light w-100 mb-3" type="button" data-bs-toggle="collapse"
+              data-bs-target="#settingsOverlay2">
+              Threshold Settings
+            </button>
+            <!-- Fan Control -->
+            <div class="d-flex justify-content-center align-items-center mb-3">
+              <div class="fan-container me-3">
+                <div class="fan-icon" id="fanIcon2">
+                  <div class="fan-blade"></div>
+                  <div class="fan-blade"></div>
+                  <div class="fan-blade"></div>
+                  <div class="fan-center"></div>
+                </div>
+              </div>
+              <label class="form-switch d-flex align-items-center" style="gap:10px;">
+                <input type="checkbox" class="fanToggle" data-fridge="2">
+                <i></i>
+                <span class="fw-bold text-white ms-3">Fan Status</span>
+              </label>
+
+              <!-- Overlay Settings for Refrigerator 2 -->
+              <div
+                class=" card collapse position-absolute top-0 start-0 w-100 h-100 bg-dark bg-opacity-90 p-3 text-white"
+                id="settingsOverlay2" style="z-index:10; overflow-y:auto;">
+
+                <h4 class="fw-bold mb-3">Temperature Threshold (°C)</h4>
+
+                <!-- Fridge Image -->
+                <div class="d-flex justify-content-center mb-3">
+                  <img src="{{ url_for('static', filename='photos/fridge.svg') }}" width="200" height="200"
+                    class="mx-auto">
+                </div>
+
+                <!-- Input for threshold -->
+                <input type="number" id="threshold2" class="form-control mb-3" placeholder="Set threshold">
+
+                <!-- Buttons -->
+                <button class="btn btn-primary w-100 mb-2 fw-bold">Apply</button>
+                <button class="btn btn-outline-light w-100" data-bs-toggle="collapse"
+                  data-bs-target="#settingsOverlay2">Close</button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
     
-      <!-- Settings Button -->
-      <button class="btn btn-outline-light w-100 mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#settingsOverlay2">
-       Threshold Settings
-      </button>
-      <!-- Fan Control -->
-      <div class="d-flex justify-content-center align-items-center mb-3">
-        <div class="fan-container me-3">
-          <div class="fan-icon" id="fanIcon2">
-            <div class="fan-blade"></div>
-            <div class="fan-blade"></div>
-            <div class="fan-blade"></div>
-            <div class="fan-center"></div>
-          </div>
-        </div>
-        <label class="form-switch d-flex align-items-center" style="gap:10px;">
-          <input type="checkbox" class="fanToggle" data-fridge="2">
-          <i></i>
-          <span class="fw-bold text-white ms-3">Fan Status</span>
-        </label>
-      <!-- Overlay Settings -->
-      <div class="collapse position-absolute top-0 start-0 w-100 h-100 bg-dark bg-opacity-90 p-3 text-white" id="settingsOverlay2" style="z-index:10;">
-        <label for="threshold2" class="fw-bold mb-1">Temperature Threshold (°C)</label>
-        <input type="number" id="threshold2" class="form-control mb-2" placeholder="Set threshold">
-        <button class="btn btn-primary w-100 mb-2">Apply</button>
-        <button class="btn btn-outline-light w-100" data-bs-toggle="collapse" data-bs-target="#settingsOverlay2">Close</button>
-      </div>
-    </div>
-  </div>
-</div>
-</div>
 
       <!-- Email Test Section -->
       <div id="email-test" class="container mt-1 email-card">
@@ -156,6 +188,7 @@
           </div>
         </div>
       </div>
+    </div>
 
       <!-- Fridge Details Modal -->
       <div class="modal fade" id="fridgeModal" tabindex="-1" aria-hidden="true">
@@ -163,7 +196,7 @@
           <div class="modal-content bg-dark text-white">
             <div class="modal-header">
               <h5 class="modal-title">Fridge Details</h5>
-              <h4 class="text-secondary current-threshold-label mb-0">Current Threshold: </h4>
+              <h4 id="current-threshold"class="text-secondary current-threshold-label mb-0">Current Threshold: </h4>
               <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
@@ -213,7 +246,7 @@
   {{ historical_data | tojson | safe }}
 </script>
       <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-      
+
 
       <script src="{{ url_for('static', filename='javascript.js') }}"></script>
 
