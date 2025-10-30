@@ -374,6 +374,7 @@ def get_latest_readings():
             .order("created_at", desc=True) \
             .limit(1) \
             .execute()
+        print(f"Fridge {fridge_id} →", response.data) 
         data[fridge_id] = response.data[0] if response.data else None
 
     return jsonify({"success": True, "data": data})
