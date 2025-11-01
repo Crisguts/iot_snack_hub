@@ -98,12 +98,13 @@
               </div>
 
               <!-- Input for threshold -->
-              <input type="number" id="threshold1" class="form-control mb-3" placeholder="Set threshold">
-
-              <!-- Buttons -->
+               <form action="{{ url_for('update_threshold', fridge_id=1) }}" method="POST">
+                <input type="number" id="threshold1" class="form-control mb-3" placeholder="Set threshold" name="new_threshold">
+                <!-- Buttons -->
               <button class="btn btn-primary w-100 mb-2 fw-bold">Apply</button>
               <button class="btn btn-outline-light w-100" data-bs-toggle="collapse"
                 data-bs-target="#settingsOverlay1">Close</button>
+               </form>
             </div>
 
           </div>
@@ -155,7 +156,13 @@
                 </div>
 
                 <!-- Input for threshold -->
-                <input type="number" id="threshold2" class="form-control mb-3" placeholder="Set threshold">
+                 <form action="{{ url_for('update_threshold', fridge_id=2) }}" method="POST">
+                <input type="number" id="threshold2" class="form-control mb-3" placeholder="Set threshold" name="new_threshold">
+                <!-- Buttons -->
+              <button class="btn btn-primary w-100 mb-2 fw-bold">Apply</button>
+              <button class="btn btn-outline-light w-100" data-bs-toggle="collapse"
+                data-bs-target="#settingsOverlay2">Close</button>
+               </form>
 
                 <!-- Buttons -->
                 <button class="btn btn-primary w-100 mb-2 fw-bold">Apply</button>

@@ -504,6 +504,28 @@ def check_email_signals():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
     
+    #Update Threshold for the fridge
+@app.route("/update_threshold/<int:fridge_id>", methods=["POST"])
+def update_threshold(fridge_id):
+    new_threshold = request.form.get("new_threshold")
+    try:
+        new_threshold = float(new_threshold)
+    except (ValueError, TypeError):
+        flash("Invalid threshold value.", "danger")
+        return redirect(url_for("index"))
+    
+    if new_threshold < -50 or new_threshold > 50:
+            flash("Threshold must be between -50°C and 50°C.", "danger")
+            return redirect(url_for("index"))
+    
+    if db.update_fridge_threshold(fridge_id, new_threshold):
+        flash(f"Threshold for Fridge {fridge_id} updated to {new_threshold}°C", "success")
+        gpio.blink("blue")
+    else:
+        flash("Failed to update threshold.", "danger")
+        gpio.blink("red")
+    
+    return redirect(url_for("index"))
 
 if __name__ == "__main__":
     app.run(host="http://127.0.0.1", port=8080, debug=False)
