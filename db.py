@@ -42,14 +42,15 @@ def get_customers():
         return []
 
 
-def add_customer(first_name, last_name, email, dob, phone_num=None):
+def add_customer(first_name, last_name, email, dob, phone_num=None, password=123):
     try:
         data = {
             "first_name": first_name,
             "last_name": last_name,
             "email": email,
             "phone_num": phone_num,
-            "date_of_birth": dob
+            "date_of_birth": dob,
+            "password": password
         }
         response = supabase.table("customers").insert(data).execute()
 
@@ -254,4 +255,23 @@ def update_fridge_threshold(fridge_id, new_threshold):
         return True
     except Exception as e:
         print(f"Error updating threshold: {e}")
+        return False
+
+
+def validate_login(email, password):
+    try:
+        response = (supabase.table("customers")
+            .select("customer_id, email, password")
+            .eq("email", email)
+            .limit(1)   
+            .execute())
+        
+        if response.data and len(response.data) > 0:
+            user = response.data[0]
+            if user.get("password") == password:
+                return user
+            
+        return None
+    except Exception as e:
+        print(f"Error login: {e}")
         return False

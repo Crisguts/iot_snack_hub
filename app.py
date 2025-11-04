@@ -77,38 +77,40 @@ def check_temperature_thresholds(fridge_data, fridge_id):
     except Exception as e:
         print(f"❌ Error checking temperature threshold for fridge {fridge_id}: {e}")
 # ToDo: Add Login Logic (Parth)
+
 # @app.route('/', methods=['GET', 'POST'])
-# @app.route('/login', methods=['GET', 'POST'])
-# def login():
-#     if request.method == "POST":
-#         username = request.form.get("Username")
-#         password = request.form.get("Password")
-
-#         if username in USERS and USERS[username] == password:
-#             session["username"] = username
-#             flash(f"Welcome, {username}!", "success")
-#             return redirect(url_for("index"))
-#         else:
-#             flash("Invalid username or password", "danger")
-#             return redirect(url_for("login"))
-
-#     # GET request: render login page
-#     return render_template("login.html")
-
-@app.route('/', methods=['GET', 'POST'])
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    """
-    Temporary login: any username/password entered goes through.
-    """
     if request.method == "POST":
-        username = request.form.get("Username", "guest")
-        session["username"] = username  # store in session
-        flash(f"Logged in as {username} (temporary auto-login)", "info")
-        return redirect(url_for("index"))
+        email = request.form.get("Email")
+        password = request.form.get("Password")
+
+        user = db.validate_login(email, password)
+        if user:
+            session["email"] = user.get("email")
+            flash(f"Welcome, {user.get('email')}!", "success")
+            return redirect(url_for("index"))
+        else:
+            flash("Invalid email or password", "danger")
+            return redirect(url_for("login"))
 
     # GET request: render login page
     return render_template("login.html")
+
+# @app.route('/', methods=['GET', 'POST'])
+# @app.route('/login', methods=['GET', 'POST'])
+# def login():
+#     """
+#     Temporary login: any username/password entered goes through.
+#     """
+#     if request.method == "POST":
+#         username = request.form.get("Username", "guest")
+#         session["username"] = username  # store in session
+#         flash(f"Logged in as {username} (temporary auto-login)", "info")
+#         return redirect(url_for("index"))
+
+#     # GET request: render login page
+#     return render_template("login.html")
 
 @app.route("/logout")
 def logout():
@@ -117,6 +119,7 @@ def logout():
     return redirect(url_for("login"))
 
 @app.route('/index')
+
 def index():
 
     # Fetch REAL data from database instead of hardcoded values
@@ -211,6 +214,7 @@ def create_account():
     email = request.form.get("email")          # Make sure your modal has an email field!
     phone_num = request.form.get("phone_num")
     dob = request.form.get("dob")
+    password = request.form.get("password")    # Get password from form
 
     # Basic validation
     if first_name and last_name and email:
@@ -226,15 +230,13 @@ def create_account():
             return redirect(url_for("index"))
         
         # Attempt to add customer to DB
-        if db.add_customer(first_name.strip(), last_name.strip(), email.strip(), dob.strip(), phone_num.strip() if phone_num else None):
+        if db.add_customer(first_name.strip(), last_name.strip(), email.strip(), dob.strip(), phone_num.strip() if phone_num else None, password.strip() if password else "123"):
             flash(f"{first_name} {last_name} added successfully!", "success")
-            gpio.blink("blue")
-        else:
-            flash("Failed to add client", "danger")
-            gpio.blink("red")
+        # else:
+        #     flash("Failed to add client", "danger")
     else:
         flash("Fields cannot be left blank.", "danger")
-        gpio.blink("red")
+        # gpio.blink("red")
 
     # Redirect to index after handling everything
     return redirect(url_for("index"))
@@ -247,6 +249,7 @@ def add():
     phone_num = request.form.get("phone_num")
     email = request.form.get("email")
     dob = request.form.get("dob")
+
 
     if first_name and last_name and email:
             # Regex for name validation
