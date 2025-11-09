@@ -1,6 +1,10 @@
 import re
 from flask import Flask, jsonify, request, render_template, flash, url_for, redirect
 import db
+from rfid_reader import RFIDReader
+
+rfid_reader = RFIDReader(port="/dev/ttyUSB0", baudrate=9600)
+rfid_reader.start()
 
 # Import email system
 try:
@@ -328,6 +332,20 @@ def get_temperature_history(fridge_id):
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
+@app.route("/api/rfid/latest", methods=["GET"])
+def get_latest_rfid():
+    """Return the most recently scanned RFID tag."""
+    if rfid_reader.last_epc:
+        return jsonify({
+            "success": True,
+            "epc": rfid_reader.last_epc
+        })
+    else:
+        return jsonify({
+            "success": False,
+            "message": "No tag scanned yet"
+        })
+        
 # Simple Email Test Route
 @app.route("/api/email/test", methods=["POST"])
 def test_email():
