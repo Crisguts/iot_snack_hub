@@ -3,7 +3,7 @@ from flask import Flask, jsonify, request, render_template, flash, url_for, redi
 import db
 from rfid_reader import RFIDReader
 
-rfid_reader = RFIDReader(port="/dev/ttyUSB0", baudrate=9600)
+rfid_reader = RFIDReader(port="/dev/ttyAMA10", baudrate=9600)
 rfid_reader.start()
 
 # Import email system
@@ -25,6 +25,7 @@ except ImportError:
         from unittest.mock import MagicMock
         gpio = MagicMock()
         gpio.blink = MagicMock()
+
 
 app = Flask(__name__)
 app.secret_key = "Cookies"
