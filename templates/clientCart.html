@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Smart Store</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+</head>
+
+<body class="container-fluid bg-dark text-white" style="margin:0; padding:0;">
+
+  <div class="row vh-100" style="margin: 0;">
+    <!-- Sidebar -->
+    <div class="col-3 d-flex flex-column justify-content-center p-4 bg-dark text-white">
+      <div>
+        <h1 class="mb-2 text-center">Smart Store</h1>
+        <div id="date" class="fw-bold text-center"></div>
+        <div id="clock" class="fw-bold text-center"></div>
+        <a href="" class="Sidebar fw-bold">Stars</a>
+      </div>
+
+      <div class="d-flex flex-column align-items-center link-div" style="gap: 20px;">
+        <a href="{{ url_for('index') }}" class="Sidebar fw-bold">Home</a>
+        <a href="" class="Sidebar fw-bold">Cart</a>
+        
+      </div>
+
+      <div class="d-flex flex-column align-items-center mt-auto">
+        <a id="logout" href="{{ url_for('logout') }}" class="Sidebar fw-bold">Logout</a>
+      </div>
+    </div>
+
+    <!-- Main content -->
+    <div class="col-9 bg-secondary">
+            <div class="w-100 p-4">
+        <!-- Bootstrap Alerts -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+      </div>
+
+      <h2 class="text-white">Cart</h2>
+
+      </div>
+
+      <!-- Cart List -->
+      <div class="customer-list-container">
+        {% if cart %}
+        {% for i in cart %}
+        <!-- Parth Use Cart class instead of Customer use client list as reference  -Ike-->
+        <div class="row align-items-center mb-1 mt-1 border-bottom Customer" style="cursor:pointer;"
+          data-bs-toggle="modal" data-bs-target="#viewClientModal" data-id="{{ i[0] }}" data-image="{{ i[1] }}" data-price="{{ i[2] }}"
+          data-product_name="{{ i[3] }}" data-quantity="{{ i[4]|default('1') }}">
+
+          <div class="col-3">{{ i[1] }}</div>
+          <div class="col-3">{{ i[2] }}</div>
+          <div class="col-4">{{ i[3] }}</div>
+          <div class="col-4">{{ i[4] }}</div>
+          <div class="col-2 d-flex gap-1">
+            <a href="#" class="btn btn-sm btn-danger w-100" data-bs-toggle="modal" data-bs-target="#deleteModal"
+              data-delete-url="/delete/{{ i[0] }}" onclick="event.stopPropagation();">
+              Delete
+            </a>
+          </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="text-center text-light mt-3">No products found.</div>
+        {% endif %}
+      </div>
+
+
+
+      <!-- Pagination Controls -->
+      <nav aria-label="Customer pages">
+        <ul class="pagination justify-content-center mt-3">
+          <!-- Previous Button -->
+          <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('client', page=page-1) }}">Previous</a>
+          </li>
+
+          <!-- Numbered Page Links -->
+          {% for p in range(1, total_pages + 1) %}
+          <li class="page-item {% if p == page %}active{% endif %}">
+            <a class="page-link" href="{{ url_for('client', page=p) }}">{{ p }}</a>
+          </li>
+          {% endfor %}
+
+          <!-- Next Button -->
+          <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('client', page=page+1) }}">Next</a>
+          </li>
+        </ul>
+      </nav>
+
+    </div>
+        <div class="border-0">
+          <h5 ></h5>
+          <a id="confirmPurchaseBtn" href="#" class="btn btn-primary">Confirm Purchase</a>
+    </div>
+      <!-- Delete Confirmation Modal -->
+  <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content bg-dark text-white rounded-3">
+        <div class="modal-header border-0">
+          <h5 class="modal-title" id="deleteModalLabel">Confirm Delete</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          Are you sure you want to delete this product?
+        </div>
+        <div class="modal-footer border-0">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <a id="confirmDeleteBtn" href="#" class="btn btn-danger">Delete</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+      <!-- Scripts -->
+      <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+      <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+
+      <script src="{{ url_for('static', filename='javascript.js') }}"></script>
+
+</body>
+
+</html>
