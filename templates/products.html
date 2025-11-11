@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="{{ current_language }}">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ _('Product Management') }} - {{ _('Smart Store') }}</title>
+    <!-- v2.1 - Fixed scrolling and buttons -->
+    <link rel="stylesheet"
+        href="{{ url_for('static', filename='css/styles.css') }}?v=3">
+    <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+</head>
+<body class="container-fluid bg-dark text-white p-0">
+    <!-- Fixed Language Switcher - Top Right -->
+    <div style="position: fixed; top: 20px; right: 20px; z-index: 9999;">
+        <div class="btn-group btn-group-sm" role="group">
+            <a href="{{ url_for('set_language', language='en') }}"
+                class="btn {{ 'btn-primary' if current_language == 'en' else 'btn-outline-light' }}">EN</a>
+            <a href="{{ url_for('set_language', language='fr') }}"
+                class="btn {{ 'btn-primary' if current_language == 'fr' else 'btn-outline-light' }}">FR</a>
+        </div>
+    </div>
+    <div class="row vh-100 m-0">
+        <!-- Admin Sidebar -->
+        <div
+            class="col-3 d-flex flex-column justify-content-center p-4 bg-dark text-white">
+            <h1 class="mb-2 text-center">{{ _('Smart Store') }}</h1>
+            <div id="date" class="fw-bold text-center"></div>
+            <div id="clock" class="fw-bold text-center mb-4"></div>
+            <div class="d-flex flex-column align-items-center link-div">
+                <a href="{{ url_for('dashboard.dashboard') }}"
+                    class="Sidebar fw-bold mb-2">{{ _('Dashboard') }}</a>
+                <a href="{{ url_for('client.client') }}"
+                    class="Sidebar fw-bold mb-2">{{ _('Clients') }}</a>
+                <a href="{{ url_for('products.products_list') }}"
+                    class="Sidebar fw-bold mb-2">{{ _('Products') }}</a>
+            </div>
+            <div class="d-flex flex-column align-items-center mt-auto">
+                <a href="{{ url_for('auth.logout') }}"
+                    class="Sidebar fw-bold">{{ _('Logout') }}</a>
+            </div>
+        </div>
+        <!-- Main content -->
+        <div class="col-9 bg-secondary overflow-auto p-4">
+            <h2 class="text-white mb-4">{{ _('Product Management') }}</h2>
+            {% if total_products %}
+            <p class="text-light">{{ _('Showing') }} {{ products|length }}
+                {{ _('of') }}
+                {{ total_products }} {{ _('products') }}
+            </p>
+            {% endif %}
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show"
+                role="alert">
+                {{ message }}
+                <button type="button" class="btn-close"
+                    data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+            {% endif %}
+            {% endwith %}
+            <!-- Add Product Button - Above Table -->
+            <div class="d-flex justify-content-end mb-3">
+                <button class="btn btn-success" data-bs-toggle="modal"
+                    data-bs-target="#addProductModal">
+                    + {{ _('Add New Product') }}
+                </button>
+            </div>
+            <div class="table-responsive"
+                style="max-height: 70vh; overflow-y: auto;">
+                <table class="table table-dark table-hover table-sm">
+                    <thead class="sticky-top"
+                        style="background-color: #212529;">
+                        <tr>
+                            <th style="width: 5%;">{{ _('ID') }}</th>
+                            <th style="width: 20%;">{{ _('Name') }}</th>
+                            <th style="width: 10%;">{{ _('Category') }}</th>
+                            <th style="width: 8%;">{{ _('Price') }}</th>
+                            <th style="width: 12%;">{{ _('UPC') }}</th>
+                            <th style="width: 12%;">{{ _('EPC') }}</th>
+                            <th style="width: 8%;">{{ _('Stock') }}</th>
+                            <th style="width: 25%;">{{ _('Actions') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for product in products %}
+                        <tr>
+                            <td>{{ product.product_id }}</td>
+                            <td>{{ product.name }}</td>
+                            <td>{{ product.category }}</td>
+                            <td>${{ "%.2f"|format(product.price) }}</td>
+                            <td><code>{{ product.upc }}</code></td>
+                            <td><code>{{ product.epc[:12] }}...</code></td>
+                            <td>
+                                <span
+                                    class="badge bg-{{ 'success' if product.total_quantity > 10 else 'warning' if product.total_quantity > 0 else 'danger' }}">
+                                    {{ product.total_quantity }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm"
+                                    role="group">
+                                    <button class="btn btn-info"
+                                        onclick="openInventoryModal({{ product.product_id }}, '{{ product.name }}', {{ product.total_quantity or 0 }})">
+                                        {{ _('Inventory') }}
+                                    </button>
+                                    <button class="btn btn-warning"
+                                        onclick="openEditModal({{ product.product_id }}, '{{ product.name }}', '{{ product.category }}', {{ product.price }}, '{{ product.upc }}', '{{ product.epc }}', '{{ product.producer }}', '{{ product.image_url or '' }}')">
+                                        {{ _('Edit') }}
+                                    </button>
+                                    <button class="btn btn-danger"
+                                        onclick="deleteProduct({{ product.product_id }}, '{{ product.name }}')">
+                                        {{ _('Delete') }}
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% if not products %}
+            <div class="text-center text-light mt-5">
+                <h4>{{ _('No products yet') }}</h4>
+                <a href="{{ url_for('products.add_product_page') }}"
+                    class="btn btn-success mt-3">
+                    {{ _('Add Your First Product') }}
+                </a>
+            </div>
+            {% else %}
+            <!-- Pagination Controls -->
+            <nav aria-label="Product pages" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+                        <a class="page-link"
+                            href="{{ url_for('products.products_list', page=page-1) }}">{{ _('Previous') }}</a>
+                    </li>
+                    {% for p in range(1, total_pages + 1) %}
+                    <li class="page-item {% if p == page %}active{% endif %}">
+                        <a class="page-link"
+                            href="{{ url_for('products.products_list', page=p) }}">{{ p }}</a>
+                    </li>
+                    {% endfor %}
+                    <li
+                        class="page-item {% if page >= total_pages %}disabled{% endif %}">
+                        <a class="page-link"
+                            href="{{ url_for('products.products_list', page=page+1) }}">{{ _('Next') }}</a>
+                    </li>
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+    <!-- Add Product Modal -->
+    <div class="modal fade" id="addProductModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content bg-dark text-white">
+                <div class="modal-header">
+                    <h5 class="modal-title">{{ _('Add New Product') }}</h5>
+                    <button type="button" class="btn-close btn-close-white"
+                        data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addProductForm">
+                        <div class="mb-3">
+                            <label class="form-label">{{ _('Product Name') }}
+                                *</label>
+                            <input type="text" class="form-control" name="name"
+                                required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">{{ _('Category') }}
+                                *</label>
+                            <input type="text" class="form-control"
+                                name="category" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">{{ _('Price') }} ($)
+                                *</label>
+                            <input type="number" step="0.01"
+                                class="form-control" name="price" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">{{ _('UPC (Barcode)') }}
+                                *</label>
+                            <input type="text" class="form-control" name="upc"
+                                required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">{{ _('EPC (RFID)') }}
+                                *</label>
+                            <input type="text" class="form-control" name="epc"
+                                required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">{{ _('Producer') }}
+                                *</label>
+                            <input type="text" class="form-control"
+                                name="producer" required>
+                        </div>
+                        <div class="mb-3">
+                            <label
+                                class="form-label">{{ _('Image URL') }}</label>
+                            <input type="text" class="form-control"
+                                name="image_url">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary"
+                        data-bs-dismiss="modal">{{ _('Cancel') }}</button>
+                    <button type="button" class="btn btn-success"
+                        onclick="addProduct()">{{ _('Add Product') }}</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Edit Product Modal -->
+    <div class="modal fade" id="editProductModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content bg-dark text-white">
+                <div class="modal-header">
+                    <h5 class="modal-title">{{ _('Edit Product') }}</h5>
+                    <button type="button" class="btn-close btn-close-white"
+                        data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editProductForm">
+                        <input type="hidden" id="editProductId">
+                        <div class="mb-3">
+                            <label class="form-label">{{ _('Product Name') }}
+                                *</label>
+                            <input type="text" class="form-control"
+                                id="editName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">{{ _('Category') }}
+                                *</label>
+                            <input type="text" class="form-control"
+                                id="editCategory" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">{{ _('Price') }} ($)
+                                *</label>
+                            <input type="number" step="0.01"
+                                class="form-control" id="editPrice" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">{{ _('UPC (Barcode)') }}
+                                *</label>
+                            <input type="text" class="form-control" id="editUpc"
+                                required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">{{ _('EPC (RFID)') }}
+                                *</label>
+                            <input type="text" class="form-control" id="editEpc"
+                                required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">{{ _('Producer') }}
+                                *</label>
+                            <input type="text" class="form-control"
+                                id="editProducer" required>
+                        </div>
+                        <div class="mb-3">
+                            <label
+                                class="form-label">{{ _('Image URL') }}</label>
+                            <input type="text" class="form-control"
+                                id="editImageUrl">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary"
+                        data-bs-dismiss="modal">{{ _('Cancel') }}</button>
+                    <button type="button" class="btn btn-warning"
+                        onclick="updateProduct()">{{ _('Update Product') }}</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Inventory Modal -->
+    <div class="modal fade" id="inventoryModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content bg-dark text-white">
+                <div class="modal-header">
+                    <h5 class="modal-title">{{ _('Manage Inventory') }}</h5>
+                    <button type="button" class="btn-close btn-close-white"
+                        data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="inventoryProductId">
+                    <input type="hidden" id="inventoryCurrentStockValue">
+                    <h6 id="inventoryProductName"></h6>
+                    <p>{{ _('Current Stock:') }} <span
+                            id="inventoryCurrentStock"
+                            class="badge bg-info"></span></p>
+                    <div class="mb-3">
+                        <label
+                            class="form-label">{{ _('Adjust Quantity') }}</label>
+                        <input type="number" class="form-control"
+                            id="inventoryQuantity" value="1" step="1">
+                        <small
+                            class="form-text text-muted">{{ _('Use positive numbers to add stock, negative to subtract, or 0 to set stock to zero') }}</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary"
+                        data-bs-dismiss="modal">{{ _('Cancel') }}</button>
+                    <button type="button" class="btn btn-info"
+                        onclick="adjustInventory()">{{ _('Update Stock') }}</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script
+        src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js">
+    </script>
+    <script src="{{ url_for('static', filename='js/javascript.js') }}?v=2">
+    </script>
+    <script src="{{ url_for('static', filename='js/products.js') }}?v=1">
+    </script>
+</body>
+</html>
+```

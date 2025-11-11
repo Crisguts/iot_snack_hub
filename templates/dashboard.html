@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="{{ current_language }}">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ _('Smart Store Dashboard') }}</title>
+    <link rel="stylesheet"
+        href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+</head>
+<body class="container-fluid bg-dark text-white p-0">
+    <!-- Fixed Language Switcher - Top Right -->
+    <div style="position: fixed; top: 20px; right: 20px; z-index: 9999;">
+        <div class="btn-group btn-group-sm" role="group">
+            <a href="{{ url_for('set_language', language='en') }}"
+                class="btn {{ 'btn-primary' if current_language == 'en' else 'btn-outline-light' }}">EN</a>
+            <a href="{{ url_for('set_language', language='fr') }}"
+                class="btn {{ 'btn-primary' if current_language == 'fr' else 'btn-outline-light' }}">FR</a>
+        </div>
+    </div>
+    <div class="row vh-100 m-0">
+        <!-- Sidebar -->
+        <div
+            class="col-3 d-flex flex-column justify-content-center p-4 bg-dark text-white">
+            <h1 class="mb-2 text-center">{{ _('Smart Store') }}</h1>
+            <div id="date" class="fw-bold text-center"></div>
+            <div id="clock" class="fw-bold text-center mb-4"></div>
+            <div class="d-flex flex-column align-items-center link-div">
+                <a href="{{ url_for('dashboard.dashboard') }}"
+                    class="Sidebar fw-bold mb-2">{{ _('Dashboard') }}</a>
+                <a href="{{ url_for('client.client') }}"
+                    class="Sidebar fw-bold mb-2">{{ _('Clients') }}</a>
+                <a href="{{ url_for('products.products_list') }}"
+                    class="Sidebar fw-bold mb-2">{{ _('Products') }}</a>
+            </div>
+            <div class="d-flex flex-column align-items-center mt-auto">
+                <a id="logout" href="{{ url_for('auth.logout') }}"
+                    class="Sidebar fw-bold">{{ _('Logout') }}</a>
+            </div>
+        </div>
+        <!-- Main content -->
+        <div class="col-9 bg-secondary overflow-auto">
+            <!-- Flash messages -->
+            <div class="w-100 p-4">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show"
+                    role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close"
+                        data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+                {% endif %}
+                {% endwith %}
+            </div>
+            <h2 class="text-white text-center mb-4">{{ _('Fridge Dashboard') }}
+            </h2>
+            <div id="fridge-dash" class="row g-4 justify-content-center">
+                {% for id, fridge in fridge_data.items() %}
+                <div class="col-md-6 fridge-card" id="fridgeCard{{ id }}">
+                    <div
+                        class="card bg-dark border-0 shadow-lg text-white p-4 text-center position-relative">
+                        <h4 class="fw-bold mb-3">{{ _('Refrigerator') }}
+                            {{ id }}</h4>
+                        <img src="{{ url_for('static', filename='images/fridge.svg') }}"
+                            class="d-block mx-auto mb-3" width="200"
+                            height="200">
+                        <!-- Current readings display -->
+                        <div class="mb-3">
+                            <p class="mb-1">
+                                <strong>{{ _('Temperature:') }}</strong> <span
+                                    class="temperature">{{ fridge.temperature }}°C</span>
+                            </p>
+                            <p class="mb-1">
+                                <strong>{{ _('Humidity:') }}</strong> <span
+                                    class="humidity">{{ fridge.humidity }}%</span>
+                            </p>
+                        </div>
+                        <button class="btn btn-primary w-100 mb-2 fw-bold"
+                            data-bs-toggle="modal" data-bs-target="#fridgeModal"
+                            data-fridge="{{ id }}">
+                            {{ _('View Details') }}
+                        </button>
+                        <button class="btn btn-outline-light w-100 mb-3"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#settingsOverlay{{ id }}">
+                            {{ _('Threshold Settings') }}
+                        </button>
+                        <!-- Fan toggle -->
+                        <div
+                            class="d-flex justify-content-center align-items-center mb-3">
+                            <div class="fan-container me-3">
+                                <div class="fan-icon" id="fanIcon{{ id }}">
+                                    <div class="fan-blade"></div>
+                                    <div class="fan-blade"></div>
+                                    <div class="fan-blade"></div>
+                                    <div class="fan-center"></div>
+                                </div>
+                            </div>
+                            <label
+                                class="form-switch d-flex align-items-center">
+                                <input type="checkbox" class="fanToggle"
+                                    data-fridge="{{ id }}"
+                                    {% if fridge.fan_on %}checked{% endif %}>
+                                <i></i>
+                                <span
+                                    class="fw-bold text-white ms-3">{{ _('Fan Status') }}</span>
+                            </label>
+                        </div>
+                        <!-- Overlay settings -->
+                        <div class="card collapse position-absolute top-0 start-0 w-100 h-100 bg-dark bg-opacity-90 p-3 text-white"
+                            id="settingsOverlay{{ id }}"
+                            style="z-index:10; overflow-y:auto;">
+                            <h5 class="fw-bold mb-3">
+                                {{ _('Temperature Threshold (°C)') }}
+                            </h5>
+                            <input type="number" id="threshold{{ id }}"
+                                class="form-control mb-3"
+                                value="{{ fridge.threshold or '' }}"
+                                placeholder="{{ _('Set threshold') }}">
+                            <button
+                                class="btn btn-primary w-100 mb-2 fw-bold">{{ _('Apply') }}</button>
+                            <button class="btn btn-outline-light w-100"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#settingsOverlay{{ id }}">{{ _('Close') }}</button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <!-- Email Test Section -->
+            <div id="email-test" class="container mt-4 email-card">
+                <div class="row justify-content-center">
+                    <div class="col-md-6">
+                        <div
+                            class="card bg-dark border-0 shadow-lg text-white p-4 text-center">
+                            <h5 class="fw-bold mb-3">{{ _('Email Control') }}
+                            </h5>
+                            <button class="btn btn-warning w-100"
+                                id="testEmailBtn">{{ _('Send Test Email') }}</button>
+                            <small
+                                class="text-muted mt-2 d-block">{{ _("Reply 'YES' to the email - fan will turn on automatically!") }}</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Fridge Details Modal -->
+    <div class="modal fade" id="fridgeModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content bg-dark text-white">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title">{{ _('Fridge Details') }}</h5>
+                    <button type="button" class="btn-close btn-close-white"
+                        data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Current Readings (Page 1) -->
+                    <div id="modalPage1">
+                        <div class="row text-center">
+                            <div class="col-md-6 mb-3">
+                                <h5 class="text-secondary">
+                                    {{ _('Current Temperature') }}
+                                </h5>
+                                <canvas id="tempGaugeModal"
+                                    height="100"></canvas>
+                                <h1 id="currentTempModal"
+                                    class="fw-bold display-5 text-danger mt-3">
+                                    --</h1>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <h5 class="text-secondary">
+                                    {{ _('Current Humidity') }}</h5>
+                                <canvas id="humidityGaugeModal"
+                                    height="100"></canvas>
+                                <h1 id="currentHumidityModal"
+                                    class="fw-bold display-5 text-info mt-3">--
+                                </h1>
+                            </div>
+                        </div>
+                        <div class="alert alert-info mt-3 text-center">
+                            <span
+                                class="current-threshold-label">{{ _('Current Threshold:') }}
+                                --°C</span>
+                        </div>
+                        <div class="text-center mt-4">
+                            <button class="btn btn-outline-light"
+                                id="toHistoryBtn">{{ _('View History') }}</button>
+                        </div>
+                    </div>
+                    <!-- Historical Chart (Page 2) -->
+                    <div id="modalPage2" style="display:none;">
+                        <h5 class="text-center mb-3">
+                            {{ _('Temperature & Humidity History') }}</h5>
+                        <canvas id="iotChartModal" height="250"></canvas>
+                        <div class="text-center mt-4">
+                            <button class="btn btn-outline-light"
+                                id="toCurrentBtn">{{ _('Back to Current') }}</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Scripts -->
+    <script
+        src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js">
+    </script>
+    <script
+        src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js">
+    </script>
+    <script id="fridge-data" type="application/json">
+    {{ fridge_data | tojson | safe }}
+    </script>
+    <script id="historical-data" type="application/json">
+    {{ historical_data | tojson | safe }}
+    </script>
+    <script src="{{ url_for('static', filename='js/javascript.js') }}?v=3">
+    </script>
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}?v=3">
+    </script>
+</body>
+</html>

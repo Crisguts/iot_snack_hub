@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="{{ current_language }}">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ _('My Account') }} - {{ _('Smart Store') }}</title>
+    <link rel="stylesheet"
+        href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+</head>
+<body class="container-fluid bg-dark text-white p-0">
+    <!-- Fixed Language Switcher - Top Right -->
+    <div style="position: fixed; top: 20px; right: 20px; z-index: 9999;">
+        <div class="btn-group btn-group-sm" role="group">
+            <a href="{{ url_for('set_language', language='en') }}"
+                class="btn {{ 'btn-primary' if current_language == 'en' else 'btn-outline-light' }}">EN</a>
+            <a href="{{ url_for('set_language', language='fr') }}"
+                class="btn {{ 'btn-primary' if current_language == 'fr' else 'btn-outline-light' }}">FR</a>
+        </div>
+    </div>
+    <div class="row vh-100 m-0">
+        <!-- Sidebar -->
+        <div
+            class="col-3 d-flex flex-column justify-content-center p-4 bg-dark text-white">
+            <h1 class="mb-2 text-center">{{ _('Smart Store') }}</h1>
+            <div id="date" class="fw-bold text-center"></div>
+            <div id="clock" class="fw-bold text-center mb-4"></div>
+            <div class="d-flex flex-column align-items-center link-div">
+                <a href="{{ url_for('store.store_home') }}"
+                    class="Sidebar fw-bold mb-2">{{ _('Shop') }}</a>
+                <a href="{{ url_for('store.checkout') }}"
+                    class="Sidebar fw-bold mb-2">{{ _('Self-Checkout') }}</a>
+                <a href="{{ url_for('store.cart') }}"
+                    class="Sidebar fw-bold mb-2">{{ _('Cart') }}</a>
+                <a href="{{ url_for('store.account') }}"
+                    class="Sidebar fw-bold mb-2">{{ _('My Account') }}</a>
+            </div>
+            <div class="d-flex flex-column align-items-center mt-auto">
+                <a href="{{ url_for('auth.logout') }}"
+                    class="Sidebar fw-bold">{{ _('Logout') }}</a>
+            </div>
+        </div>
+        <!-- Main content -->
+        <div class="col-9 bg-secondary overflow-auto p-4"
+            style="max-height: 100vh;">
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show"
+                role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"
+                    aria-label="Close"></button>
+            </div>
+            {% endfor %}
+            {% endif %}
+            {% endwith %}
+            <h2 class="text-white mb-4">{{ _('My Account') }}</h2>
+            <!-- Account Info -->
+            <div class="card bg-dark text-white mb-4">
+                <div class="card-body">
+                    <h4>{{ _('Account Information') }}</h4>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <p><strong>{{ _('Name:') }}</strong>
+                                {{ customer.first_name }}
+                                {{ customer.last_name }}
+                            </p>
+                            <p><strong>{{ _('Email:') }}</strong>
+                                {{ customer.email }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>{{ _('Membership #:') }}</strong>
+                                {{ customer.membership_number }}
+                            </p>
+                            <p><strong>{{ _('Points:') }}</strong> <span
+                                    class="badge bg-success fs-5">{{ points }}</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Change Password Section -->
+            <div class="card bg-dark text-white mb-4">
+                <div class="card-body">
+                    <div
+                        class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">{{ _('Change Password') }}</h4>
+                        <button class="btn btn-sm btn-outline-light"
+                            type="button" data-bs-toggle="collapse"
+                            data-bs-target="#passwordForm" aria-expanded="false"
+                            aria-controls="passwordForm">
+                            <i class="bi bi-chevron-down"></i>
+                            {{ _('Show Form') }}
+                        </button>
+                    </div>
+                    <div class="collapse mt-3" id="passwordForm">
+                        <form method="POST"
+                            action="{{ url_for('store.change_password') }}"
+                            class="row g-3">
+                            <div class="col-md-4">
+                                <label for="currentPassword"
+                                    class="form-label">{{ _('Current Password') }}</label>
+                                <input type="password" class="form-control"
+                                    id="currentPassword" name="current_password"
+                                    required minlength="6">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="newPassword"
+                                    class="form-label">{{ _('New Password') }}</label>
+                                <input type="password" class="form-control"
+                                    id="newPassword" name="new_password"
+                                    required minlength="6">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="confirmPassword"
+                                    class="form-label">{{ _('Confirm New Password') }}</label>
+                                <input type="password" class="form-control"
+                                    id="confirmPassword" name="confirm_password"
+                                    required minlength="6">
+                            </div>
+                            <div class="col-12">
+                                <button type="submit"
+                                    class="btn btn-warning">{{ _('Update Password') }}</button>
+                                <small
+                                    class="text-muted ms-3">{{ _('Minimum 6 characters') }}</small>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <!-- Purchase History -->
+            <h3 class="text-white mb-3">{{ _('Purchase History') }}</h3>
+            {% if purchases %}
+            <div class="table-responsive">
+                <table class="table table-dark table-hover">
+                    <thead>
+                        <tr>
+                            <th>{{ _('Purchase ID') }}</th>
+                            <th>{{ _('Date') }}</th>
+                            <th>{{ _('Total') }}</th>
+                            <th>{{ _('Points Earned') }}</th>
+                            <th>{{ _('Action') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for purchase in purchases %}
+                        <tr>
+                            <td>#{{ purchase.purchase_id }}</td>
+                            <td>{{ purchase.purchase_date[:10] }}</td>
+                            <td>${{ "%.2f"|format(purchase.total_amount) }}</td>
+                            <td>{{ purchase.points_earned }}</td>
+                            <td>
+                                <a href="{{ url_for('store.view_receipt', purchase_id=purchase.purchase_id) }}"
+                                    class="btn btn-sm btn-primary">{{ _('View Receipt') }}</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center text-light mt-4">
+                <p>{{ _('No purchase history yet') }}</p>
+                <a href="{{ url_for('store.store_home') }}"
+                    class="btn btn-primary">{{ _('Start Shopping') }}</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    <script
+        src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js">
+    </script>
+    <script src="{{ url_for('static', filename='js/javascript.js') }}"></script>
+    <script>
+        // Auto-dismiss alerts after 3 seconds
+        setTimeout(() => {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            });
+        }, 3000);
+        // Toggle password form button text and icon
+        var passwordForm = document.getElementById('passwordForm');
+        if (passwordForm) {
+            passwordForm.addEventListener('show.bs.collapse', function() {
+                var btn = document.querySelector(
+                    '[data-bs-target="#passwordForm"]');
+                btn.innerHTML =
+                    '<i class="bi bi-chevron-up"></i> Hide Form';
+            });
+            passwordForm.addEventListener('hide.bs.collapse', function() {
+                var btn = document.querySelector(
+                    '[data-bs-target="#passwordForm"]');
+                btn.innerHTML =
+                    '<i class="bi bi-chevron-down"></i> Show Form';
+            });
+        }
+    </script>
+</body>
+</html>

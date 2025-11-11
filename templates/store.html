@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="{{ current_language }}">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ _('Shop') }} - {{ _('Smart Store') }}</title>
+    <!-- v3.0 - Fixed scrolling -->
+    <link rel="stylesheet"
+        href="{{ url_for('static', filename='css/styles.css') }}?v=4">
+    <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+</head>
+<body class="container-fluid bg-dark text-white p-0">
+    <!-- Fixed Language Switcher - Top Right -->
+    <div style="position: fixed; top: 20px; right: 20px; z-index: 9999;">
+        <div class="btn-group btn-group-sm" role="group">
+            <a href="{{ url_for('set_language', language='en') }}"
+                class="btn {{ 'btn-primary' if current_language == 'en' else 'btn-outline-light' }}">EN</a>
+            <a href="{{ url_for('set_language', language='fr') }}"
+                class="btn {{ 'btn-primary' if current_language == 'fr' else 'btn-outline-light' }}">FR</a>
+        </div>
+    </div>
+    <div class="row m-0" style="min-height: 100vh;">
+        <!-- Sidebar -->
+        <div class="col-3 d-flex flex-column p-4 bg-dark text-white"
+            style="position: sticky; top: 0; height: 100vh;">
+            <div class="text-center">
+                <h1 class="mb-2">{{ _('Smart Store') }}</h1>
+                <div id="date" class="fw-bold"></div>
+                <div id="clock" class="fw-bold mb-4"></div>
+            </div>
+            <div
+                class="d-flex flex-column align-items-center flex-grow-1 justify-content-center link-div">
+                <a href="{{ url_for('store.store_home') }}"
+                    class="Sidebar fw-bold mb-2">{{ _('Shop') }}</a>
+                <a href="{{ url_for('store.checkout') }}"
+                    class="Sidebar fw-bold mb-2">{{ _('Self-Checkout') }}</a>
+                <a href="{{ url_for('store.cart') }}"
+                    class="Sidebar fw-bold mb-2">
+                    {{ _('Cart') }} <span
+                        class="badge bg-primary">{{ cart_count }}</span>
+                </a>
+                <a href="{{ url_for('store.account') }}"
+                    class="Sidebar fw-bold mb-2">{{ _('My Account') }}</a>
+            </div>
+            <div class="d-flex flex-column align-items-center mt-auto">
+                <a href="{{ url_for('auth.logout') }}"
+                    class="Sidebar fw-bold">{{ _('Logout') }}</a>
+            </div>
+        </div>
+        <!-- Main content -->
+        <div class="col-9 bg-secondary p-4"
+            style="overflow-y: auto; height: 100vh;">
+            <h2 class="text-white text-center mb-4">{{ _('Product Catalog') }}
+            </h2>
+            <div class="row g-4 pb-5">
+                {% for product in products %}
+                <div class="col-md-4">
+                    <div class="card bg-dark text-white h-100">
+                        {% if product.image_url %}
+                        <img src="{{ product.image_url }}" class="card-img-top"
+                            style="height:200px;object-fit:cover;">
+                        {% else %}
+                        <div class="card-img-top bg-secondary d-flex align-items-center justify-content-center"
+                            style="height:200px;">
+                            <span class="text-muted">{{ _('No Image') }}</span>
+                        </div>
+                        {% endif %}
+                        <div class="card-body">
+                            <h5 class="card-title">{{ product.name }}</h5>
+                            <p class="card-text text-muted">
+                                {{ product.category }}
+                            </p>
+                            <p class="card-text">
+                                <strong
+                                    class="text-success">${{ "%.2f"|format(product.price) }}</strong>
+                            </p>
+                            <p class="card-text">
+                                <small class="text-light">
+                                    {{ _('Stock') }}:
+                                    {{ product.total_quantity }}
+                                    {{ _('units') }}
+                                </small>
+                            </p>
+                            <button class="btn btn-primary w-100 add-to-cart"
+                                data-product-id="{{ product.product_id }}"
+                                {% if product.total_quantity < 1 %}disabled{% endif %}>
+                                {% if product.total_quantity < 1 %}{{ _('Out of Stock') }}{% else %}{{ _('Add to Cart') }}{% endif %}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% if not products %}
+            <div class="text-center text-light mt-5">
+                <h4>{{ _('No products available at the moment') }}</h4>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    <script
+        src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js">
+    </script>
+    <script src="{{ url_for('static', filename='js/javascript.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/store.js') }}"></script>
+</body>
+</html>

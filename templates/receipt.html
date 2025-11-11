@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="{{ current_language }}">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ _('Receipt') }} #{{ purchase.purchase_id }} -
+        {{ _('Smart Store') }}</title>
+    <link rel="stylesheet"
+        href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <style>
+        @media print {
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body class="bg-dark text-white p-5">
+    <div class="container">
+        <div class="card bg-dark text-white border-light">
+            <div class="card-body">
+                <h1 class="text-center mb-4">{{ _('Smart Store') }}</h1>
+                <h3 class="text-center mb-4">{{ _('Receipt') }}</h3>
+                <div class="row mb-4">
+                    <div class="col-6">
+                        <p><strong>{{ _('Receipt #:') }}</strong>
+                            {{ purchase.purchase_id }}
+                        </p>
+                        <p><strong>{{ _('Date:') }}</strong>
+                            {{ purchase.purchase_date }}
+                        </p>
+                    </div>
+                    <div class="col-6 text-end">
+                        <p><strong>{{ _('Customer ID:') }}</strong>
+                            {{ purchase.customer_id }}
+                        </p>
+                    </div>
+                </div>
+                <hr class="border-light">
+                <h4 class="mb-3">{{ _('Items Purchased') }}</h4>
+                <table class="table table-dark">
+                    <thead>
+                        <tr>
+                            <th>{{ _('Product') }}</th>
+                            <th>{{ _('Price') }}</th>
+                            <th>{{ _('Qty') }}</th>
+                            <th class="text-end">{{ _('Subtotal') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in items %}
+                        <tr>
+                            <td>{{ item.products.name if item.products else 'Product' }}
+                            </td>
+                            <td>${{ "%.2f"|format(item.price_at_purchase) }}
+                            </td>
+                            <td>{{ item.quantity }}</td>
+                            <td class="text-end">
+                                ${{ "%.2f"|format(item.price_at_purchase * item.quantity) }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr class="border-top border-light">
+                            <td colspan="3" class="text-end">
+                                <strong>{{ _('Total:') }}</strong>
+                            </td>
+                            <td class="text-end">
+                                <strong>${{ "%.2f"|format(purchase.total_amount) }}</strong>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="3" class="text-end">
+                                <strong>{{ _('Points Earned:') }}</strong></td>
+                            <td class="text-end">
+                                <strong>{{ purchase.points_earned }}</strong>
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+                <div class="text-center mt-4">
+                    <p>{{ _('Thank you for shopping at Smart Store!') }}</p>
+                </div>
+                <div class="text-center mt-4 no-print">
+                    <button class="btn btn-primary me-2"
+                        onclick="window.print()">{{ _('Print Receipt') }}</button>
+                    <a href="{{ url_for('store.account') }}"
+                        class="btn btn-secondary">{{ _('Back to Account') }}</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script
+        src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js">
+    </script>
+</body>
+</html>

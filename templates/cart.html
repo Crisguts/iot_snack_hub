@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="{{ current_language }}">
+<head>
+    <title>{{ _('Cart') }} - {{ _('Smart Store') }}</title>
+    <link rel="stylesheet"
+        href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+</head>
+<body class="container-fluid bg-dark text-white" style="margin:0; padding:0;">
+    <!-- Fixed Language Switcher - Top Right -->
+    <div style="position: fixed; top: 20px; right: 20px; z-index: 9999;">
+        <div class="btn-group btn-group-sm" role="group">
+            <a href="{{ url_for('set_language', language='en') }}"
+                class="btn {{ 'btn-primary' if current_language == 'en' else 'btn-outline-light' }}">EN</a>
+            <a href="{{ url_for('set_language', language='fr') }}"
+                class="btn {{ 'btn-primary' if current_language == 'fr' else 'btn-outline-light' }}">FR</a>
+        </div>
+    </div>
+    <div class="row vh-100" style="margin: 0;">
+        <!-- Sidebar -->
+        <div
+            class="col-3 d-flex flex-column justify-content-center p-4 bg-dark text-white">
+            <div>
+                <h1 class="mb-2 text-center">{{ _('Smart Store') }}</h1>
+                <div id="date" class="fw-bold text-center"></div>
+                <div id="clock" class="fw-bold text-center"></div>
+            </div>
+            <div class="d-flex flex-column align-items-center link-div"
+                style="gap: 20px;">
+                <a href="{{ url_for('store.store_home') }}"
+                    class="Sidebar fw-bold">{{ _('Shop') }}</a>
+                <a href="{{ url_for('store.checkout') }}"
+                    class="Sidebar fw-bold">{{ _('Self-Checkout') }}</a>
+                <a href="{{ url_for('store.cart') }}"
+                    class="Sidebar fw-bold">{{ _('Cart') }}</a>
+                <a href="{{ url_for('store.account') }}"
+                    class="Sidebar fw-bold">{{ _('My Account') }}</a>
+            </div>
+            <div class="d-flex flex-column align-items-center mt-auto">
+                <a id="logout" href="{{ url_for('auth.logout') }}"
+                    class="Sidebar fw-bold">{{ _('Logout') }}</a>
+            </div>
+        </div>
+        <!-- Main content -->
+        <div class="col-9 bg-secondary overflow-auto">
+            <div class="w-100 p-4">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show"
+                    role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close"
+                        data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+                {% endif %}
+                {% endwith %}
+            </div>
+            <h2 class="text-white px-4">{{ _('Shopping Cart') }}</h2>
+            <!-- Cart List -->
+            <div class="customer-list-container px-4">
+                <div class="row fw-bold border-bottom pb-2 mb-2">
+                    <div class="col-4">{{ _('Product') }}</div>
+                    <div class="col-2">{{ _('Price') }}</div>
+                    <div class="col-2">{{ _('Quantity') }}</div>
+                    <div class="col-2">{{ _('Subtotal') }}</div>
+                    <div class="col-2">{{ _('Action') }}</div>
+                </div>
+                {% if cart %}
+                {% for item in cart %}
+                <div class="row align-items-center mb-2 border-bottom pb-2 Customer"
+                    data-product-id="{{ item.product_id }}">
+                    <div class="col-4">
+                        {% if item.image_url %}
+                        <img src="{{ item.image_url }}"
+                            style="width:50px;height:50px;object-fit:cover;margin-right:10px;">
+                        {% endif %}
+                        <span>{{ item.name }}</span>
+                    </div>
+                    <div class="col-2">${{ "%.2f"|format(item.price) }}</div>
+                    <div class="col-2">{{ item.quantity }}</div>
+                    <div class="col-2">
+                        ${{ "%.2f"|format(item.price * item.quantity) }}</div>
+                    <div class="col-2 d-flex gap-1">
+                        <button class="btn btn-sm btn-danger w-100 remove-item"
+                            data-product-id="{{ item.product_id }}">
+                            {{ _('Delete') }}
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="text-center text-light mt-3">
+                    {{ _('Your cart is empty') }}
+                </div>
+                {% endif %}
+            </div>
+            <!-- Total and Actions -->
+            <div class="border-top mt-4 pt-3 px-4">
+                <div class="row">
+                    <div class="col-8 text-end">
+                        <h4>{{ _('Total') }}:</h4>
+                        <p class="text-light">{{ _('Points to earn') }}:
+                            {{ points }}</p>
+                    </div>
+                    <div class="col-4">
+                        <h4 class="text-success"
+                            style="text-shadow: 2px 2px 4px rgba(0,0,0,0.8);">
+                            ${{ "%.2f"|format(total) }}
+                        </h4>
+                    </div>
+                </div>
+                <div class="text-end">
+                    <a href="{{ url_for('store.store_home') }}"
+                        class="btn btn-outline-light me-2">{{ _('Continue Shopping') }}</a>
+                    <a href="{{ url_for('store.checkout') }}"
+                        class="btn btn-secondary me-2"
+                        {% if not cart %}style="opacity:0.5; pointer-events:none;"
+                        {% endif %}>
+                        ← {{ _('Back to Scanning') }}
+                    </a>
+                    <button id="completePaymentBtn"
+                        class="btn btn-success btn-lg"
+                        {% if not cart %}disabled{% endif %}>
+                        {{ _('Complete Payment') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Payment Success Modal -->
+    <div class="modal fade" id="paymentSuccessModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-dark text-white">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title">{{ _('Payment Complete!') }}</h5>
+                </div>
+                <div class="modal-body text-center">
+                    <div class="mb-3">
+                        <i class="text-success" style="font-size:4rem;">✓</i>
+                    </div>
+                    <p id="paymentMessage"></p>
+                    <p>{{ _('Receipt has been emailed to you.') }}</p>
+                </div>
+                <div class="modal-footer border-0">
+                    <a href="{{ url_for('store.store_home') }}"
+                        class="btn btn-primary">{{ _('Continue Shopping') }}</a>
+                    <a href="{{ url_for('store.account') }}"
+                        class="btn btn-outline-light">{{ _('View Receipt') }}</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Scripts -->
+    <script
+        src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js">
+    </script>
+    <script src="{{ url_for('static', filename='js/javascript.js') }}"></script>
+    <script>
+        // Complete Payment
+        document.getElementById('completePaymentBtn')?.addEventListener('click',
+            async function() {
+                if (!confirm('Complete payment and finalize purchase?'))
+                    return;
+                this.disabled = true;
+                this.textContent = 'Processing...';
+                try {
+                    const response = await fetch(
+                        '/store/api/purchase', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                    const data = await response.json();
+                    if (data.success) {
+                        document.getElementById('paymentMessage')
+                            .textContent =
+                            `Purchase complete! You earned ${data.points_earned} points.`;
+                        const modal = new bootstrap.Modal(document
+                            .getElementById('paymentSuccessModal'));
+                        modal.show();
+                    } else {
+                        alert('Payment failed: ' + (data.error ||
+                            'Unknown error'));
+                        this.disabled = false;
+                        this.textContent = 'Complete Payment';
+                    }
+                } catch (error) {
+                    console.error(error);
+                    alert('Network error during payment');
+                    this.disabled = false;
+                    this.textContent = 'Complete Payment';
+                }
+            });
+        // Remove item from cart
+        document.querySelectorAll('.remove-item').forEach(btn => {
+            btn.addEventListener('click', async function() {
+                const productId = this.dataset.productId;
+                try {
+                    const response = await fetch(
+                        '/store/api/cart/remove', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                product_id: parseInt(
+                                    productId
+                                )
+                            })
+                        });
+                    if (response.ok) {
+                        location.reload();
+                    }
+                } catch (error) {
+                    console.error('Remove error:', error);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
