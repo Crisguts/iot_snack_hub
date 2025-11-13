@@ -2,7 +2,7 @@
 # Handles app initialization, blueprint registration, and root routes
 from flask import Flask, render_template, redirect, url_for, session, request
 import os
-from flask_babel import Babel, gettext
+from flask_babel import Babel
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -61,6 +61,7 @@ from blueprints.dashboard.routes import dashboard_bp
 from blueprints.dashboard.mqtt_handler import mqtt_api
 from blueprints.store.routes import store_bp
 from blueprints.products.routes import products_bp
+from blueprints.payments.routes import payments_bp
 
 app.register_blueprint(auth_bp)
 app.register_blueprint(client_bp)
@@ -68,6 +69,7 @@ app.register_blueprint(dashboard_bp)
 app.register_blueprint(mqtt_api)
 app.register_blueprint(store_bp)
 app.register_blueprint(products_bp)
+app.register_blueprint(payments_bp)
 
 # Root routes
 @app.route("/")

@@ -46,7 +46,6 @@ _thread = None
 _running = threading.Event()
 
 
-# ---------- Helpers: read cache ----------
 def get_latest_readings():
     """Return a shallow copy of latest_readings (safe to call from other threads)."""
     with _latest_lock:
@@ -74,7 +73,6 @@ def get_historical(fridge_id, limit=100):
         return []
 
 
-# ---------- Internal: DB save ----------
 def _save_to_db(fridge_id, temperature, humidity):
     """Insert reading to Supabase. Returns True on likely success, False otherwise."""
     try:
@@ -105,7 +103,6 @@ def _save_to_db(fridge_id, temperature, humidity):
         return False
 
 
-# ---------- Internal: check threshold & send email ----------
 def _check_threshold_and_alert(fridge_id, temperature):
     """
     Query refrigerators table for threshold and send email alert if exceeded.
@@ -155,7 +152,6 @@ def _check_threshold_and_alert(fridge_id, temperature):
         print("mqtt_client: threshold check error:", e)
 
 
-# ---------- MQTT callbacks ----------
 def _on_connect(client, userdata, flags, rc):
     if rc == 0:
         print("mqtt_client connected to broker")
@@ -214,7 +210,6 @@ def _on_message(client, userdata, msg):
         print("mqtt_client: unexpected error handling message:", e)
 
 
-# ---------- Start / stop helpers ----------
 def start_client(loop_forever=False):
     """
     Start the MQTT client in the current thread.
@@ -274,6 +269,6 @@ def start_in_thread():
     print("mqtt_client: background thread started")
 
 
-# ---------- module-level safety: start automatically if env requests it ----------
+# Module initialization: start MQTT if configured
 if os.getenv("MQTT_AUTO_START", "false").lower() in ("1", "true", "yes"):
     start_in_thread()

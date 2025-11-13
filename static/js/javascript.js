@@ -1,6 +1,5 @@
 /* ========== App-level helpers & DOM ready ========== */
 (function () {
-    // small helper to safely query
     const $ = (sel, ctx = document) => ctx.querySelector(sel);
     const $$ = (sel, ctx = document) => Array.from(ctx.querySelectorAll(sel));
 
@@ -214,10 +213,6 @@
             }
         });
     })();
-
-    /* ========== Polling / fan / email signals (lightweight) ========== */
-    // NOTE: Fan toggle logic removed from this file - it's handled in dashboard.js
-    // to avoid duplicate event listeners causing multiple POST requests
 
     /* ========== Optional realtime refresh code (keeps client page responsive) ========== */
     (function initRealtimeRefresh() {

@@ -147,7 +147,7 @@ def manage_inventory(product_id):
     
     return redirect(url_for('products.manage_inventory', product_id=product_id))
 
-# --- API Endpoints ---
+
 @products_bp.route('/api/search', methods=['GET'])
 def api_search_products():
     """Search products by name, UPC, or EPC."""

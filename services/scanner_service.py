@@ -1,18 +1,21 @@
 # services/scanner_service.py
 """
-Scanner service for USB barcode scanner and RFID reader
-Supports mock mode for development without hardware
+Scanner service for USB barcode scanner and RFID reader.
+- USB barcode scanners work as keyboard input (no special config needed)
+- RFID readers connect via serial port
+- Mock mode available for development without hardware
 """
 import os
 import threading
 import time
 import queue
 import logging
+import glob
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Mock mode if no hardware
+# Mock mode if no hardware detected
 MOCK_MODE = os.getenv("SCANNER_MOCK_MODE", "True").lower() == "true"
 
 class ScannerService:
@@ -21,10 +24,29 @@ class ScannerService:
         self.running = False
         self.thread = None
         
-        # RFID settings
-        self.rfid_port = os.getenv("RFID_PORT", "/dev/ttyAMA10")
+        # RFID settings - will auto-detect if not specified
+        self.rfid_port = os.getenv("RFID_PORT", None)
         self.rfid_baud = int(os.getenv("RFID_BAUD", 9600))
         self.rfid_connection = None
+        
+    def _detect_rfid_port(self):
+        """Auto-detect RFID reader serial port."""
+        # Common serial port patterns
+        patterns = [
+            '/dev/ttyUSB*',  # Linux USB serial
+            '/dev/ttyACM*',  # Linux ACM serial
+            '/dev/ttyAMA*',  # Raspberry Pi serial
+            '/dev/cu.usb*',  # macOS USB serial
+        ]
+        
+        for pattern in patterns:
+            ports = glob.glob(pattern)
+            if ports:
+                logger.info(f"Detected potential RFID port: {ports[0]}")
+                return ports[0]
+        
+        logger.warning("No RFID serial port detected")
+        return None
         
     def start(self):
         """Start scanner listener in background thread."""
@@ -35,13 +57,24 @@ class ScannerService:
         self.running = True
         
         if not MOCK_MODE:
-            # Real hardware mode
-            self.thread = threading.Thread(target=self._listen_rfid, daemon=True)
-            self.thread.start()
-            logger.info("✅ Scanner service started (RFID mode)")
+            # Auto-detect RFID port if not specified
+            if not self.rfid_port:
+                self.rfid_port = self._detect_rfid_port()
+            
+            if self.rfid_port:
+                # Real hardware mode - start RFID listener
+                self.thread = threading.Thread(target=self._listen_rfid, daemon=True)
+                self.thread.start()
+                logger.info(f"✅ Scanner service started (RFID on {self.rfid_port})")
+                logger.info("💡 USB barcode scanners work automatically as keyboard input")
+            else:
+                # No RFID detected - USB barcode only
+                logger.info("✅ Scanner service started (USB barcode only)")
+                logger.info("⚠️  No RFID reader detected. Set RFID_PORT env var if you have one.")
         else:
             # Mock mode for development
             logger.info("⚠️ Scanner service started (MOCK mode)")
+            logger.info("💡 Set SCANNER_MOCK_MODE=False to use real hardware")
     
     def stop(self):
         """Stop scanner service."""

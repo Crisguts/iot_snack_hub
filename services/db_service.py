@@ -280,7 +280,6 @@ def delete_product(product_id):
         raise  # Re-raise the exception so the caller can handle it
 
 
-# --- INVENTORY MANAGEMENT ---
 def add_inventory_reception(product_id, quantity, date_received=None):
     """Record stock reception and update product inventory."""
     try:
@@ -350,6 +349,16 @@ def get_customer_by_email(email):
         return None
 
 
+def get_customer_by_id(customer_id):
+    """Get customer by ID."""
+    try:
+        response = supabase.table("customers").select("*").eq("customer_id", customer_id).execute()
+        return response.data[0] if response.data else None
+    except Exception as e:
+        print(f"Error fetching customer by ID: {e}")
+        return None
+
+
 def get_customer_by_membership(membership_number):
     """Get customer by membership number."""
     try:
@@ -376,12 +385,20 @@ def update_customer_points(customer_id, points_to_add):
 
 
 # Purchase and receipt functions
-def create_purchase(customer_id, total_amount, points_earned, items):
-    """Create purchase record with items and update inventory."""
+def create_purchase(customer_id, total_amount, points_earned, items, points_redeemed=0):
+    """Create purchase record with items and update inventory.
+    
+    Args:
+        customer_id: Customer ID (can be None for guest purchases)
+        total_amount: Total purchase amount after any discounts
+        points_earned: Points to award (0 for guests)
+        items: List of purchase items
+        points_redeemed: Points customer redeemed for discount (deducted from their account)
+    """
     try:
         # Create purchase record
         purchase_data = {
-            "customer_id": customer_id,
+            "customer_id": customer_id,  # Can be None for guests
             "total_amount": float(total_amount),
             "points_earned": points_earned,
             "purchase_date": datetime.now().isoformat()
@@ -408,8 +425,14 @@ def create_purchase(customer_id, total_amount, points_earned, items):
                 new_qty = max(0, product.get("total_quantity", 0) - item["quantity"])
                 update_product(item["product_id"], total_quantity=new_qty)
         
-        # Add points to customer
-        update_customer_points(customer_id, points_earned)
+        # Handle customer points (only if customer_id provided)
+        if customer_id:
+            # Deduct redeemed points first
+            if points_redeemed > 0:
+                update_customer_points(customer_id, -points_redeemed)
+            # Add earned points
+            if points_earned > 0:
+                update_customer_points(customer_id, points_earned)
         
         return purchase_id
     except Exception as e:
@@ -445,3 +468,69 @@ def get_purchase_details(purchase_id):
     except Exception as e:
         print(f"Error fetching purchase details: {e}")
         return None
+
+
+def get_all_purchases_paginated(limit, offset, search=None):
+    """Fetch all purchases with customer info (admin view) - paginated."""
+    try:
+        # Fetch all purchases with customer info
+        response = supabase.table("purchases").select("*, customers(customer_id, first_name, last_name, email, membership_number)").order("purchase_date", desc=True).execute()
+        all_purchases = response.data or []
+        
+        # Apply search filter if provided
+        if search:
+            search_lower = search.lower()
+            filtered = [
+                p for p in all_purchases
+                if (search_lower in str(p.get('purchase_id', '')) or
+                    (p.get('customers') and (
+                        search_lower in p['customers'].get('first_name', '').lower() or
+                        search_lower in p['customers'].get('last_name', '').lower() or
+                        search_lower in p['customers'].get('email', '').lower() or
+                        search_lower in p['customers'].get('membership_number', '').lower()
+                    )))
+            ]
+        else:
+            filtered = all_purchases
+        
+        # Apply pagination
+        return filtered[offset:offset + limit]
+    except Exception as e:
+        print(f"Error fetching all purchases: {e}")
+        return []
+
+
+def get_purchases_count(search=None):
+    """Get total count of purchases for pagination."""
+    try:
+        response = supabase.table("purchases").select("*, customers(first_name, last_name, email, membership_number)").execute()
+        all_purchases = response.data or []
+        
+        if search:
+            search_lower = search.lower()
+            filtered = [
+                p for p in all_purchases
+                if (search_lower in str(p.get('purchase_id', '')) or
+                    (p.get('customers') and (
+                        search_lower in p['customers'].get('first_name', '').lower() or
+                        search_lower in p['customers'].get('last_name', '').lower() or
+                        search_lower in p['customers'].get('email', '').lower() or
+                        search_lower in p['customers'].get('membership_number', '').lower()
+                    )))
+            ]
+            return len(filtered)
+        
+        return len(all_purchases)
+    except Exception as e:
+        print(f"Error counting purchases: {e}")
+        return 0
+
+
+def get_customer_purchases_with_details(customer_id):
+    """Get all purchases for a specific customer with full details (for admin modal)."""
+    try:
+        response = supabase.table("purchases").select("*").eq("customer_id", customer_id).order("purchase_date", desc=True).execute()
+        return response.data or []
+    except Exception as e:
+        print(f"Error fetching customer purchases: {e}")
+        return []

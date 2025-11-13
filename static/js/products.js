@@ -1,7 +1,5 @@
 // Products page - Admin product management with modals
-// Handles add, edit, delete, and inventory management
 
-// Show notification helper
 function showNotification(message, type = 'success') {
     const alertDiv = document.createElement('div');
     alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
@@ -109,7 +107,6 @@ async function deleteProduct(id, name) {
 
 // Open inventory modal
 function openInventoryModal(id, name, currentStock) {
-    console.log('Opening inventory modal - ID:', id, 'Name:', name, 'Current Stock:', currentStock);
     document.getElementById('inventoryProductId').value = id;
     document.getElementById('inventoryProductName').textContent = name;
     document.getElementById('inventoryCurrentStock').textContent = currentStock;
@@ -124,17 +121,13 @@ async function adjustInventory() {
     const quantity = parseInt(document.getElementById('inventoryQuantity').value);
     const currentStock = parseInt(document.getElementById('inventoryCurrentStockValue').value);
 
-    console.log('Adjust inventory - ID:', id, 'Quantity:', quantity, 'Current Stock:', currentStock);
-
     if (isNaN(quantity)) {
         alert('Please enter a valid number');
         return;
     }
 
-    // If quantity is 0, we're setting stock to 0 (subtract all current stock)
+    // If quantity is 0, set stock to 0 by subtracting all current stock
     const adjustAmount = quantity === 0 ? -currentStock : quantity;
-
-    console.log('Adjust amount:', adjustAmount, 'New stock will be:', currentStock + adjustAmount);
 
     // Check if subtracting would result in negative stock
     const newStock = currentStock + adjustAmount;
@@ -151,7 +144,6 @@ async function adjustInventory() {
         });
 
         const result = await response.json();
-        console.log('Server response:', result);
 
         if (response.ok && result.success) {
             bootstrap.Modal.getInstance(document.getElementById('inventoryModal')).hide();
@@ -165,11 +157,58 @@ async function adjustInventory() {
             }
             setTimeout(() => location.reload(), 1000);
         } else {
-            console.error('Error from server:', result.error);
             alert(result.error || 'Error updating inventory');
         }
     } catch (error) {
-        console.error('Fetch error:', error);
         alert('Error updating inventory: ' + error);
     }
 }
+
+// Event listeners for action buttons (replaces inline onclick to avoid linter errors)
+document.addEventListener('DOMContentLoaded', function () {
+    // Inventory buttons
+    document.querySelectorAll('.inventory-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const id = parseInt(this.dataset.productId);
+            const name = this.dataset.productName;
+            const stock = parseInt(this.dataset.totalQuantity);
+            openInventoryModal(id, name, stock);
+        });
+    });
+
+    // Edit buttons
+    document.querySelectorAll('.edit-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const id = parseInt(this.dataset.productId);
+            const name = this.dataset.productName;
+            const category = this.dataset.category;
+            const price = parseFloat(this.dataset.price);
+            const upc = this.dataset.upc;
+            const epc = this.dataset.epc;
+            const producer = this.dataset.producer;
+            const imageUrl = this.dataset.imageUrl;
+            openEditModal(id, name, category, price, upc, epc, producer, imageUrl);
+        });
+    });
+
+    // Delete buttons
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const id = parseInt(this.dataset.productId);
+            const name = this.dataset.productName;
+            deleteProduct(id, name);
+        });
+    });
+
+    // Update Product button in Edit Modal
+    const updateProductBtn = document.getElementById('updateProductBtn');
+    if (updateProductBtn) {
+        updateProductBtn.addEventListener('click', updateProduct);
+    }
+
+    // Update Stock button in Inventory Modal
+    const updateStockBtn = document.getElementById('updateStockBtn');
+    if (updateStockBtn) {
+        updateStockBtn.addEventListener('click', adjustInventory);
+    }
+});

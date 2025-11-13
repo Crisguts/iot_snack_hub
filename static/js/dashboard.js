@@ -47,7 +47,7 @@ if (window.dashboardInitialized) {
                     updateFanAnimation(id, data.fan_states[id] || false);
                 });
             }
-        }).catch(err => console.error("Error fetching fan states:", err));
+        }).catch(() => { });
     }
     initializeFanToggles();
 
@@ -59,22 +59,17 @@ if (window.dashboardInitialized) {
         const id = parseInt(toggle.getAttribute("data-fridge"));
         const newState = toggle.checked;
 
-        console.log(`Fan toggle change event - fridge ${id}, new state: ${newState}`);
-
-        // Prevent multiple simultaneous toggles for the SAME fridge
+        // Prevent multiple simultaneous toggles for the same fridge
         if (fanTogglesInProgress.has(id)) {
-            console.log("Toggle already in progress, reverting");
-            toggle.checked = !newState; // Revert the visual change
+            toggle.checked = !newState;
             return;
         }
 
         fanTogglesInProgress.add(id);
         toggle.disabled = true;
 
-        console.log(`Sending POST to /dashboard/fan/${id}`);
         fetch(`/dashboard/fan/${id}`, { method: "POST", headers: { "Content-Type": "application/json" } })
             .then(res => res.json()).then(data => {
-                console.log("Fan toggle response:", data);
                 if (data.success) {
                     toggle.checked = data.fan_state;
                     updateFanAnimation(id, data.fan_state);
@@ -83,7 +78,6 @@ if (window.dashboardInitialized) {
                     alert("Failed to toggle fan: " + (data.error || "Unknown error"));
                 }
             }).catch(err => {
-                console.error("Fan toggle error:", err);
                 toggle.checked = !newState;
                 alert("Network error: " + err.message);
             }).finally(() => {
@@ -125,7 +119,7 @@ if (window.dashboardInitialized) {
                 if (toggle) { toggle.checked = true; updateFanAnimation(id, true); }
                 showNotification(`Fan activated for Fridge ${id} via email reply!`, "success");
             }
-        }).catch(err => console.error("Error checking email signals:", err));
+        }).catch(() => { });
     }
     setInterval(checkEmailSignals, 10000);
     setTimeout(checkEmailSignals, 2000);
@@ -154,46 +148,28 @@ if (window.dashboardInitialized) {
     const historicalDataEl = document.getElementById("historical-data");
     let fridgeData = {}, historicalData = {};
 
-    console.log("Raw fridge data text:", fridgeDataEl ? fridgeDataEl.textContent : null);
-    console.log("Raw history data text:", historicalDataEl ? historicalDataEl.textContent : null);
-
     if (fridgeDataEl) {
         try {
             fridgeData = JSON.parse(fridgeDataEl.textContent);
-            console.log("Fridge Data loaded:", fridgeData);
-            console.log("Fridge Data type:", typeof fridgeData);
-            console.log("Fridge Data keys:", Object.keys(fridgeData));
         } catch (e) {
-            console.error("Error parsing fridge data:", e);
+            fridgeData = {};
         }
     }
     if (historicalDataEl) {
         try {
             historicalData = JSON.parse(historicalDataEl.textContent);
-            console.log("Historical Data loaded:", historicalData);
         } catch (e) {
-            console.error("Error parsing historical data:", e);
+            historicalData = {};
         }
     }
 
     if (fridgeModal) {
         fridgeModal.addEventListener("show.bs.modal", event => {
             const button = event.relatedTarget;
-            if (!button) {
-                console.warn("No relatedTarget on modal event");
-                return;
-            }
-            const fridgeId = button.getAttribute("data-fridge");
-            if (!fridgeId) {
-                console.warn("No data-fridge attribute found");
-                return;
-            }
+            if (!button) return;
 
-            console.log("Opening modal for fridge:", fridgeId);
-            console.log("All fridge data keys:", Object.keys(fridgeData));
-            console.log("Fridge data for", fridgeId, ":", fridgeData[fridgeId]);
-            console.log("Fridge data for (as number)", parseInt(fridgeId), ":", fridgeData[parseInt(fridgeId)]);
-            console.log("History data:", historicalData[fridgeId]);
+            const fridgeId = button.getAttribute("data-fridge");
+            if (!fridgeId) return;
 
             fridgeModal.setAttribute("data-current-fridge", fridgeId);
 
@@ -207,13 +183,7 @@ if (window.dashboardInitialized) {
             const data = fridgeData[parseInt(fridgeId)] || fridgeData[fridgeId];
             const history = historicalData[parseInt(fridgeId)] || historicalData[fridgeId];
 
-            if (!data) {
-                console.error("No data found for fridge", fridgeId);
-                return;
-            }
-            if (!history) {
-                console.error("No history found for fridge", fridgeId);
-            }
+            if (!data) return;
 
             const thresholdLabel = fridgeModal.querySelector(".current-threshold-label");
             if (thresholdLabel) {
@@ -324,7 +294,6 @@ if (window.dashboardInitialized) {
                         if (fanToggle && !fanToggle.disabled && !fanTogglesInProgress.has(parseInt(fridgeId))) {
                             const serverState = entry.fan_on || false;
                             if (fanToggle.checked !== serverState) {
-                                console.log(`Syncing fan ${fridgeId} toggle from server: ${serverState}`);
                                 fanToggle.checked = serverState;
                                 updateFanAnimation(fridgeId, serverState);
                             }
@@ -343,7 +312,7 @@ if (window.dashboardInitialized) {
                         }
                     }
                 }
-            } catch (err) { console.error("Error refreshing fridge data:", err); }
+            } catch (err) { }
         }
         setInterval(refreshFridgeData, 3000);
         refreshFridgeData();

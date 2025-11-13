@@ -59,9 +59,12 @@
                 {{ _('Get Started - Create Account') }}
             </a>
             <a href="{{ url_for('auth.login') }}"
-                class="btn btn-outline-light btn-lg">
+                class="btn btn-outline-light btn-lg me-3">
                 {{ _('Customer Login') }}
             </a>
+            <button id="guestModeBtn" class="btn btn-outline-info btn-lg">
+                {{ _('Continue as Guest') }}
+            </button>
         </div>
         {% endif %}
     </div>
@@ -84,6 +87,26 @@
                     });
             });
         }, 3000);
+        // Guest mode button
+        document.getElementById('guestModeBtn')?.addEventListener('click',
+        async function() {
+                try {
+                    const response = await fetch(
+                        '/store/api/guest/start', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                    const data = await response.json();
+                    if (data.success) {
+                        window.location.href = '/store/home';
+                    }
+                } catch (error) {
+                    console.error('Error starting guest mode:', error);
+                    alert('Failed to start guest mode');
+                }
+            });
     </script>
 </body>
 </html>

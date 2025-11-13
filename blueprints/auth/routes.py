@@ -56,9 +56,15 @@ def login():
 
 @auth_bp.route('/logout')
 def logout():
-    """Clear session and log user out."""
+    """Clear session and log user out. Preserves guest mode if active."""
     username = session.get('first_name', 'User')
+    was_guest = session.get('guest_mode', False)
     session.clear()
+    
+    # Restore guest mode if they were a guest
+    if was_guest:
+        session['guest_mode'] = True
+    
     flash(f'Goodbye, {username}! You have been logged out.', 'info')
     return redirect(url_for('home'))
 

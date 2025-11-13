@@ -145,3 +145,20 @@ def delete(customer_id):
         flash(f'Error deleting customer: {str(e)}', 'danger')
     
     return redirect(url_for('client.client'))
+
+@client_bp.route('/payments/<int:customer_id>')
+def get_customer_payments(customer_id):
+    """API endpoint to fetch all payments for a specific customer."""
+    try:
+        from services.db_service import get_customer_purchases_with_details
+        
+        payments = get_customer_purchases_with_details(customer_id)
+        return jsonify({
+            'success': True,
+            'payments': payments
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500

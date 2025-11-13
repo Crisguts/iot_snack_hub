@@ -13,18 +13,15 @@ except ImportError:
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# --- Hardware setup ---
-# LED + Buzzer Pins
+# Hardware pin assignments
 BLUE_LED_PIN = 21
 RED_LED_PIN = 20
 BUZZER_PIN = 16
-
-# Motor pins
 ENABLE_PIN = 22
 MOTOR_FORWARD_PIN = 17
 MOTOR_BACKWARD_PIN = 27
 
-# --- Initialize Components ---
+# Initialize GPIO components
 try:
     blue_led = LED(BLUE_LED_PIN)
     red_led = LED(RED_LED_PIN)
@@ -36,7 +33,7 @@ except Exception as e:
 
 fan_states = {1: False, 2: False}
 
-# --- LED / Buzzer alert ---
+
 def blink(led_color: str, times: int = 3, delay: float = 0.3):
     try:
         led = blue_led if led_color == "blue" else red_led
@@ -56,7 +53,7 @@ def blink(led_color: str, times: int = 3, delay: float = 0.3):
     except Exception as e:
         logger.error(f"Error in blink: {e}")
 
-# --- Fan / Motor control ---
+
 def turn_fan_on(fridge_id=1):
     try:
         if fridge_id not in fan_states:

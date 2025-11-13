@@ -32,6 +32,8 @@
                     class="Sidebar fw-bold mb-2">{{ _('Clients') }}</a>
                 <a href="{{ url_for('products.products_list') }}"
                     class="Sidebar fw-bold mb-2">{{ _('Products') }}</a>
+                <a href="{{ url_for('payments.payments_list') }}"
+                    class="Sidebar fw-bold mb-2">{{ _('Payments') }}</a>
             </div>
             <div class="d-flex flex-column align-items-center mt-auto">
                 <a id="logout" href="{{ url_for('auth.logout') }}"
@@ -63,7 +65,8 @@
                     <div
                         class="card bg-dark border-0 shadow-lg text-white p-4 text-center position-relative">
                         <h4 class="fw-bold mb-3">{{ _('Refrigerator') }}
-                            {{ id }}</h4>
+                            {{ id }}
+                        </h4>
                         <img src="{{ url_for('static', filename='images/fridge.svg') }}"
                             class="d-block mx-auto mb-3" width="200"
                             height="200">
@@ -173,7 +176,8 @@
                             </div>
                             <div class="col-md-6 mb-3">
                                 <h5 class="text-secondary">
-                                    {{ _('Current Humidity') }}</h5>
+                                    {{ _('Current Humidity') }}
+                                </h5>
                                 <canvas id="humidityGaugeModal"
                                     height="100"></canvas>
                                 <h1 id="currentHumidityModal"
@@ -194,7 +198,8 @@
                     <!-- Historical Chart (Page 2) -->
                     <div id="modalPage2" style="display:none;">
                         <h5 class="text-center mb-3">
-                            {{ _('Temperature & Humidity History') }}</h5>
+                            {{ _('Temperature & Humidity History') }}
+                        </h5>
                         <canvas id="iotChartModal" height="250"></canvas>
                         <div class="text-center mt-4">
                             <button class="btn btn-outline-light"

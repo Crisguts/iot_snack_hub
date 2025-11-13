@@ -696,3 +696,159 @@ msgid_plural "{len_type} values are required, but {len_value} were given."
 msgstr[0] ""
 msgstr[1] ""
 
+
+# Payments Management
+msgid "Payments"
+msgstr "Paiements"
+
+msgid "Payments Management"
+msgstr "Gestion des Paiements"
+
+msgid "Show All Payments"
+msgstr "Afficher Tous les Paiements"
+
+msgid "Payment History"
+msgstr "Historique des Paiements"
+
+msgid "No payments found for this customer"
+msgstr "Aucun paiement trouvé pour ce client"
+
+msgid "Purchase ID"
+msgstr "ID d'achat"
+
+msgid "Membership #"
+msgstr "Nº de membre"
+
+msgid "Search by Purchase ID, Customer Name, Email, or Membership Number..."
+msgstr "Rechercher par ID d'achat, nom du client, email ou numéro de membre..."
+
+msgid "No payments found"
+msgstr "Aucun paiement trouvé"
+
+msgid "No purchases have been made yet"
+msgstr "Aucun achat n'a encore été effectué"
+
+msgid "View All Payments"
+msgstr "Voir Tous les Paiements"
+
+msgid "Print"
+msgstr "Imprimer"
+
+msgid "Customer Name"
+msgstr "Nom du Client"
+
+msgid "View Receipt"
+msgstr "Voir le Reçu"
+
+# Guest Checkout & Point Redemption
+msgid "Continue as Guest"
+msgstr "Continuer en tant qu'invité"
+
+msgid "Are you a member?"
+msgstr "Êtes-vous membre?"
+
+msgid "Members earn points and can redeem them for discounts!"
+msgstr "Les membres gagnent des points et peuvent les échanger contre des réductions!"
+
+msgid "New Customer?"
+msgstr "Nouveau client?"
+
+msgid "Create an account to earn and redeem points"
+msgstr "Créez un compte pour gagner et échanger des points"
+
+msgid "Sign Up Now"
+msgstr "S'inscrire maintenant"
+
+msgid "Existing Member?"
+msgstr "Membre existant?"
+
+msgid "Enter your membership number to earn points"
+msgstr "Entrez votre numéro de membre pour gagner des points"
+
+msgid "Membership #"
+msgstr "Nº de membre"
+
+msgid "Verify"
+msgstr "Vérifier"
+
+msgid "Continue as Guest (No Points)"
+msgstr "Continuer en tant qu'invité (sans points)"
+
+msgid "Use Your Points"
+msgstr "Utilisez vos points"
+
+msgid "Available Points"
+msgstr "Points disponibles"
+
+msgid "Worth"
+msgstr "Valeur"
+
+msgid "Points to Redeem"
+msgstr "Points à échanger"
+
+msgid "points"
+msgstr "points"
+
+msgid "Apply Discount"
+msgstr "Appliquer la réduction"
+
+msgid "Clear"
+msgstr "Effacer"
+
+msgid "Subtotal"
+msgstr "Sous-total"
+
+msgid "Point Discount"
+msgstr "Réduction de points"
+
+msgid "Points to earn"
+msgstr "Points à gagner"
+
+msgid "Minimum 100 points required"
+msgstr "Minimum 100 points requis"
+
+msgid "You only have"
+msgstr "Vous n'avez que"
+
+msgid "Points must be in multiples of 100"
+msgstr "Les points doivent être des multiples de 100"
+
+msgid "Discount cannot exceed cart total"
+msgstr "La réduction ne peut pas dépasser le total du panier"
+
+msgid "Applied"
+msgstr "Appliqué"
+
+msgid "discount"
+msgstr "réduction"
+
+msgid "Complete payment and finalize purchase?"
+msgstr "Finaliser le paiement et la commande?"
+
+msgid "Processing..."
+msgstr "Traitement en cours..."
+
+msgid "Payment failed"
+msgstr "Paiement échoué"
+
+msgid "Unknown error"
+msgstr "Erreur inconnue"
+
+msgid "Network error during payment"
+msgstr "Erreur réseau lors du paiement"
+
+msgid "Please enter your membership number"
+msgstr "Veuillez entrer votre numéro de membre"
+
+msgid "Verifying..."
+msgstr "Vérification..."
+
+msgid "Invalid membership number"
+msgstr "Numéro de membre invalide"
+
+msgid "Verification failed. Please try again."
+msgstr "Vérification échouée. Veuillez réessayer."
+
+msgid "Back to Home"
+msgstr "Retour à l'accueil"
+

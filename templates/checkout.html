@@ -32,12 +32,16 @@
                     class="Sidebar fw-bold">{{ _('Shop') }}</a>
                 <a href="{{ url_for('store.cart') }}"
                     class="Sidebar fw-bold">{{ _('Cart') }}</a>
+                {% if session.get('role') == 'customer' %}
                 <a href="{{ url_for('store.account') }}"
                     class="Sidebar fw-bold">{{ _('My Account') }}</a>
+                {% endif %}
             </div>
             <div class="d-flex flex-column align-items-center mt-auto">
+                {% if session.get('role') == 'customer' or session.get('guest_mode') %}
                 <a id="logout" href="{{ url_for('auth.logout') }}"
                     class="Sidebar fw-bold">{{ _('Logout') }}</a>
+                {% endif %}
             </div>
         </div>
         <!-- Main content -->
@@ -56,46 +60,24 @@
                 {% endfor %}
                 {% endif %}
                 {% endwith %}
-                <div
-                    class="d-flex justify-content-between align-items-center mb-4">
-                    <h2 class="text-white mb-0">{{ _('Self-Checkout') }}</h2>
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox"
-                            id="testModeToggle">
-                        <label class="form-check-label text-white"
-                            for="testModeToggle">
-                            <strong>{{ _('Test Mode (Show Inputs)') }}</strong>
-                        </label>
+                <h2 class="text-white text-center mb-3">{{ _('Self-Checkout') }}
+                </h2>
+                <!-- Scanner Status Badge (centered) -->
+                <div class="text-center mb-4">
+                    <div class="badge bg-success fs-5 py-2 px-4"
+                        id="scannerStatus"
+                        data-ready-text="{{ _('Ready to Scan') }}"
+                        data-scanning-text="{{ _('Scanning...') }}">
+                        <i class="bi bi-upc-scan"></i> {{ _('Ready to Scan') }}
                     </div>
                 </div>
-                <!-- Scanner Input Area -->
-                <div class="card bg-dark text-white mb-4 p-4" id="scannerInputs"
-                    style="display: none;">
-                    <h4 class="mb-3">{{ _('Scan Products') }}</h4>
-                    <div class="row g-3">
-                        <div class="col-md-5">
-                            <label
-                                class="form-label">{{ _('Barcode Scanner (USB)') }}</label>
-                            <input type="text" id="barcodeInput"
-                                class="form-control form-control-lg"
-                                placeholder="{{ _('Focus here and scan barcode') }}"
-                                autofocus>
-                            <small
-                                class="text-muted">{{ _('Scanner will input here automatically') }}</small>
-                        </div>
-                        <div class="col-md-5">
-                            <label
-                                class="form-label">{{ _('RFID Tag') }}</label>
-                            <input type="text" id="rfidInput"
-                                class="form-control form-control-lg"
-                                placeholder="{{ _('Enter RFID tag') }}">
-                        </div>
-                        <div class="col-md-2 d-flex align-items-end">
-                            <button class="btn btn-primary btn-lg w-100"
-                                onclick="scanRFID()">{{ _('Scan RFID') }}</button>
-                        </div>
-                    </div>
-                </div>
+                <!-- Hidden Scanner Inputs (invisible but functional) -->
+                <input type="text" id="barcodeInput"
+                    style="position: absolute; left: -9999px; opacity: 0;"
+                    autocomplete="off" tabindex="-1">
+                <input type="text" id="rfidInput"
+                    style="position: absolute; left: -9999px; opacity: 0;"
+                    autocomplete="off" tabindex="-1">
                 <!-- Cart List -->
                 <h4 class="text-white mb-3">{{ _('Scanned Items') }}</h4>
                 <div class="row fw-bold border-bottom pb-2 mb-2">
@@ -199,20 +181,5 @@
     </script>
     <script src="{{ url_for('static', filename='js/javascript.js') }}"></script>
     <script src="{{ url_for('static', filename='js/checkout.js') }}"></script>
-    <script>
-        // Test Mode Toggle
-        document.getElementById('testModeToggle').addEventListener('change',
-            function() {
-                const scannerInputs = document.getElementById(
-                    'scannerInputs');
-                if (this.checked) {
-                    scannerInputs.style.display = 'block';
-                } else {
-                    scannerInputs.style.display = 'none';
-                    // Keep barcode input focused for scanner even when hidden
-                    document.getElementById('barcodeInput').focus();
-                }
-            });
-    </script>
 </body>
 </html>

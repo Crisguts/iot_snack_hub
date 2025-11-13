@@ -1,25 +1,23 @@
-# Smart Store IoT Project
-**Phase 2 & 3 Complete Implementation**
+# Smart Store IoT
 
-IoT-enabled smart store system with self-checkout, RFID/barcode scanning, temperature monitoring, and customer management.
+Automated store with self-checkout, RFID/barcode scanning, temperature monitoring, and customer management.
 
-## 🌟 Features
+## Features
 
-### Phase 2 - IoT Dashboard & Monitoring
-- **Real-time Temperature Monitoring**: DHT11 sensors on 2 ESP32 boards
-- **MQTT Communication**: Mosquitto broker on Raspberry Pi
-- **Alert System**: Email alerts when temperature exceeds threshold
-- **Remote Fan Control**: Email-reply activation ("YES" to turn on fan)
-- **Visual Dashboard**: Real-time gauges and historical charts
+**IoT Monitoring**
+- Temperature sensors (ESP32 + DHT11)
+- MQTT communication
+- Email alerts with fan control
+- Real-time dashboard with charts
 
-### Phase 3 - Smart Self-Checkout
-- **Product Management**: Full CRUD with UPC/EPC codes
-- **Inventory Tracking**: Reception history and stock levels
-- **Barcode Scanner**: USB scanner integration (acts as keyboard)
-- **RFID Reader**: CF600 UHF desktop reader support
-- **Self-Checkout**: Real-time cart updates, payment simulation
-- **Customer Accounts**: Membership numbers, points system, purchase history
-- **Receipt Generation**: Automatic email receipts with point tracking
+**Self-Checkout**
+- USB barcode + RFID scanner support
+- Auto-detect scanner ports
+- Invisible scanner inputs (kiosk mode)
+- Guest checkout or member login
+- Point system (100 pts = $1)
+- Multi-language (EN/FR)
+- Email receipts
 
 ## 🗂️ Project Structure
 
@@ -136,25 +134,22 @@ CREATE TABLE temperature_readings (
 );
 ```
 
-## 🚀 Setup Instructions
+## Setup
 
-### 1. Prerequisites
+**Prerequisites**
 - Python 3.8+
-- Raspberry Pi (for hardware)
-- Supabase account (free tier)
-- Gmail account (for email alerts)
+- Supabase account (free)
+- Gmail for alerts (optional)
 
-### 2. Clone & Install
+**Install**
 ```bash
-cd /path/to/project
 python3 -m venv venv
-source venv/bin/activate  # Mac/Linux
-# venv\Scripts\activate   # Windows
+source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 3. Environment Variables
-Create `.env` file in project root:
+**Configure**
+Create `.env` file:
 
 ```env
 # Flask
@@ -174,132 +169,65 @@ MQTT_BROKER=localhost
 MQTT_PORT=1883
 MQTT_TOPICS=Frig1,Frig2
 
-# Scanner (for development on Mac)
+# Scanner (for development - set to False to enable real hardware)
 SCANNER_MOCK_MODE=True
 MOCK_MODE=True
 
-# RFID (when hardware connected)
-RFID_PORT=/dev/ttyAMA10
-RFID_BAUD=9600
+# RFID (optional - auto-detects if not set)
+# RFID_PORT=/dev/ttyUSB0
+# RFID_BAUD=9600
 ```
 
-### 4. Database Setup
-1. Create Supabase project at https://supabase.com
-2. Run SQL schema above in Supabase SQL Editor
-3. Insert initial fridge data:
+**Database**
+1. Create project at supabase.com
+2. Run SQL schema (see below)
+3. Add test data:
 ```sql
 INSERT INTO refrigerators (fridge_id, name, temperature_threshold) VALUES
-(1, 'Refrigerator 1', 5.0),
-(2, 'Refrigerator 2', 6.0);
+(1, 'Refrigerator 1', 5.0), (2, 'Refrigerator 2', 6.0);
 ```
 
-### 5. Run Application
+**Run**
 ```bash
 python3 app.py
+# Visit http://localhost:8080
 ```
 
-Visit: http://localhost:8080
+## Login
 
-## 👥 User Accounts
+**Admin**: `admin` / `admin123` (dashboard, products, customers)  
+**Customer**: Sign up at `/auth/signup` (store, cart, purchase history)
 
-### Admin Access
-- **Username**: `admin`
-- **Password**: `admin123`
-- **Access**: Dashboard, Product Management, Customer Management
+## How to Use
 
-### Customer Access
-- **Create Account**: Sign up at http://localhost:8080/auth/signup
-- **Access**: Store, Cart, Self-Checkout, Purchase History
+**Checkout**
+1. Go to `/store/checkout`
+2. Scan products (USB barcode or RFID) - inputs are invisible
+3. Status badge shows "Ready to Scan" / "Scanning..."
+4. Complete purchase (login, guest, or member verification)
 
-## 🛒 Self-Checkout Flow
+**Points**
+- 100 points = $1 discount
+- Redeem in multiples of 100
+- Must be logged in or enter membership #
 
-1. **Login** as customer
-2. Navigate to **Self-Checkout**
-3. **Scan products**:
-   - USB Barcode Scanner: Focus on "Barcode Input" field, scan automatically
-   - RFID: Enter tag manually or use CF600 reader
-4. Products appear in cart real-time
-5. **Review cart**, adjust quantities
-6. **Confirm Purchase** → Receipt emailed + points added
+## Hardware
 
-## 🔧 Hardware Integration
+**ESP32**: Flash with DHT11 sensor code, publish to MQTT (`Frig1`, `Frig2`)  
+**Pi GPIO**: LEDs (pins 21, 20), Buzzer (16), Motor (17, 27, 22)  
+**Scanners**: USB barcode (plug & play), RFID auto-detects serial port
 
-### ESP32 Setup (Phase 2)
-- Flash ESP32 with DHT11 sensor code
-- Connect to WiFi
-- Publish to MQTT topics: `Frig1`, `Frig2`
-- JSON payload: `{"temperature": 4.5, "humidity": 45}`
+**Mock Mode**: Set `SCANNER_MOCK_MODE=True` and `MOCK_MODE=True` in `.env` to test without hardware
 
-### Raspberry Pi GPIO
-- **Blue LED** (Pin 21): Customer add success
-- **Red LED** (Pin 20): Errors
-- **Buzzer** (Pin 16): Alert sound
-- **Motor** (Pins 17, 27, 22): Fan control
+## Routes
 
-### Scanners
-- **USB Barcode**: Plug & play (acts as keyboard)
-- **RFID CF600**: Connect via serial (`/dev/ttyAMA10`)
+**Customer**: `/store/`, `/store/cart`, `/store/checkout`, `/store/account`  
+**Admin**: `/dashboard/`, `/products/`, `/client/`
 
-## 🧪 Testing Without Hardware
+## Troubleshooting
 
-App runs in **mock mode** on Mac/Windows:
-- GPIO operations print to console
-- MQTT uses mock data
-- Scanner accepts manual input
-- All features testable via UI
-
-## 📝 Key Endpoints
-
-### Customer Routes
-- `GET /store/` - Product catalog
-- `GET /store/cart` - View cart
-- `GET /store/checkout` - Self-checkout
-- `POST /store/api/scan` - Scan product
-- `POST /store/api/purchase` - Complete purchase
-- `GET /store/account` - Purchase history
-
-### Admin Routes
-- `GET /dashboard/` - Fridge monitoring
-- `GET /products/` - Product management
-- `GET /client/` - Customer management
-- `POST /fan/<id>` - Toggle fan
-
-## 🎨 Customization
-
-### Add Sample Products
-```python
-# In services/db_service.py or Supabase SQL Editor
-INSERT INTO products (name, category, price, upc, epc, producer, total_quantity) VALUES
-('Coca-Cola 500ml', 'Beverage', 1.99, '012000001234', 'E200001234567890ABCD', 'Coca-Cola Company', 50),
-('Snickers Bar', 'Snack', 1.49, '028400005678', 'E200009876543210DCBA', 'Mars Inc.', 100);
-```
-
-### Customize Points System
-Edit `blueprints/store/routes.py`:
-```python
-def calculate_points(total_amount):
-    return int(total_amount * 2)  # 2 points per dollar
-```
-
-## 🐛 Troubleshooting
-
-### Database Connection Failed
-- Check `SUPABASE_URL` and `SUPABASE_KEY` in `.env`
-- Verify network connection to Supabase
-
-### Email Alerts Not Working
-- Enable "Less secure app access" or use App Password for Gmail
-- Check `EMAIL_APP_PASSWORD` format
-
-### MQTT Not Connecting
-- Ensure Mosquitto broker running: `sudo systemctl status mosquitto`
-- Check `MQTT_BROKER` IP address
-
-### Scanner Not Working
-- USB Barcode: Focus input field, check USB connection
-- RFID: Verify serial port in `RFID_PORT`
-
-## 📄 License
-
-Educational project for IoT Course (420-521-VA) at Vanier College.
+- **No DB connection**: Check `.env` Supabase credentials
+- **Email alerts fail**: Use Gmail App Password, not regular password
+- **MQTT won't connect**: Check Mosquitto is running (`sudo systemctl status mosquitto`)
+- **Scanner not working**: Set `SCANNER_MOCK_MODE=False`, check USB connection
 

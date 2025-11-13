@@ -1,4 +1,3 @@
-# services/email_service.py
 import smtplib
 import ssl
 import imaplib
@@ -38,7 +37,6 @@ class EmailService:
         self.monitoring = False
         self.monitor_thread = None
 
-    # --- Sending emails ---
     def _send_email(self, subject, body):
         try:
             email_msg = f"Subject: {subject}\nTo: {self.recipient}\nFrom: {self.login}\n\n{body}"

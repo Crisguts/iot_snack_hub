@@ -160,6 +160,8 @@
                     class="Sidebar fw-bold">{{ _('Clients') }}</a>
                 <a href="{{ url_for('products.products_list') }}"
                     class="Sidebar fw-bold">{{ _('Products') }}</a>
+                <a href="{{ url_for('payments.payments_list') }}"
+                    class="Sidebar fw-bold">{{ _('Payments') }}</a>
             </div>
             <div class="d-flex flex-column align-items-center mt-auto">
                 <a id="logout" href="{{ url_for('auth.logout') }}"
@@ -271,7 +273,8 @@
                 <form method="POST" id="editClientForm">
                     <div class="modal-header border-0">
                         <h5 class="modal-title" id="editClientModalLabel">
-                            {{ _('Edit Client') }}</h5>
+                            {{ _('Edit Client') }}
+                        </h5>
                         <button type="button" class="btn-close btn-close-white"
                             data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
@@ -344,7 +347,8 @@
             <div class="modal-content bg-dark text-white rounded-3">
                 <div class="modal-header border-0">
                     <h5 class="modal-title" id="addCustomerModalLabel">
-                        {{ _('Add Client') }}</h5>
+                        {{ _('Add Client') }}
+                    </h5>
                     <button type="button" class="btn-close btn-close-white"
                         data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
@@ -406,19 +410,22 @@
             <div class="modal-content bg-dark text-white rounded-3">
                 <div class="modal-header border-0">
                     <h5 class="modal-title" id="viewClientModalLabel">
-                        {{ _('Client Details') }}</h5>
+                        {{ _('Client Details') }}
+                    </h5>
                     <button type="button" class="btn-close btn-close-white"
                         data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <div class="row mb-2">
                         <div class="col-5 fw-bold text-end">
-                            {{ _('First Name:') }}</div>
+                            {{ _('First Name:') }}
+                        </div>
                         <div class="col-7" id="modalFirstName"></div>
                     </div>
                     <div class="row mb-2">
                         <div class="col-5 fw-bold text-end">
-                            {{ _('Last Name:') }}</div>
+                            {{ _('Last Name:') }}
+                        </div>
                         <div class="col-7" id="modalLastName"></div>
                     </div>
                     <div class="row mb-2">
@@ -428,17 +435,20 @@
                     </div>
                     <div class="row mb-2">
                         <div class="col-5 fw-bold text-end">
-                            {{ _('Phone Number:') }}</div>
+                            {{ _('Phone Number:') }}
+                        </div>
                         <div class="col-7" id="modalPhone"></div>
                     </div>
                     <div class="row mb-2">
                         <div class="col-5 fw-bold text-end">
-                            {{ _('Date of Birth:') }}</div>
+                            {{ _('Date of Birth:') }}
+                        </div>
                         <div class="col-7" id="modalDob"></div>
                     </div>
                     <div class="row mb-2">
                         <div class="col-5 fw-bold text-end">
-                            {{ _('Membership #:') }}</div>
+                            {{ _('Membership #:') }}
+                        </div>
                         <div class="col-7" id="modalMembership"></div>
                     </div>
                     <div class="row mb-2">
@@ -448,18 +458,74 @@
                     </div>
                     <div class="row mb-2">
                         <div class="col-5 fw-bold text-end">
-                            {{ _('Member Since:') }}</div>
+                            {{ _('Member Since:') }}
+                        </div>
                         <div class="col-7" id="modalDate"></div>
                     </div>
                 </div>
                 <div class="modal-footer border-0 justify-content-center">
+                    <input type="hidden" id="modalCustomerId">
                     <button type="button" class="btn btn-secondary"
                         data-bs-dismiss="modal">{{ _('Close') }}</button>
+                    <button type="button" class="btn btn-success"
+                        onclick="showClientPayments()">
+                        {{ _('Show All Payments') }}
+                    </button>
                     <button type="button" class="btn btn-info"
                         id="editFromViewBtn" data-bs-toggle="modal"
                         data-bs-target="#editClientModal">
                         {{ _('Edit Client') }}
                     </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Client Payments Modal -->
+    <div class="modal fade" id="clientPaymentsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content bg-dark text-white">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title">{{ _('Payment History') }} - <span
+                            id="paymentsClientName"></span></h5>
+                    <button type="button" class="btn-close btn-close-white"
+                        data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="paymentsLoader" class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span
+                                class="visually-hidden">{{ _('Loading...') }}</span>
+                        </div>
+                    </div>
+                    <div id="paymentsContent" style="display:none;">
+                        <div class="table-responsive">
+                            <table
+                                class="table table-dark table-sm table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>{{ _('Purchase ID') }}</th>
+                                        <th>{{ _('Date') }}</th>
+                                        <th>{{ _('Total') }}</th>
+                                        <th>{{ _('Points') }}</th>
+                                        <th>{{ _('Actions') }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="paymentsTableBody">
+                                    <!-- Payments will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div id="noPaymentsMessage"
+                            class="text-center text-muted py-4"
+                            style="display:none;">
+                            <p>{{ _('No payments found for this customer') }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-secondary"
+                        data-bs-dismiss="modal">{{ _('Close') }}</button>
                 </div>
             </div>
         </div>
@@ -486,7 +552,8 @@
         onclick="hideSearchOverlay(event)">
         <div class="search-box" onclick="event.stopPropagation()">
             <h4 class="text-dark mb-3"><i class="bi bi-search"></i>
-                {{ _('Search Clients') }}</h4>
+                {{ _('Search Clients') }}
+            </h4>
             <form method="GET" action="{{ url_for('client.client') }}">
                 <div class="mb-3">
                     <input type="text" name="search"
@@ -539,6 +606,86 @@
                 fabButton.classList.remove('active');
             }
         });
+        // Capture customer ID when viewing client details
+        const viewClientModal = document.getElementById('viewClientModal');
+        if (viewClientModal) {
+            viewClientModal.addEventListener('show.bs.modal', function(event) {
+                const button = event.relatedTarget;
+                if (button) {
+                    const customerId = button.getAttribute('data-id');
+                    document.getElementById('modalCustomerId').value =
+                        customerId;
+                }
+            });
+        }
+        // Show client payments in modal
+        async function showClientPayments() {
+            const customerId = document.getElementById('modalCustomerId')
+                .value;
+            const firstName = document.getElementById('modalFirstName')
+                .textContent;
+            const lastName = document.getElementById('modalLastName')
+                .textContent;
+            // Set client name in modal title
+            document.getElementById('paymentsClientName').textContent =
+                `${firstName} ${lastName}`;
+            // Hide view modal and show payments modal
+            const viewModal = bootstrap.Modal.getInstance(document
+                .getElementById('viewClientModal'));
+            viewModal.hide();
+            const paymentsModal = new bootstrap.Modal(document
+                .getElementById('clientPaymentsModal'));
+            paymentsModal.show();
+            // Show loader
+            document.getElementById('paymentsLoader').style.display =
+                'block';
+            document.getElementById('paymentsContent').style.display =
+                'none';
+            try {
+                const response = await fetch(
+                    `/client/payments/${customerId}`);
+                const data = await response.json();
+                // Hide loader
+                document.getElementById('paymentsLoader').style.display =
+                    'none';
+                document.getElementById('paymentsContent').style.display =
+                    'block';
+                const tbody = document.getElementById('paymentsTableBody');
+                const noPaymentsMsg = document.getElementById(
+                    'noPaymentsMessage');
+                tbody.innerHTML = '';
+                if (data.success && data.payments && data.payments.length >
+                    0) {
+                    noPaymentsMsg.style.display = 'none';
+                    data.payments.forEach(payment => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>#${payment.purchase_id}</td>
+                            <td>${payment.purchase_date.substring(0, 10)}</td>
+                            <td><strong>$${parseFloat(payment.total_amount).toFixed(2)}</strong></td>
+                            <td><span class="badge bg-success">${payment.points_earned}</span></td>
+                            <td>
+                                <a href="/store/receipt/${payment.purchase_id}" 
+                                   class="btn btn-sm btn-primary" target="_blank">
+                                    View Receipt
+                                </a>
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                } else {
+                    noPaymentsMsg.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error fetching payments:', error);
+                document.getElementById('paymentsLoader').style.display =
+                    'none';
+                document.getElementById('paymentsContent').style.display =
+                    'block';
+                document.getElementById('noPaymentsMessage').style.display =
+                    'block';
+            }
+        }
     </script>
 </body>
 </html>

@@ -1,36 +1,47 @@
 // Self-checkout scanner functionality
-// Handles barcode/RFID scanning, cart management, and purchase completion
+// Handles barcode/RFID scanning invisibly in background
 
-// Listen for barcode scanner input (USB scanner acts as keyboard)
+// Auto-detect and handle both barcode and RFID scans
 document.getElementById('barcodeInput').addEventListener('keypress', function (e) {
     if (e.key === 'Enter') {
         e.preventDefault();
-        const barcode = this.value.trim();
-        if (barcode) {
-            // Validate barcode format (8-14 digits for UPC/EAN)
-            if (!/^\d{8,14}$/.test(barcode)) {
-                showNotification('Invalid barcode format. Please try again.', 'danger');
-                this.value = '';
-                return;
+        const code = this.value.trim();
+        if (code) {
+            // Visual feedback: scanning
+            const statusBadge = document.getElementById('scannerStatus');
+            if (statusBadge) {
+                statusBadge.className = 'badge bg-warning fs-5 py-2 px-4';
+                const scanningText = statusBadge.dataset.scanningText || 'Scanning...';
+                statusBadge.innerHTML = `<i class="bi bi-upc-scan"></i> ${scanningText}`;
             }
-            scanProduct(barcode, 'barcode');
+
+            // Auto-detect type: RFID (alphanumeric, 8-24 chars) vs Barcode (digits only)
+            const isRFID = /^[A-Fa-f0-9]{8,24}$/.test(code) && !/^\d+$/.test(code);
+
+            if (isRFID) {
+                scanProduct(code, 'rfid');
+            } else if (/^\d{8,14}$/.test(code)) {
+                scanProduct(code, 'barcode');
+            } else {
+                showNotification('Invalid scan format. Please try again.', 'danger');
+                resetScannerStatus();
+            }
+
             this.value = '';
+            // Re-focus to keep capturing scans
+            setTimeout(() => this.focus(), 100);
         }
     }
 });
 
-// Manual RFID scan handler
-function scanRFID() {
-    const rfid = document.getElementById('rfidInput').value.trim();
-    if (rfid) {
-        // Validate RFID format (typically alphanumeric, 8-24 characters)
-        if (!/^[A-Fa-f0-9]{8,24}$/.test(rfid)) {
-            showNotification('Invalid RFID format. Please try again.', 'danger');
-            document.getElementById('rfidInput').value = '';
-            return;
-        }
-        scanProduct(rfid, 'rfid');
-        document.getElementById('rfidInput').value = '';
+function resetScannerStatus() {
+    const statusBadge = document.getElementById('scannerStatus');
+    if (statusBadge) {
+        setTimeout(() => {
+            statusBadge.className = 'badge bg-success fs-5 py-2 px-4';
+            const readyText = statusBadge.dataset.readyText || 'Ready to Scan';
+            statusBadge.innerHTML = `<i class="bi bi-upc-scan"></i> ${readyText}`;
+        }, 800);
     }
 }
 
@@ -49,16 +60,19 @@ async function scanProduct(code, type) {
             showNotification(`${data.product.name} added to cart!`, 'success');
             addItemToCartUI(data.product);
             updateCartTotals();
+            resetScannerStatus();
 
-            // Re-focus barcode input
-            document.getElementById('barcodeInput').focus();
+            // Re-focus to keep capturing scans
+            setTimeout(() => document.getElementById('barcodeInput').focus(), 100);
         } else {
             // Show specific error message
             showNotification(data.error || 'Product not found in database', 'danger');
+            resetScannerStatus();
         }
     } catch (error) {
         console.error('Scan error:', error);
         showNotification('Error scanning product', 'danger');
+        resetScannerStatus();
     }
 }
 
@@ -274,19 +288,38 @@ if (confirmBtn) {
 
 // Initialize: attach listeners to existing items
 document.addEventListener('DOMContentLoaded', function () {
+    const barcodeInput = document.getElementById('barcodeInput');
+
     // Attach listeners to existing cart items
     document.querySelectorAll('#cartItems > .row[data-product-id]').forEach(row => {
         attachItemListeners(row);
     });
 
-    // Focus barcode input
-    document.getElementById('barcodeInput').focus();
+    // Initial focus on invisible barcode input
+    barcodeInput.focus();
+
+    // Keep focus on barcode input for continuous scanning
+    // Re-focus when user clicks anywhere on page (except form inputs)
+    document.addEventListener('click', function (e) {
+        // Don't steal focus from quantity inputs or buttons
+        if (!e.target.matches('input[type="number"], button, a, select, textarea')) {
+            setTimeout(() => barcodeInput.focus(), 10);
+        }
+    });
+
+    // Re-focus after any blur (except when clicking inputs/buttons)
+    barcodeInput.addEventListener('blur', function () {
+        setTimeout(() => {
+            if (!document.activeElement.matches('input[type="number"], button, select, textarea')) {
+                barcodeInput.focus();
+            }
+        }, 100);
+    });
 
     // Initial totals calculation
     updateCartTotals();
 });
 
-// Helper: show notification
 function showNotification(message, type = 'info') {
     const alertDiv = document.createElement('div');
     alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;

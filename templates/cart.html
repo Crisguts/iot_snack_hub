@@ -7,7 +7,30 @@
     <link rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
 </head>
-<body class="container-fluid bg-dark text-white" style="margin:0; padding:0;">
+<body class="container-fluid bg-dark text-white" style="margin:0; padding:0;"
+    data-guest-mode="{{ 'true' if guest_mode else 'false' }}"
+    data-customer-id="{{ session.get('customer_id') or '' }}"
+    data-total="{{ total if total else 0 }}"
+    data-points="{{ available_points if available_points else 0 }}"
+    data-guest-no-member="{{ 'true' if (guest_mode and not session.get('customer_id')) else 'false' }}"
+    data-i18n-enter-membership="{{ _('Please enter your membership number') }}"
+    data-i18n-verifying="{{ _('Verifying...') }}"
+    data-i18n-verify="{{ _('Verify') }}"
+    data-i18n-invalid="{{ _('Invalid membership number') }}"
+    data-i18n-failed="{{ _('Verification failed. Please try again.') }}"
+    data-i18n-min-points="{{ _('Minimum 100 points required') }}"
+    data-i18n-you-have="{{ _('You only have') }}"
+    data-i18n-points="{{ _('points') }}"
+    data-i18n-multiples="{{ _('Points must be in multiples of 100') }}"
+    data-i18n-exceeds="{{ _('Discount cannot exceed cart total') }}"
+    data-i18n-applied="{{ _('Applied') }}"
+    data-i18n-discount="{{ _('discount') }}"
+    data-i18n-confirm="{{ _('Complete payment and finalize purchase?') }}"
+    data-i18n-processing="{{ _('Processing...') }}"
+    data-i18n-failed-pay="{{ _('Payment failed') }}"
+    data-i18n-unknown="{{ _('Unknown error') }}"
+    data-i18n-network="{{ _('Network error during payment') }}"
+    data-i18n-complete="{{ _('Complete Payment') }}">
     <!-- Fixed Language Switcher - Top Right -->
     <div style="position: fixed; top: 20px; right: 20px; z-index: 9999;">
         <div class="btn-group btn-group-sm" role="group">
@@ -34,12 +57,16 @@
                     class="Sidebar fw-bold">{{ _('Self-Checkout') }}</a>
                 <a href="{{ url_for('store.cart') }}"
                     class="Sidebar fw-bold">{{ _('Cart') }}</a>
+                {% if session.get('role') == 'customer' %}
                 <a href="{{ url_for('store.account') }}"
                     class="Sidebar fw-bold">{{ _('My Account') }}</a>
+                {% endif %}
             </div>
             <div class="d-flex flex-column align-items-center mt-auto">
+                {% if session.get('role') == 'customer' or session.get('guest_mode') %}
                 <a id="logout" href="{{ url_for('auth.logout') }}"
                     class="Sidebar fw-bold">{{ _('Logout') }}</a>
+                {% endif %}
             </div>
         </div>
         <!-- Main content -->
@@ -97,17 +124,58 @@
                 </div>
                 {% endif %}
             </div>
+            <!-- Point Redemption (for logged-in/verified members only) -->
+            {% if available_points >= 100 and total > 1 %}
+            <div class="card bg-dark text-white mb-3 px-4 py-3">
+                <h5 class="mb-3">{{ _('Use Your Points') }}</h5>
+                <p class="text-light mb-2">{{ _('Available Points') }}:
+                    <strong>{{ available_points }}</strong> ({{ _('Worth') }}:
+                    ${{ "%.2f"|format(available_points / 100.0) }})
+                </p>
+                <div class="d-flex align-items-center gap-3">
+                    <label
+                        class="text-light">{{ _('Points to Redeem') }}:</label>
+                    <input type="number" id="pointsToRedeem"
+                        class="form-control w-25" min="0"
+                        max="{{ available_points }}" step="100" value="0"
+                        placeholder="0">
+                    <span class="text-muted">(100 {{ _('points') }} =
+                        $1.00)</span>
+                    <button id="applyPointsBtn"
+                        class="btn btn-warning">{{ _('Apply Discount') }}</button>
+                    <button id="clearPointsBtn"
+                        class="btn btn-outline-secondary"
+                        style="display:none;">{{ _('Clear') }}</button>
+                </div>
+                <div id="discountMessage" class="text-success mt-2"
+                    style="display:none;"></div>
+            </div>
+            {% endif %}
             <!-- Total and Actions -->
             <div class="border-top mt-4 pt-3 px-4">
                 <div class="row">
                     <div class="col-8 text-end">
-                        <h4>{{ _('Total') }}:</h4>
+                        <div id="subtotalRow">
+                            <p class="text-light mb-1">{{ _('Subtotal') }}:
+                                ${{ "%.2f"|format(total) }}</p>
+                        </div>
+                        <div id="discountRow" style="display:none;">
+                            <p class="text-warning mb-1">
+                                {{ _('Point Discount') }}: <span
+                                    id="discountAmount">$0.00</span>
+                            </p>
+                        </div>
+                        <h4>{{ _('Total') }}: <span
+                                id="finalTotal">${{ "%.2f"|format(total) }}</span>
+                        </h4>
                         <p class="text-light">{{ _('Points to earn') }}:
-                            {{ points }}</p>
+                            <span id="pointsToEarn">{{ points }}</span>
+                        </p>
                     </div>
                     <div class="col-4">
                         <h4 class="text-success"
-                            style="text-shadow: 2px 2px 4px rgba(0,0,0,0.8);">
+                            style="text-shadow: 2px 2px 4px rgba(0,0,0,0.8);"
+                            id="totalDisplay">
                             ${{ "%.2f"|format(total) }}
                         </h4>
                     </div>
@@ -130,6 +198,59 @@
             </div>
         </div>
     </div>
+    <!-- Membership Verification Modal (for guests) -->
+    <!-- DEBUG: guest_mode={{ guest_mode }}, customer_id={{ session.get('customer_id') }} -->
+    {% if guest_mode and not session.get('customer_id') %}
+    <div class="modal fade" id="membershipModal" tabindex="-1"
+        data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-dark text-white">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title">{{ _('Are you a member?') }}</h5>
+                </div>
+                <div class="modal-body">
+                    <p class="text-light mb-4">
+                        {{ _('Members earn points and can redeem them for discounts!') }}
+                    </p>
+                    <!-- Option 1: Sign Up -->
+                    <div class="card bg-secondary mb-3 p-3">
+                        <h6 class="text-white mb-2">{{ _('New Customer?') }}
+                        </h6>
+                        <p class="text-muted small">
+                            {{ _('Create an account to earn and redeem points') }}
+                        </p>
+                        <a href="{{ url_for('auth.signup') }}"
+                            class="btn btn-success">{{ _('Sign Up Now') }}</a>
+                    </div>
+                    <!-- Option 2: Enter Membership -->
+                    <div class="card bg-secondary mb-3 p-3">
+                        <h6 class="text-white mb-2">{{ _('Existing Member?') }}
+                        </h6>
+                        <p class="text-muted small">
+                            {{ _('Enter your membership number to earn points') }}
+                        </p>
+                        <div class="input-group mb-2">
+                            <input type="text" id="membershipInput"
+                                class="form-control"
+                                placeholder="{{ _('Membership #') }}">
+                            <button id="verifyMemberBtn"
+                                class="btn btn-primary">{{ _('Verify') }}</button>
+                        </div>
+                        <div id="membershipError" class="text-danger small"
+                            style="display:none;"></div>
+                        <div id="membershipSuccess" class="text-success small"
+                            style="display:none;"></div>
+                    </div>
+                    <!-- Option 3: Continue as Guest -->
+                    <div class="text-center">
+                        <button id="continueGuestBtn"
+                            class="btn btn-outline-light">{{ _('Continue as Guest (No Points)') }}</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
     <!-- Payment Success Modal -->
     <div class="modal fade" id="paymentSuccessModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
@@ -142,13 +263,16 @@
                         <i class="text-success" style="font-size:4rem;">✓</i>
                     </div>
                     <p id="paymentMessage"></p>
-                    <p>{{ _('Receipt has been emailed to you.') }}</p>
+                    <p id="receiptEmailMsg">
+                        {{ _('Receipt has been emailed to you.') }}
+                    </p>
                 </div>
                 <div class="modal-footer border-0">
                     <a href="{{ url_for('store.store_home') }}"
                         class="btn btn-primary">{{ _('Continue Shopping') }}</a>
                     <a href="{{ url_for('store.account') }}"
-                        class="btn btn-outline-light">{{ _('View Receipt') }}</a>
+                        class="btn btn-outline-light"
+                        id="viewReceiptLink">{{ _('View Receipt') }}</a>
                 </div>
             </div>
         </div>
@@ -158,66 +282,38 @@
         src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js">
     </script>
     <script src="{{ url_for('static', filename='js/javascript.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/cart.js') }}"></script>
     <script>
-        // Complete Payment
-        document.getElementById('completePaymentBtn')?.addEventListener('click',
-            async function() {
-                if (!confirm('Complete payment and finalize purchase?'))
-                    return;
-                this.disabled = true;
-                this.textContent = 'Processing...';
-                try {
-                    const response = await fetch(
-                        '/store/api/purchase', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            }
-                        });
-                    const data = await response.json();
-                    if (data.success) {
-                        document.getElementById('paymentMessage')
-                            .textContent =
-                            `Purchase complete! You earned ${data.points_earned} points.`;
-                        const modal = new bootstrap.Modal(document
-                            .getElementById('paymentSuccessModal'));
-                        modal.show();
-                    } else {
-                        alert('Payment failed: ' + (data.error ||
-                            'Unknown error'));
-                        this.disabled = false;
-                        this.textContent = 'Complete Payment';
-                    }
-                } catch (error) {
-                    console.error(error);
-                    alert('Network error during payment');
-                    this.disabled = false;
-                    this.textContent = 'Complete Payment';
-                }
-            });
-        // Remove item from cart
-        document.querySelectorAll('.remove-item').forEach(btn => {
-            btn.addEventListener('click', async function() {
-                const productId = this.dataset.productId;
-                try {
-                    const response = await fetch(
-                        '/store/api/cart/remove', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                product_id: parseInt(
-                                    productId
-                                )
-                            })
-                        });
-                    if (response.ok) {
-                        location.reload();
-                    }
-                } catch (error) {
-                    console.error('Remove error:', error);
-                }
+        document.addEventListener('DOMContentLoaded', function() {
+            const body = document.body;
+            window.cartTranslations = {
+                enterMembership: body.dataset.i18nEnterMembership,
+                verifying: body.dataset.i18nVerifying,
+                verify: body.dataset.i18nVerify,
+                invalidMembership: body.dataset.i18nInvalid,
+                verificationFailed: body.dataset.i18nFailed,
+                minimumPoints: body.dataset.i18nMinPoints,
+                youOnlyHave: body.dataset.i18nYouHave,
+                points: body.dataset.i18nPoints,
+                multiplesOf100: body.dataset.i18nMultiples,
+                discountExceeds: body.dataset.i18nExceeds,
+                applied: body.dataset.i18nApplied,
+                discount: body.dataset.i18nDiscount,
+                confirmPayment: body.dataset.i18nConfirm,
+                processing: body.dataset.i18nProcessing,
+                paymentFailed: body.dataset.i18nFailedPay,
+                unknownError: body.dataset.i18nUnknown,
+                networkError: body.dataset.i18nNetwork,
+                completePayment: body.dataset.i18nComplete
+            };
+            window.initCart({
+                guestMode: body.dataset.guestMode === 'true',
+                customerId: body.dataset.customerId,
+                originalTotal: parseFloat(body.dataset.total) ||
+                    0,
+                maxPoints: parseInt(body.dataset.points) || 0,
+                isGuestWithoutMembership: body.dataset
+                    .guestNoMember === 'true'
             });
         });
     </script>
