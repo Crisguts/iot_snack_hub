@@ -37,16 +37,18 @@ class EmailService:
         self.monitoring = False
         self.monitor_thread = None
 
-    def _send_email(self, subject, body):
+    def _send_email(self, subject, body, recipient=None):
+        """Send email to specified recipient or default admin."""
+        to_email = recipient if recipient else self.recipient
         try:
-            email_msg = f"Subject: {subject}\nTo: {self.recipient}\nFrom: {self.login}\n\n{body}"
+            email_msg = f"Subject: {subject}\nTo: {to_email}\nFrom: {self.login}\n\n{body}"
             with smtplib.SMTP_SSL(self.smtp_host, self.smtp_port, context=self.context, timeout=30) as server:
                 server.login(self.login, self.password)
-                server.sendmail(self.login, self.recipient, email_msg.encode("utf-8"))
-            logger.info(f"Email sent: {subject}")
+                server.sendmail(self.login, to_email, email_msg.encode("utf-8"))
+            logger.info(f"Email sent to {to_email}: {subject}")
             return True
         except Exception as e:
-            logger.error(f"Email send failed: {e}")
+            logger.error(f"Email send failed to {to_email}: {e}")
             return False
 
     def send_test(self):

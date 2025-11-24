@@ -227,8 +227,13 @@
                         <h6 class="text-white mb-2">{{ _('Existing Member?') }}
                         </h6>
                         <p class="text-muted small">
-                            {{ _('Enter your membership number to earn points') }}
+                            {{ _('Scan your membership card or enter manually') }}
                         </p>
+                        <!-- Hidden RFID scanner input -->
+                        <input type="text" id="rfidCardInput"
+                            style="position: absolute; left: -9999px; opacity: 0;"
+                            autocomplete="off" tabindex="-1">
+                        <!-- Manual entry input -->
                         <div class="input-group mb-2">
                             <input type="text" id="membershipInput"
                                 class="form-control"

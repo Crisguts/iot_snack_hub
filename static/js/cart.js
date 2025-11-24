@@ -17,7 +17,8 @@
         maxPoints = config.maxPoints || 0;
         isGuestWithoutMembership = config.isGuestWithoutMembership || false;
 
-        // Show membership modal for pure guests
+        // Show membership modal ONLY for pure guests (guest_mode=true AND no customer_id)
+        // Logged-in customers already have customer_id, so modal won't show
         if (isGuestWithoutMembership) {
             showMembershipModal();
         }
@@ -40,7 +41,30 @@
     }
 
     function setupMembershipVerification() {
-        // Verify membership button
+        // RFID card scanner listener
+        const rfidInput = document.getElementById('rfidCardInput');
+        if (rfidInput) {
+            rfidInput.addEventListener('keypress', async function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const rfidTag = this.value.trim();
+                    if (rfidTag) {
+                        await verifyByRFID(rfidTag);
+                        this.value = '';
+                    }
+                }
+            });
+
+            // Auto-focus RFID input when modal opens
+            const modal = document.getElementById('membershipModal');
+            if (modal) {
+                modal.addEventListener('shown.bs.modal', function () {
+                    rfidInput.focus();
+                });
+            }
+        }
+
+        // Verify membership button (manual entry)
         const verifyBtn = document.getElementById('verifyMemberBtn');
         if (verifyBtn) {
             verifyBtn.addEventListener('click', async function () {
@@ -100,6 +124,36 @@
                     }
                 }
             });
+        }
+    }
+
+    async function verifyByRFID(rfidTag) {
+        const errorDiv = document.getElementById('membershipError');
+        const successDiv = document.getElementById('membershipSuccess');
+
+        try {
+            const response = await fetch('/store/api/membership/verify-rfid', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ rfid_tag: rfidTag })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                successDiv.textContent = data.message;
+                successDiv.style.display = 'block';
+                errorDiv.style.display = 'none';
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                errorDiv.textContent = data.error || 'Card not found';
+                errorDiv.style.display = 'block';
+                successDiv.style.display = 'none';
+            }
+        } catch (error) {
+            console.error(error);
+            errorDiv.textContent = 'Verification failed. Please try again.';
+            errorDiv.style.display = 'block';
         }
     }
 

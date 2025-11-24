@@ -76,13 +76,13 @@
                         style="background-color: #212529;">
                         <tr>
                             <th style="width: 5%;">{{ _('ID') }}</th>
-                            <th style="width: 20%;">{{ _('Name') }}</th>
-                            <th style="width: 10%;">{{ _('Category') }}</th>
+                            <th style="width: 22%;">{{ _('Name') }}</th>
+                            <th style="width: 12%;">{{ _('Category') }}</th>
                             <th style="width: 8%;">{{ _('Price') }}</th>
-                            <th style="width: 12%;">{{ _('UPC') }}</th>
-                            <th style="width: 12%;">{{ _('EPC') }}</th>
-                            <th style="width: 8%;">{{ _('Stock') }}</th>
-                            <th style="width: 25%;">{{ _('Actions') }}</th>
+                            <th style="width: 13%;">{{ _('UPC') }}</th>
+                            <th style="width: 13%;">{{ _('EPC') }}</th>
+                            <th style="width: 10%;">{{ _('Stock') }}</th>
+                            <th style="width: 30%;">{{ _('Actions') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -93,7 +93,7 @@
                             <td>{{ product.category }}</td>
                             <td>${{ "%.2f"|format(product.price) }}</td>
                             <td><code>{{ product.upc }}</code></td>
-                            <td><code>{{ product.epc[:12] }}...</code></td>
+                            <td><code>{{ product.epc }}</code></td>
                             <td>
                                 <span
                                     class="badge bg-{{ 'success' if product.total_quantity > 10 else 'warning' if product.total_quantity > 0 else 'danger' }}">

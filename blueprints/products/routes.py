@@ -150,7 +150,7 @@ def manage_inventory(product_id):
 
 @products_bp.route('/api/search', methods=['GET'])
 def api_search_products():
-    """Search products by name, UPC, or EPC."""
+    """Search products by name or UPC."""
     query = request.args.get('q', '').strip()
     
     if not query:
@@ -163,7 +163,6 @@ def api_search_products():
         p for p in products
         if query.lower() in p.get('name', '').lower()
         or query in p.get('upc', '')
-        or query in p.get('epc', '')
     ]
     
     return jsonify({'success': True, 'products': results})

@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>{{ _('Receipt') }} #{{ purchase.purchase_id }} -
-        {{ _('Smart Store') }}</title>
+        {{ _('Smart Store') }}
+    </title>
     <link rel="stylesheet"
         href="{{ url_for('static', filename='css/styles.css') }}">
     <link rel="stylesheet"
@@ -73,7 +74,8 @@
                         </tr>
                         <tr>
                             <td colspan="3" class="text-end">
-                                <strong>{{ _('Points Earned:') }}</strong></td>
+                                <strong>{{ _('Points Earned:') }}</strong>
+                            </td>
                             <td class="text-end">
                                 <strong>{{ purchase.points_earned }}</strong>
                             </td>
@@ -86,8 +88,13 @@
                 <div class="text-center mt-4 no-print">
                     <button class="btn btn-primary me-2"
                         onclick="window.print()">{{ _('Print Receipt') }}</button>
+                    {% if session.get('role') == 'admin' %}
+                    <a href="{{ url_for('payments.payments_list') }}"
+                        class="btn btn-secondary">{{ _('Back to Payments') }}</a>
+                    {% else %}
                     <a href="{{ url_for('store.account') }}"
                         class="btn btn-secondary">{{ _('Back to Account') }}</a>
+                    {% endif %}
                 </div>
             </div>
         </div>

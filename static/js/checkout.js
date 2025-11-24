@@ -1,7 +1,7 @@
 // Self-checkout scanner functionality
-// Handles barcode/RFID scanning invisibly in background
+// Handles barcode (UPC) and RFID (EPC) scanning invisibly in background
 
-// Auto-detect and handle both barcode and RFID scans
+// Scanner listener - handles both barcode and RFID
 document.getElementById('barcodeInput').addEventListener('keypress', function (e) {
     if (e.key === 'Enter') {
         e.preventDefault();
@@ -15,13 +15,10 @@ document.getElementById('barcodeInput').addEventListener('keypress', function (e
                 statusBadge.innerHTML = `<i class="bi bi-upc-scan"></i> ${scanningText}`;
             }
 
-            // Auto-detect type: RFID (alphanumeric, 8-24 chars) vs Barcode (digits only)
-            const isRFID = /^[A-Fa-f0-9]{8,24}$/.test(code) && !/^\d+$/.test(code);
-
-            if (isRFID) {
-                scanProduct(code, 'rfid');
-            } else if (/^\d{8,14}$/.test(code)) {
-                scanProduct(code, 'barcode');
+            // Accept both barcode (8-14 digits) and RFID (any alphanumeric)
+            // Backend will determine which type based on format
+            if (code.length >= 8) {
+                scanProduct(code);
             } else {
                 showNotification('Invalid scan format. Please try again.', 'danger');
                 resetScannerStatus();
@@ -46,12 +43,12 @@ function resetScannerStatus() {
 }
 
 // Scan product and add to cart
-async function scanProduct(code, type) {
+async function scanProduct(code) {
     try {
         const response = await fetch('/store/api/scan', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ code: code, type: type })
+            body: JSON.stringify({ code: code })
         });
 
         const data = await response.json();
@@ -61,6 +58,7 @@ async function scanProduct(code, type) {
             addItemToCartUI(data.product);
             updateCartTotals();
             resetScannerStatus();
+            window.location.reload();
 
             // Re-focus to keep capturing scans
             setTimeout(() => document.getElementById('barcodeInput').focus(), 100);
@@ -321,17 +319,32 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 function showNotification(message, type = 'info') {
+    // Use alert container to prevent stacking
+    const container = document.getElementById('alertContainer');
+    if (!container) {
+        // Fallback if container doesn't exist
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+        alertDiv.style.cssText = 'position:fixed;top:80px;right:20px;z-index:10000;max-width:400px;';
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(alertDiv);
+        setTimeout(() => alertDiv.remove(), 3000);
+        return;
+    }
+
+    // Clear existing alerts to prevent overlap
+    container.innerHTML = '';
+
     const alertDiv = document.createElement('div');
-    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
-    alertDiv.style.cssText = 'top:20px;right:20px;z-index:9999;max-width:350px;';
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
     alertDiv.innerHTML = `
         ${message}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     `;
-    document.body.appendChild(alertDiv);
+    container.appendChild(alertDiv);
 
-    setTimeout(() => {
-        alertDiv.classList.add('hide-slide');
-        setTimeout(() => alertDiv.remove(), 500);
-    }, 3000);
+    setTimeout(() => alertDiv.remove(), 3000);
 }

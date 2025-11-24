@@ -1,7 +1,6 @@
 # Customer management interface for admin users
 # Handles CRUD operations for customer accounts with search and pagination
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
-from datetime import datetime
 import math
 from werkzeug.security import generate_password_hash
 from services.db_service import (

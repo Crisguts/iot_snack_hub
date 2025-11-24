@@ -223,15 +223,11 @@ def get_product_by_id(product_id):
         return None
 
 
-def get_product_by_code(upc=None, epc=None):
-    """Find product by barcode (UPC) or RFID tag (EPC)."""
+def get_product_by_code(upc=None):
+    """Find product by barcode (UPC)."""
     try:
         if upc:
             response = supabase.table("products").select("*").eq("upc", upc).execute()
-            if response.data:
-                return response.data[0]
-        if epc:
-            response = supabase.table("products").select("*").eq("epc", epc).execute()
             if response.data:
                 return response.data[0]
         return None
@@ -246,7 +242,7 @@ def add_product(name, category, price, upc, epc, producer, image_url=None):
         data = {
             "name": name,
             "category": category,
-            "price": float(price),
+            "price": price,
             "upc": upc,
             "epc": epc,
             "producer": producer,
@@ -366,6 +362,16 @@ def get_customer_by_membership(membership_number):
         return response.data[0] if response.data else None
     except Exception as e:
         print(f"Error fetching customer by membership: {e}")
+        return None
+
+
+def get_customer_by_rfid(rfid_tag):
+    """Get customer by RFID card tag."""
+    try:
+        response = supabase.table("customers").select("*").eq("rfid_card", rfid_tag).execute()
+        return response.data[0] if response.data else None
+    except Exception as e:
+        print(f"Error fetching customer by RFID: {e}")
         return None
 
 

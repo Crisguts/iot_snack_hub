@@ -222,6 +222,7 @@
                     data-phone="{{ customer.phone_num|default('N/A') }}"
                     data-dob="{{ customer.date_of_birth|default('N/A') }}"
                     data-membership="{{ customer.membership_number|default('N/A') }}"
+                    data-rfidcard="{{ customer.rfid_card|default('N/A') }}"
                     data-points="{{ customer.points|default(0) }}"
                     data-date="{{ customer.created_at|default('N/A') }}">
                     <div class="col-3">{{ customer.first_name }}</div>
@@ -450,6 +451,12 @@
                             {{ _('Membership #:') }}
                         </div>
                         <div class="col-7" id="modalMembership"></div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-5 fw-bold text-end">
+                            {{ _('RFID Card:') }}
+                        </div>
+                        <div class="col-7" id="modalRfidCard"></div>
                     </div>
                     <div class="row mb-2">
                         <div class="col-5 fw-bold text-end">{{ _('Points:') }}
