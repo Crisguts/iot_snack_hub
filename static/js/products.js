@@ -57,7 +57,7 @@ async function updateProduct() {
     const data = {
         name: document.getElementById('editName').value,
         category: document.getElementById('editCategory').value,
-        price: parseFloat(document.getElementById('editPrice').value),
+        price: document.getElementById('editPrice').value,
         upc: document.getElementById('editUpc').value,
         epc: document.getElementById('editEpc').value,
         producer: document.getElementById('editProducer').value,

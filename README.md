@@ -61,6 +61,7 @@ CREATE TABLE customers (
     phone_num VARCHAR(20),
     date_of_birth DATE,
     membership_number VARCHAR(50) UNIQUE,
+    rfid_card VARCHAR(24) UNIQUE,
     points INTEGER DEFAULT 0,
     created_at TIMESTAMP DEFAULT NOW()
 );

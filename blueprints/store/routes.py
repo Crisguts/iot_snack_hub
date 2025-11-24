@@ -70,12 +70,26 @@ def cart():
     
     # Get customer points if logged in or verified member
     available_points = 0
+    customer = None
     if customer_id:
         from services.db_service import get_customer_by_id
         customer = get_customer_by_id(customer_id)
         available_points = customer.get('points', 0) if customer else 0
     
-    return render_template('cart.html', cart=cart, total=total, points=points, available_points=available_points, guest_mode=guest_mode)
+    # Determine if pure guest without membership (for membership modal)
+    # Only show modal if guest mode AND no customer_id (not logged in, no membership verified)
+    is_guest_without_membership = guest_mode and not customer_id
+    
+    return render_template(
+        'cart.html',
+        cart=cart,
+        total=total,
+        points=points,
+        available_points=available_points,
+        customer=customer,
+        guest_mode=guest_mode,
+        is_guest_without_membership=is_guest_without_membership
+    )
 
 @store_bp.route('/checkout', methods=['GET', 'POST'])
 def checkout():
@@ -219,21 +233,62 @@ def api_verify_membership():
         'message': f"Welcome back, {customer['first_name']}! Your membership is verified."
     })
 
+
+@store_bp.route('/api/membership/verify-rfid', methods=['POST'])
+def verify_membership_rfid():
+    """Verify membership by scanning RFID card."""
+    from services.db_service import get_customer_by_rfid
+    
+    data = request.get_json() or {}
+    rfid_tag = data.get('rfid_tag', '').strip()
+    
+    if not rfid_tag:
+        return jsonify({'success': False, 'error': 'No RFID tag provided'}), 400
+    
+    customer = get_customer_by_rfid(rfid_tag)
+    
+    if customer:
+        # Set session EXACTLY like manual verification
+        session['customer_id'] = customer['customer_id']
+        session['guest_mode'] = True  # Still guest, but with member benefits
+        session['username'] = customer['email']  # For receipt email
+        session.modified = True
+        
+        return jsonify({
+            'success': True,
+            'customer': {
+                'name': f"{customer['first_name']} {customer['last_name']}",
+                'email': customer['email'],
+                'points': customer.get('points', 0),
+                'membership_number': customer['membership_number']
+            },
+            'message': f"Welcome back, {customer['first_name']}! Your membership is verified."
+        })
+    else:
+        return jsonify({
+            'success': False,
+            'error': 'Membership card not found'
+        }), 404
+
+
 # --- Scanner Integration ---
 @store_bp.route('/api/scan', methods=['POST'])
 def api_scan_product():
-    """Handle product scan (barcode or RFID)."""
+    """Handle product barcode (UPC) or RFID (EPC) scan at checkout."""
     data = request.get_json() or {}
     code = data.get('code', '').strip()
-    scan_type = data.get('type', 'barcode')  # 'barcode' or 'rfid'
     
     if not code:
         return jsonify({'success': False, 'error': 'No code provided'}), 400
     
-    # Find product by code
-    if scan_type == 'barcode':
+    # Determine if code is UPC (8-14 digits) or EPC (typically 24 hex chars)
+    # Try UPC first (barcode), then EPC (RFID)
+    product = None
+    if code.isdigit() and 8 <= len(code) <= 14:
+        # Barcode scan (UPC)
         product = get_product_by_code(upc=code)
     else:
+        # RFID scan (EPC) - typically longer alphanumeric
         product = get_product_by_code(epc=code)
     
     if not product:
@@ -484,4 +539,5 @@ Points Earned: {points}
 Thank you for your purchase!
 """
     
-    email_service._send_email(f"Receipt #{purchase_id} - Smart Store", body)
+    # Send to customer's email, not admin
+    email_service._send_email(f"Receipt #{purchase_id} - Smart Store", body, recipient=email)

@@ -1,5 +1,8 @@
 # services/scanner_service.py
 """
+I KEPT THIS FILE EVEN THOUGH WE DONT USE IT ANYMORE (FOR NOW). INSTEAD SCANNERS ARE HANDLED 
+USING SIMPLE JS + FLASK ENDPOINTS (hidden inputs with event listeners).
+
 Scanner service for USB barcode scanner and RFID reader.
 - USB barcode scanners work as keyboard input (no special config needed)
 - RFID readers connect via serial port

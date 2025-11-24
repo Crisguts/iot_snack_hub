@@ -105,6 +105,7 @@
                 const phone_num = row.getAttribute("data-phone");
                 const dob = row.getAttribute("data-dob");
                 const membership = row.getAttribute("data-membership");
+                const rfidCard = row.getAttribute("data-rfidcard");
                 const points = row.getAttribute("data-points");
                 const dateStr = row.getAttribute("data-date");
 
@@ -118,6 +119,7 @@
                 setText("modalPhone", phone_num || "N/A");
                 setText("modalDob", dob || "N/A");
                 setText("modalMembership", membership || "N/A");
+                setText("modalRfidCard", rfidCard || "N/A");
                 setText("modalPoints", points || "0");
                 setText("modalDate", dateStr ? new Date(dateStr).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }) : "N/A");
 
