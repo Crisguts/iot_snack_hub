@@ -35,17 +35,13 @@
         {% endif %}
         {% endwith %}
     </div>
-    <div class="login-card"
+    <div class="login-card text-white"
         style="width: 90%; max-width: 500px; min-height: 500px; padding: 3rem;">
-        <h1 class="text-center mb-3"
-            style="text-shadow: 2px 2px 4px rgba(0, 110, 11, 0.8);">
-            {{ _('Smart Store') }}
-        </h1>
-        <h2 class="text-center mb-2"
-            style="text-shadow: 2px 2px 4px rgba(0, 110, 11, 0.8);">
+        <h1 class="text-center mb-2">
+            {{ _('Smart Store') }}</h1>
+        <h2 class="text-center mb-2">
             {{ _('Login') }}</h2>
-        <h4 class="text-center mb-4"
-            style="text-shadow: 2px 2px 4px rgba(0, 110, 11, 0.8);">
+        <h4 class="text-center mb-3">
             {{ _('Customer or Admin Access') }}</h4>
         <!-- Login form -->
         <form id="loginForm" method="POST" action="{{ url_for('auth.login') }}">
@@ -55,7 +51,7 @@
             <input type="password" name="password" class="form-control mb-3"
                 placeholder="{{ _('Password') }}" required />
             <button type="submit"
-                class="btn btn-primary w-100 mb-3">{{ _('Login') }}</button>
+                class="btn btn-primary w-100">{{ _('Login') }}</button>
         </form>
         <div class="text-center mt-4">
             <p class="text-light mb-2">{{ _("Don't have an account?") }}</p>

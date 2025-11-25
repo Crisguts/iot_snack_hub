@@ -33,17 +33,14 @@
         {% endif %}
         {% endwith %}
     </div>
-    <div class="login-card"
-        style="width: 90%; max-width: 600px; min-height: 600px; padding: 3rem;">
-        <h1 class="text-center mb-3"
-            style="text-shadow: 2px 2px 4px rgba(0, 110, 11, 0.8);">
+    <div class="login-card text-white"
+        style="width: 90%; max-width: 600px; min-height: 600px; padding: 1rem;">
+        <h1 class="text-center mb-2">
             {{ _('Smart Store') }}
         </h1>
-        <h2 class="text-center mb-2"
-            style="text-shadow: 2px 2px 4px rgba(0, 110, 11, 0.8);">
+        <h2 class="text-center mb-2">
             {{ _('Create Account') }}</h2>
-        <h4 class="text-center mb-4"
-            style="text-shadow: 2px 2px 4px rgba(0, 110, 11, 0.8);">
+        <h4 class="text-center mb-3">
             {{ _('Join our smart shopping experience') }}</h4>
         <!-- Signup form -->
         <form id="signupForm" method="POST"
@@ -51,33 +48,32 @@
             <div class="row">
                 <div class="col-md-6">
                     <input type="text" name="first_name"
-                        class="form-control mb-3"
+                        class="form-control"
                         placeholder="{{ _('First Name') }}" required />
                 </div>
                 <div class="col-md-6">
                     <input type="text" name="last_name"
-                        class="form-control mb-3"
+                        class="form-control"
                         placeholder="{{ _('Last Name') }}" required />
                 </div>
             </div>
-            <input type="email" name="email" class="form-control mb-3"
+            <input type="email" name="email" class="form-control"
                 placeholder="{{ _('Email Address') }}" required />
-            <input type="tel" name="phone_num" class="form-control mb-3"
+            <input type="tel" name="phone_num" class="form-control"
                 placeholder="{{ _('Phone Number (Optional)') }}"
                 pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}" />
-            <input type="date" name="dob" class="form-control mb-3"
+            <input type="date" name="dob" class="form-control"
                 placeholder="{{ _('Date of Birth') }}" />
-            <input type="password" name="password" class="form-control mb-3"
+            <input type="password" name="password" class="form-control"
                 placeholder="{{ _('Password') }}" required minlength="6" />
             <button type="submit"
                 class="btn btn-success w-100 mb-3">{{ _('Create Account') }}</button>
         </form>
-        <div class="text-center mt-4">
-            <p class="text-light mb-2">{{ _('Already have an account?') }}</p>
+        <div class="text-center mt-1">
             <a href="{{ url_for('auth.login') }}"
-                class="btn btn-outline-light w-100">
+                class="btn btn-secondary w-100">
                 {{ _('Login Instead') }}
-            </a>
+            </a> 
         </div>
     </div>
     <script
