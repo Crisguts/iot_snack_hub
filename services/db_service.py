@@ -223,11 +223,15 @@ def get_product_by_id(product_id):
         return None
 
 
-def get_product_by_code(upc=None):
-    """Find product by barcode (UPC)."""
+def get_product_by_code(upc=None, epc=None):
+    """Find product by barcode (UPC) or RFID tag (EPC)."""
     try:
         if upc:
             response = supabase.table("products").select("*").eq("upc", upc).execute()
+            if response.data:
+                return response.data[0]
+        if epc:
+            response = supabase.table("products").select("*").eq("epc", epc).execute()
             if response.data:
                 return response.data[0]
         return None
