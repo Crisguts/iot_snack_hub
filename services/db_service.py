@@ -544,3 +544,81 @@ def get_customer_purchases_with_details(customer_id):
     except Exception as e:
         print(f"Error fetching customer purchases: {e}")
         return []
+
+"""Inventory Report"""
+def get_inventory_report_paginated(limit, offset, search=None):
+    """
+    Fetch all products for the Inventory Report (admin view) - paginated + search.
+    """
+
+    try:
+        # Fetch all products
+        response = supabase.table("products").select("*").order("product_id").execute()
+        all_products = response.data or []
+
+        # Compute stock value
+        for p in all_products:
+            qty = p.get("total_quantity", 0) or 0
+            price = float(p.get("price", 0) or 0)
+            p["stock_value"] = qty * price
+
+        # ---- SEARCH FILTER ----
+        if search:
+            search_lower = search.lower()
+            filtered = [
+                p for p in all_products
+                if search_lower in p.get("name", "").lower()
+                or search_lower in p.get("category", "").lower()
+            ]
+        else:
+            filtered = all_products
+
+        # ---- PAGINATION ----
+        paginated = filtered[offset : offset + limit]
+
+        return paginated, len(filtered)
+
+    except Exception as e:
+        print("Error fetching paginated products:", e)
+        return [], 0
+
+def get_inventory_products():
+    try:
+        response = supabase.table("products").select(
+            "product_id, name, category, price, total_quantity"
+        ).order("name", desc=False).execute()
+        return response.data or []
+    except Exception as e:
+        print("Error fetching inventory products:", e)
+        return []
+def get_total_inventory_value(search=None):
+    """
+    Calculate the TOTAL stock value for ALL products (respects search filter).
+    This ensures the total remains consistent across pagination pages.
+    """
+    try:
+        # Fetch all products
+        response = supabase.table("products").select("*").execute()
+        all_products = response.data or []
+
+        # Apply search filter if provided
+        if search:
+            search_lower = search.lower()
+            all_products = [
+                p for p in all_products
+                if search_lower in p.get("name", "").lower()
+                or search_lower in p.get("category", "").lower()
+            ]
+
+        # Calculate total stock value
+        total_value = 0.0
+        for p in all_products:
+            qty = p.get("total_quantity", 0) or 0
+            price = float(p.get("price", 0) or 0)
+            total_value += qty * price
+
+        return total_value
+
+    except Exception as e:
+        print("Error calculating total inventory value:", e)
+        return 0.0

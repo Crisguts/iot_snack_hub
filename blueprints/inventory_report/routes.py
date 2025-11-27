@@ -1,0 +1,117 @@
+from flask import Blueprint, redirect, render_template, request, session, flash, url_for, send_file
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet
+import io
+from services.db_service import (get_inventory_report_paginated, get_inventory_products, get_total_inventory_value)
+
+inventory_bp = Blueprint('inventory', __name__, url_prefix='/inventory')
+
+def admin_required(f):
+    """Decorator to require admin access."""
+    from functools import wraps
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if session.get('role') != 'admin':
+            flash('Admin access required', 'danger')
+            return redirect(url_for('auth.login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+@inventory_bp.route('/')
+@admin_required
+def inventory_report():
+
+    # Pagination settings
+    page = request.args.get("page", 1, type=int)
+    per_page = 10
+    offset = (page - 1) * per_page
+
+    # Search text
+    search = request.args.get("search", "").strip()
+
+    # Pull paginated + searched products
+    products, total_filtered = get_inventory_report_paginated(per_page, offset, search)
+
+    # Total pages
+    total_pages = (total_filtered + per_page - 1) // per_page
+
+    # FIXED: Get total stock value for ALL products (not just current page)
+    total_stock_value = get_total_inventory_value(search)
+
+    return render_template(
+        "inventory_report.html",
+        products=products,
+        total_stock_value=total_stock_value,
+        page=page,
+        total_pages=total_pages,
+        search=search
+    )
+
+@inventory_bp.route('/export_pdf')
+@admin_required
+def export_inventory_pdf():
+    products = get_inventory_products()
+
+    # Compute stock value
+    for p in products:
+        p["value"] = float(p["total_quantity"]) * float(p["price"])
+
+    total_value = sum(p["value"] for p in products)
+
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
+
+    styles = getSampleStyleSheet()
+    elements = []
+
+    title = Paragraph("<b>Smart Store Inventory Report</b>", styles["Title"])
+    elements.append(title)
+    elements.append(Paragraph("<br/>", styles["Normal"]))
+
+    # TABLE HEADER
+    data = [
+        ["Product", "Category", "Stock", "Price ($)", "Value ($)"]
+    ]
+
+    # TABLE ROWS
+    for p in products:
+        data.append([
+            p["name"],
+            p["category"],
+            p["total_quantity"],
+            f"{float(p['price']):.2f}",
+            f"{p['value']:.2f}"
+        ])
+
+    # Build the table
+    table = Table(data, colWidths=[150, 100, 60, 60, 70])
+
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#333333")),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('ALIGN', (2, 1), (-1, -1), 'CENTER'),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor("#f2f2f2")),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+    ]))
+
+    elements.append(table)
+    elements.append(Paragraph("<br/><br/>", styles["Normal"]))
+    elements.append(Paragraph(f"<b>Total Stock Value:</b> ${total_value:,.2f}", styles["Heading3"]))
+
+    def set_metadata(canvas, doc):
+        canvas.setTitle("Smart Store Inventory Report")
+        canvas.setAuthor("Smart Store System")
+
+    doc.build(elements, onFirstPage=set_metadata, onLaterPages=set_metadata)
+    buffer.seek(0)
+
+    return send_file(
+        buffer,
+        as_attachment=True,
+        download_name="inventory_report.pdf",
+        mimetype="application/pdf"
+    )
