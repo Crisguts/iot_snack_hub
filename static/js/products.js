@@ -39,13 +39,12 @@ async function addProduct() {
 }
 
 // Open edit modal with product data
-function openEditModal(id, name, category, price, upc, epc, producer, imageUrl) {
+function openEditModal(id, name, category, price, upc, producer, imageUrl) {
     document.getElementById('editProductId').value = id;
     document.getElementById('editName').value = name;
     document.getElementById('editCategory').value = category;
     document.getElementById('editPrice').value = price;
     document.getElementById('editUpc').value = upc;
-    document.getElementById('editEpc').value = epc;
     document.getElementById('editProducer').value = producer;
     document.getElementById('editImageUrl').value = imageUrl;
     new bootstrap.Modal(document.getElementById('editProductModal')).show();
@@ -59,7 +58,6 @@ async function updateProduct() {
         category: document.getElementById('editCategory').value,
         price: document.getElementById('editPrice').value,
         upc: document.getElementById('editUpc').value,
-        epc: document.getElementById('editEpc').value,
         producer: document.getElementById('editProducer').value,
         image_url: document.getElementById('editImageUrl').value
     };
@@ -114,6 +112,75 @@ function openInventoryModal(id, name, currentStock) {
     document.getElementById('inventoryQuantity').value = 1;
     new bootstrap.Modal(document.getElementById('inventoryModal')).show();
 }
+
+// Open stock items modal and load EPCs for product
+async function openStockModal(id, name) {
+    document.getElementById('stockProductId').value = id;
+    document.getElementById('stockProductName').textContent = name;
+
+    // Show modal immediately with loading state
+    const modal = new bootstrap.Modal(document.getElementById('stockItemsModal'));
+    modal.show();
+
+    // Show loading, hide content
+    document.getElementById('stockItemsLoading').style.display = 'block';
+    document.getElementById('stockItemsContent').style.display = 'none';
+
+    // Load stock items
+    await loadStockItems(id);
+}
+
+// Load and display stock items for a product
+async function loadStockItems(productId) {
+    try {
+        const response = await fetch(`/products/api/products/${productId}/stock`);
+        const result = await response.json();
+
+        // Hide loading
+        document.getElementById('stockItemsLoading').style.display = 'none';
+        document.getElementById('stockItemsContent').style.display = 'block';
+
+        if (result.success && result.stock_items && result.stock_items.length > 0) {
+            const tbody = document.getElementById('stockItemsTableBody');
+            tbody.innerHTML = '';
+
+            result.stock_items.forEach(item => {
+                const tr = document.createElement('tr');
+
+                // Status badge color
+                let statusClass = 'secondary';
+                if (item.status === 'available') statusClass = 'success';
+                else if (item.status === 'sold') statusClass = 'danger';
+                else if (item.status === 'damaged') statusClass = 'warning';
+
+                // Format dates
+                const createdDate = item.created_at ? new Date(item.created_at).toLocaleDateString() : '-';
+                const soldDate = item.sold_at ? new Date(item.sold_at).toLocaleDateString() : '-';
+
+                tr.innerHTML = `
+                    <td>${item.stock_id}</td>
+                    <td><code class="text-warning">${item.epc}</code></td>
+                    <td><span class="badge bg-${statusClass}">${item.status}</span></td>
+                    <td>${createdDate}</td>
+                    <td>${soldDate}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('stockItemsEmpty').style.display = 'none';
+        } else {
+            // No stock items found
+            document.getElementById('stockItemsEmpty').style.display = 'block';
+            document.getElementById('stockItemsTableBody').innerHTML = '';
+        }
+    } catch (error) {
+        alert('Error loading stock items: ' + error);
+        document.getElementById('stockItemsLoading').style.display = 'none';
+        document.getElementById('stockItemsContent').style.display = 'block';
+        document.getElementById('stockItemsEmpty').style.display = 'block';
+    }
+}
+
 
 // Adjust inventory (add or subtract)
 async function adjustInventory() {
@@ -176,6 +243,15 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
+    // Stock Items buttons
+    document.querySelectorAll('.stock-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const id = parseInt(this.dataset.productId);
+            const name = this.dataset.productName;
+            openStockModal(id, name);
+        });
+    });
+
     // Edit buttons
     document.querySelectorAll('.edit-btn').forEach(btn => {
         btn.addEventListener('click', function () {
@@ -184,10 +260,9 @@ document.addEventListener('DOMContentLoaded', function () {
             const category = this.dataset.category;
             const price = parseFloat(this.dataset.price);
             const upc = this.dataset.upc;
-            const epc = this.dataset.epc;
             const producer = this.dataset.producer;
             const imageUrl = this.dataset.imageUrl;
-            openEditModal(id, name, category, price, upc, epc, producer, imageUrl);
+            openEditModal(id, name, category, price, upc, producer, imageUrl);
         });
     });
 

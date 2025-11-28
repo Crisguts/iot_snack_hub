@@ -60,6 +60,19 @@ Reply 'NO' to ignore."""
         return self._send_email("🔧 IoT Test Email", body)
 
     def send_temp_alert(self, fridge_name, current_temp, threshold):
+        """Legacy method name - calls send_temperature_alert"""
+        return self.send_temperature_alert(
+            fridge_id=1, 
+            current_temp=current_temp, 
+            threshold=threshold, 
+            fridge_name=fridge_name
+        )
+    
+    def send_temperature_alert(self, fridge_id, current_temp, threshold, fridge_name=None):
+        """Send temperature alert email when threshold is exceeded."""
+        if not fridge_name:
+            fridge_name = f"Refrigerator {fridge_id}"
+        
         body = f"""⚠️ Temperature Alert!
 
 {fridge_name} exceeded its threshold.
@@ -67,8 +80,10 @@ Current: {current_temp}°C
 Threshold: {threshold}°C
 Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 
-Reply 'YES' to activate cooling.
-Reply 'NO' to ignore."""
+Reply 'YES' to activate cooling fan.
+Reply 'NO' to ignore this alert.
+
+Fridge ID: {fridge_id}"""
         return self._send_email(f"🚨 IoT Alert - {fridge_name}", body)
 
     def send_confirmation(self, fridge_id):

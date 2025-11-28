@@ -1,7 +1,8 @@
 # Customer management interface for admin users
 # Handles CRUD operations for customer accounts with search and pagination
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session
 import math
+from functools import wraps
 from werkzeug.security import generate_password_hash
 from services.db_service import (
     get_customers_paginated,
@@ -13,8 +14,19 @@ from services.db_service import (
 
 client_bp = Blueprint("client", __name__, url_prefix="/client")
 
+def admin_required(f):
+    """Decorator to require admin access."""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if session.get('role') != 'admin':
+            flash('Admin access required', 'danger')
+            return redirect(url_for('auth.login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
 @client_bp.route('/')
 @client_bp.route('/list')
+@admin_required
 def client():
     """Display paginated customer list with search functionality."""
     search = request.args.get('search', '').strip()
@@ -38,6 +50,7 @@ def client():
     )
 
 @client_bp.route('/add', methods=['POST'])
+@admin_required
 def add():
     """Create new customer account (admin only)."""
     try:
@@ -98,6 +111,7 @@ def add():
         return redirect(url_for('client.client'))
 
 @client_bp.route('/update/<int:customer_id>', methods=['POST'])
+@admin_required
 def update(customer_id):
     """Update existing customer information."""
     try:
@@ -130,6 +144,7 @@ def update(customer_id):
         return redirect(url_for('client.client'))
 
 @client_bp.route('/delete/<int:customer_id>')
+@admin_required
 def delete(customer_id):
     """Remove customer from system."""
     try:
@@ -146,6 +161,7 @@ def delete(customer_id):
     return redirect(url_for('client.client'))
 
 @client_bp.route('/payments/<int:customer_id>')
+@admin_required
 def get_customer_payments(customer_id):
     """API endpoint to fetch all payments for a specific customer."""
     try:

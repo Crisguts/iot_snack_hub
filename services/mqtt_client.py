@@ -112,8 +112,8 @@ def _check_threshold_and_alert(fridge_id, temperature):
         data = (resp.data or [])
         if data:
             cfg = data[0]
-            threshold = cfg.get("temperature_threshold", 25.0)
-            fridge_name = cfg.get("name", f"Refrigerator {fridge_id}")
+            threshold = float(cfg.get("temperature_threshold", 25.0))
+            fridge_name = cfg.get("name") or f"Refrigerator {fridge_id}"
         else:
             threshold = 25.0
             fridge_name = f"Refrigerator {fridge_id}"
@@ -124,32 +124,38 @@ def _check_threshold_and_alert(fridge_id, temperature):
         try:
             temp_val = float(temperature)
         except (TypeError, ValueError):
+            print(f"mqtt_client: invalid temperature value: {temperature}")
             return
 
         if temp_val > threshold:
-            print(f"mqtt_client: ALERT {fridge_name} temp {temp_val} > {threshold}")
+            print(f"mqtt_client: 🚨 ALERT {fridge_name} temp {temp_val}°C > {threshold}°C")
             try:
                 # Send alert via email service
                 if hasattr(email_service, "send_temperature_alert"):
-                    ok = email_service.send_temperature_alert(fridge_id=int(fridge_id), current_temp=temp_val, threshold=threshold, fridge_name=fridge_name)
+                    ok = email_service.send_temperature_alert(
+                        fridge_id=int(fridge_id), 
+                        current_temp=temp_val, 
+                        threshold=threshold, 
+                        fridge_name=fridge_name
+                    )
                     if ok:
-                        print("mqtt_client: email alert sent")
-                        # ensure monitoring thread in email system is running to capture replies
+                        print(f"mqtt_client: ✅ Email alert sent for {fridge_name}")
+                        # Ensure monitoring thread in email system is running to capture replies
                         if hasattr(email_service, "start_monitoring"):
                             try:
                                 email_service.start_monitoring()
-                            except Exception:
-                                pass
+                            except Exception as mon_err:
+                                print(f"mqtt_client: email monitoring already running or failed: {mon_err}")
                     else:
-                        print("mqtt_client: email alert failed to send")
+                        print(f"mqtt_client: ❌ Email alert failed to send for {fridge_name}")
                 else:
-                    print("mqtt_client: email_system.send_temperature_alert not implemented")
+                    print("mqtt_client: ⚠️ email_service.send_temperature_alert not implemented")
             except Exception as e:
-                print("mqtt_client: error while sending alert:", e)
+                print(f"mqtt_client: ❌ Error sending alert: {e}")
         else:
-            print(f"mqtt_client: OK {fridge_name} temp {temp_val} within threshold {threshold}")
+            print(f"mqtt_client: ✅ {fridge_name} temp {temp_val}°C within threshold {threshold}°C")
     except Exception as e:
-        print("mqtt_client: threshold check error:", e)
+        print(f"mqtt_client: ❌ Threshold check error: {e}")
 
 
 def _on_connect(client, userdata, flags, rc):

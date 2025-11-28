@@ -1,6 +1,7 @@
 # blueprints/dashboard/routes.py - DATABASE VERSION
-from flask import Blueprint, render_template, jsonify, request
+from flask import Blueprint, render_template, jsonify, request, session, redirect, url_for, flash
 from datetime import datetime
+from functools import wraps
 from services.db_service import (
     get_latest_temperature_reading,
     get_temperature_history,
@@ -13,7 +14,18 @@ dashboard_bp = Blueprint('dashboard', __name__, url_prefix='/dashboard')
 # Fan states (stored in memory for now, could be in DB)
 fan_states = {1: False, 2: False}
 
+def admin_required(f):
+    """Decorator to require admin access."""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if session.get('role') != 'admin':
+            flash('Admin access required', 'danger')
+            return redirect(url_for('auth.login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
 @dashboard_bp.route('/')
+@admin_required
 def dashboard():
     """Main dashboard page - fetch real data from database"""
     fridge_data = {}
@@ -74,6 +86,7 @@ def dashboard():
     )
 
 @dashboard_bp.route('/api/latest')
+@admin_required
 def api_latest():
     """API endpoint for real-time fridge data updates from database"""
     data = {}
@@ -96,11 +109,13 @@ def api_latest():
     return jsonify({'success': True, 'data': data})
 
 @dashboard_bp.route('/fan/states')
+@admin_required
 def fan_states_endpoint():
     """Get all fan states"""
     return jsonify({'success': True, 'fan_states': fan_states})
 
 @dashboard_bp.route('/fan/<int:fridge_id>', methods=['POST'])
+@admin_required
 def toggle_fan(fridge_id):
     """Toggle fan for a specific fridge"""
     if fridge_id not in fan_states:
@@ -159,6 +174,7 @@ def update_threshold_route(fridge_id):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @dashboard_bp.route('/api/email/test', methods=['POST'])
+@admin_required
 def test_email():
     """Send test email"""
     try:
@@ -176,6 +192,7 @@ def test_email():
         return jsonify({'success': False, 'error': error_msg}), 500
 
 @dashboard_bp.route('/api/email/check-signals')
+@admin_required
 def check_email_signals():
     """Check for email reply signals (YES to activate fan)"""
     try:

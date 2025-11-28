@@ -48,11 +48,11 @@ except Exception as e:
     print(f"⚠️ Email service mock loaded: {e}")
 
 try:
-    from services.scanner_service import scanner_service
-    scanner_service.start()
-    print("✅ Scanner service loaded")
+    from services.mqtt_client import start_in_thread
+    start_in_thread()
+    print("✅ MQTT client started")
 except Exception as e:
-    print(f"⚠️ Scanner service mock loaded: {e}")
+    print(f"⚠️ MQTT client mock loaded: {e}")
 
 # Register all blueprints (modular route handlers)
 from blueprints.auth.routes import auth_bp
