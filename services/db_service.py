@@ -2,6 +2,7 @@
 # Handles all database operations for customers, products, purchases, and temperature readings
 from unittest.mock import MagicMock
 import os
+import secrets
 from datetime import datetime
 
 try:
@@ -23,7 +24,139 @@ def init_db():
     print("✅ Supabase connection ready." if DB_AVAILABLE else "⚠️ Mock DB active")
 
 
-# Customer management functions
+# =============================================================================
+# EPC Generator and Stock Management Functions
+# =============================================================================
+
+def generate_epc():
+    """Generate a unique 24-character hexadecimal EPC code for RFID tags.
+    Format: 24 hex characters (e.g., '3034257BF7194E4FAFA8B9B8')
+    """
+    return secrets.token_hex(12).upper()  # 12 bytes = 24 hex chars
+
+
+def add_stock_item(product_id, epc=None):
+    """Add a single stock item with unique EPC to product_stock table.
+    
+    Args:
+        product_id: ID of the product this stock item belongs to
+        epc: Optional EPC code (if None, will be auto-generated)
+    
+    Returns:
+        stock_id of the created item, or None on error
+    """
+    try:
+        if not epc:
+            epc = generate_epc()
+        
+        data = {
+            "epc": epc,
+            "product_id": product_id,
+            "status": "available",
+            "created_at": datetime.now().isoformat()
+        }
+        response = supabase.table("product_stock").insert(data).execute()
+        return response.data[0]["stock_id"] if response.data else None
+    except Exception as e:
+        print(f"Error adding stock item: {e}")
+        return None
+
+
+def get_available_stock_items(product_id, quantity=1):
+    """Get available stock items for a product.
+    
+    Args:
+        product_id: Product to find stock for
+        quantity: Number of items needed
+    
+    Returns:
+        List of stock_id values (up to quantity requested)
+    """
+    try:
+        response = (
+            supabase.table("product_stock")
+            .select("stock_id, epc")
+            .eq("product_id", product_id)
+            .eq("status", "available")
+            .limit(quantity)
+            .execute()
+        )
+        return [item["stock_id"] for item in (response.data or [])]
+    except Exception as e:
+        print(f"Error fetching available stock: {e}")
+        return []
+
+
+def mark_stock_as_sold(stock_id, purchase_id):
+    """Mark a stock item as sold and link to purchase.
+    
+    Args:
+        stock_id: ID of the stock item to mark as sold
+        purchase_id: ID of the purchase this item belongs to
+    
+    Returns:
+        True on success, False on error
+    """
+    try:
+        supabase.table("product_stock").update({
+            "status": "sold",
+            "sold_at": datetime.now().isoformat(),
+            "purchase_id": purchase_id
+        }).eq("stock_id", stock_id).execute()
+        return True
+    except Exception as e:
+        print(f"Error marking stock as sold: {e}")
+        return False
+
+
+def get_stock_items_for_product(product_id):
+    """Get all stock items for a product (for admin stock modal).
+    
+    Args:
+        product_id: Product to get stock items for
+    
+    Returns:
+        List of stock items with their EPCs, status, and timestamps
+    """
+    try:
+        response = (
+            supabase.table("product_stock")
+            .select("stock_id, epc, status, created_at, sold_at, purchase_id")
+            .eq("product_id", product_id)
+            .order("created_at", desc=True)
+            .execute()
+        )
+        return response.data or []
+    except Exception as e:
+        print(f"Error fetching stock items: {e}")
+        return []
+
+
+def get_stock_by_epc(epc):
+    """Find stock item by EPC and join with product info.
+    
+    Args:
+        epc: The EPC code to search for
+    
+    Returns:
+        Dictionary with stock item and product details, or None if not found
+    """
+    try:
+        response = (
+            supabase.table("product_stock")
+            .select("*, product_info(*)")
+            .eq("epc", epc)
+            .execute()
+        )
+        return response.data[0] if response.data else None
+    except Exception as e:
+        print(f"Error finding stock by EPC: {e}")
+        return None
+
+
+# =============================================================================
+# Customer Management Functions
+# =============================================================================
 def get_customers():
     """Fetch all customers sorted by name."""
     try:
@@ -94,9 +227,9 @@ def get_customers_paginated(limit, offset, search=None):
             search_lower = search.lower()
             filtered = [
                 c for c in all_customers
-                if (search_lower in c.get('first_name', '').lower() or
-                    search_lower in c.get('last_name', '').lower() or
-                    search_lower in c.get('email', '').lower())
+                if (search_lower in (c.get('first_name') or '').lower() or
+                    search_lower in (c.get('last_name') or '').lower() or
+                    search_lower in (c.get('email') or '').lower())
             ]
         else:
             filtered = all_customers
@@ -204,56 +337,118 @@ def update_fridge_threshold(fridge_id, new_threshold):
 
 # Product management functions
 def get_all_products():
-    """Fetch all products with inventory information."""
+    """Fetch all products with inventory information calculated from product_stock."""
     try:
-        response = supabase.table("products").select("*").order("name").execute()
-        return response.data or []
+        # Get all products
+        response = supabase.table("product_info").select("*").order("name").execute()
+        products = response.data or []
+        
+        if not products:
+            return []
+        
+        # Fetch all available stock counts in one query
+        stock_response = (
+            supabase.table("product_stock")
+            .select("product_id")
+            .eq("status", "available")
+            .execute()
+        )
+        
+        # Count stock items per product
+        stock_counts = {}
+        for item in (stock_response.data or []):
+            product_id = item["product_id"]
+            stock_counts[product_id] = stock_counts.get(product_id, 0) + 1
+        
+        # Assign counts to products
+        for product in products:
+            product["total_quantity"] = stock_counts.get(product["product_id"], 0)
+        
+        return products
     except Exception as e:
         print(f"Error fetching products: {e}")
         return []
 
 
 def get_product_by_id(product_id):
-    """Get single product by ID."""
+    """Get single product by ID with calculated stock quantity."""
     try:
-        response = supabase.table("products").select("*").eq("product_id", product_id).single().execute()
-        return response.data
+        response = supabase.table("product_info").select("*").eq("product_id", product_id).single().execute()
+        product = response.data
+        
+        if product:
+            # Calculate actual stock quantity from product_stock
+            stock_response = (
+                supabase.table("product_stock")
+                .select("stock_id", count="exact")
+                .eq("product_id", product_id)
+                .eq("status", "available")
+                .execute()
+            )
+            product["total_quantity"] = stock_response.count or 0
+        
+        return product
     except Exception as e:
         print(f"Error fetching product: {e}")
         return None
 
 
 def get_product_by_code(upc=None, epc=None):
-    """Find product by barcode (UPC) or RFID tag (EPC)."""
+    """Find product by barcode (UPC) or RFID tag (EPC).
+    
+    Args:
+        upc: Product UPC barcode (finds product type)
+        epc: Stock item EPC tag (finds specific stock item with product info)
+    
+    Returns:
+        Product dictionary (from product_info or joined from product_stock)
+    """
     try:
         if upc:
-            response = supabase.table("products").select("*").eq("upc", upc).execute()
+            # UPC lookup: find product type in product_info
+            response = supabase.table("product_info").select("*").eq("upc", upc).execute()
             if response.data:
                 return response.data[0]
         if epc:
-            response = supabase.table("products").select("*").eq("epc", epc).execute()
-            if response.data:
-                return response.data[0]
+            # EPC lookup: find stock item and join with product_info
+            stock_item = get_stock_by_epc(epc)
+            if stock_item and stock_item.get("product_info"):
+                # Return the product_info part, but include the stock_id for reference
+                product = stock_item["product_info"]
+                product["stock_id"] = stock_item["stock_id"]  # Add stock_id to track which item was scanned
+                product["epc"] = epc  # Add EPC back for display purposes
+                return product
         return None
     except Exception as e:
         print(f"Error finding product by code: {e}")
         return None
 
 
-def add_product(name, category, price, upc, epc, producer, image_url=None):
-    """Add new product to database."""
+def add_product(name, category, price, upc, producer, image_url=None):
+    """Add new product to database (product_info table).
+    Note: Stock quantity is calculated from product_stock table, not stored here.
+    
+    Args:
+        name: Product name
+        category: Product category
+        price: Product price
+        upc: Universal Product Code (barcode)
+        producer: Product producer/manufacturer
+        image_url: Optional product image URL
+    
+    Returns:
+        Created product dictionary, or None on error
+    """
     try:
         data = {
             "name": name,
             "category": category,
             "price": price,
             "upc": upc,
-            "epc": epc,
             "producer": producer,
-            "image_url": image_url,
-            "total_quantity": 0
+            "image_url": image_url
         }
-        response = supabase.table("products").insert(data).execute()
+        response = supabase.table("product_info").insert(data).execute()
         return response.data[0] if response.data else None
     except Exception as e:
         print(f"Error adding product: {e}")
@@ -263,7 +458,7 @@ def add_product(name, category, price, upc, epc, producer, image_url=None):
 def update_product(product_id, **kwargs):
     """Update product fields."""
     try:
-        supabase.table("products").update(kwargs).eq("product_id", product_id).execute()
+        supabase.table("product_info").update(kwargs).eq("product_id", product_id).execute()
         return True
     except Exception as e:
         print(f"Error updating product: {e}")
@@ -273,7 +468,7 @@ def update_product(product_id, **kwargs):
 def delete_product(product_id):
     """Delete product."""
     try:
-        supabase.table("products").delete().eq("product_id", product_id).execute()
+        supabase.table("product_info").delete().eq("product_id", product_id).execute()
         return True
     except Exception as e:
         print(f"Error deleting product: {e}")
@@ -281,11 +476,21 @@ def delete_product(product_id):
 
 
 def add_inventory_reception(product_id, quantity, date_received=None):
-    """Record stock reception and update product inventory."""
+    """Record stock reception, generate EPCs, and update product inventory.
+    
+    Args:
+        product_id: ID of the product receiving stock
+        quantity: Number of items being added
+        date_received: Optional timestamp (defaults to now)
+    
+    Returns:
+        True on success, False on error
+    """
     try:
         if not date_received:
             date_received = datetime.now().isoformat()
         
+        # Record the inventory reception
         data = {
             "product_id": product_id,
             "quantity_received": quantity,
@@ -293,11 +498,11 @@ def add_inventory_reception(product_id, quantity, date_received=None):
         }
         supabase.table("inventory_receptions").insert(data).execute()
         
-        # Update total quantity in products table
-        product = get_product_by_id(product_id)
-        if product:
-            new_total = product.get("total_quantity", 0) + quantity
-            update_product(product_id, total_quantity=new_total)
+        # Generate EPC-tagged stock items for each unit received
+        for _ in range(quantity):
+            add_stock_item(product_id)
+        
+        # Note: total_quantity is now calculated dynamically from product_stock
         
         return True
     except Exception as e:
@@ -396,14 +601,17 @@ def update_customer_points(customer_id, points_to_add):
 
 # Purchase and receipt functions
 def create_purchase(customer_id, total_amount, points_earned, items, points_redeemed=0):
-    """Create purchase record with items and update inventory.
+    """Create purchase record with items, mark stock as sold, and update inventory.
     
     Args:
         customer_id: Customer ID (can be None for guest purchases)
         total_amount: Total purchase amount after any discounts
         points_earned: Points to award (0 for guests)
-        items: List of purchase items
+        items: List of purchase items (each with product_id, quantity, price, and optional stock_ids)
         points_redeemed: Points customer redeemed for discount (deducted from their account)
+    
+    Returns:
+        purchase_id on success, None on error
     """
     try:
         # Create purchase record
@@ -419,7 +627,7 @@ def create_purchase(customer_id, total_amount, points_earned, items, points_rede
         
         purchase_id = purchase_response.data[0]["purchase_id"]
         
-        # Create purchase items
+        # Create purchase items and mark stock as sold
         for item in items:
             item_data = {
                 "purchase_id": purchase_id,
@@ -429,11 +637,19 @@ def create_purchase(customer_id, total_amount, points_earned, items, points_rede
             }
             supabase.table("purchase_items").insert(item_data).execute()
             
-            # Decrease inventory
-            product = get_product_by_id(item["product_id"])
-            if product:
-                new_qty = max(0, product.get("total_quantity", 0) - item["quantity"])
-                update_product(item["product_id"], total_quantity=new_qty)
+            # Mark stock items as sold
+            # If stock_ids are provided (from scanning), use those
+            # Otherwise, allocate available stock items
+            if "stock_ids" in item and item["stock_ids"]:
+                stock_ids = item["stock_ids"]
+            else:
+                stock_ids = get_available_stock_items(item["product_id"], item["quantity"])
+            
+            # Mark each stock item as sold
+            for stock_id in stock_ids:
+                mark_stock_as_sold(stock_id, purchase_id)
+            
+            # Note: total_quantity is now calculated dynamically from product_stock
         
         # Handle customer points (only if customer_id provided)
         if customer_id:

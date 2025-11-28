@@ -19,10 +19,10 @@
                 class="btn {{ 'btn-primary' if current_language == 'fr' else 'btn-outline-light' }}">FR</a>
         </div>
     </div>
-    <div class="row vh-100 m-0">
+    <div class="row m-0" style="height: 100vh;">
         <!-- Admin Sidebar -->
-        <div
-            class="col-3 d-flex flex-column justify-content-center p-4 bg-dark text-white">
+        <div class="col-3 d-flex flex-column justify-content-center p-4 bg-dark text-white"
+            style="height: 100vh;">
             <h1 class="mb-2 text-center">{{ _('Smart Store') }}</h1>
             <div id="date" class="fw-bold text-center"></div>
             <div id="clock" class="fw-bold text-center mb-4"></div>
@@ -44,7 +44,8 @@
             </div>
         </div>
         <!-- Main content -->
-        <div class="col-9 bg-secondary overflow-auto p-4">
+        <div class="col-9 bg-secondary p-4"
+            style="height: 100vh; overflow-y: auto;">
             <h2 class="text-white mb-4">{{ _('Product Management') }}</h2>
             {% if total_products %}
             <p class="text-light">{{ _('Showing') }} {{ products|length }}
@@ -71,18 +72,16 @@
                     + {{ _('Add New Product') }}
                 </button>
             </div>
-            <div class="table-responsive"
-                style="max-height: 70vh; overflow-y: auto;">
+            <div class="table-responsive">
                 <table class="table table-dark table-hover table-sm">
                     <thead class="sticky-top"
                         style="background-color: #212529;">
                         <tr>
                             <th style="width: 5%;">{{ _('ID') }}</th>
-                            <th style="width: 22%;">{{ _('Name') }}</th>
-                            <th style="width: 12%;">{{ _('Category') }}</th>
+                            <th style="width: 25%;">{{ _('Name') }}</th>
+                            <th style="width: 13%;">{{ _('Category') }}</th>
                             <th style="width: 8%;">{{ _('Price') }}</th>
-                            <th style="width: 13%;">{{ _('UPC') }}</th>
-                            <th style="width: 13%;">{{ _('EPC') }}</th>
+                            <th style="width: 16%;">{{ _('UPC') }}</th>
                             <th style="width: 10%;">{{ _('Stock') }}</th>
                             <th style="width: 30%;">{{ _('Actions') }}</th>
                         </tr>
@@ -95,7 +94,6 @@
                             <td>{{ product.category }}</td>
                             <td>${{ "%.2f"|format(product.price) }}</td>
                             <td><code>{{ product.upc }}</code></td>
-                            <td><code>{{ product.epc }}</code></td>
                             <td>
                                 <span
                                     class="badge bg-{{ 'success' if product.total_quantity > 10 else 'warning' if product.total_quantity > 0 else 'danger' }}">
@@ -111,13 +109,17 @@
                                         data-total-quantity="{{ product.total_quantity or 0 }}">
                                         {{ _('Inventory') }}
                                     </button>
+                                    <button class="btn btn-primary stock-btn"
+                                        data-product-id="{{ product.product_id }}"
+                                        data-product-name="{{ product.name }}">
+                                        {{ _('Stock Items') }}
+                                    </button>
                                     <button class="btn btn-warning edit-btn"
                                         data-product-id="{{ product.product_id }}"
                                         data-product-name="{{ product.name }}"
                                         data-category="{{ product.category }}"
                                         data-price="{{ product.price }}"
                                         data-upc="{{ product.upc }}"
-                                        data-epc="{{ product.epc }}"
                                         data-producer="{{ product.producer }}"
                                         data-image-url="{{ product.image_url or '' }}">
                                         {{ _('Edit') }}
@@ -134,17 +136,9 @@
                     </tbody>
                 </table>
             </div>
-            {% if not products %}
-            <div class="text-center text-light mt-5">
-                <h4>{{ _('No products yet') }}</h4>
-                <a href="{{ url_for('products.add_product_page') }}"
-                    class="btn btn-success mt-3">
-                    {{ _('Add Your First Product') }}
-                </a>
-            </div>
-            {% else %}
-            <!-- Pagination Controls -->
-            <nav aria-label="Product pages" class="mt-4">
+            <!-- Pagination Controls - Right after table -->
+            {% if products %}
+            <nav aria-label="Product pages" class="mt-3">
                 <ul class="pagination justify-content-center">
                     <li class="page-item {% if page <= 1 %}disabled{% endif %}">
                         <a class="page-link"
@@ -163,6 +157,15 @@
                     </li>
                 </ul>
             </nav>
+            {% endif %}
+            {% if not products %}
+            <div class="text-center text-light mt-5">
+                <h4>{{ _('No products yet') }}</h4>
+                <a href="{{ url_for('products.add_product_page') }}"
+                    class="btn btn-success mt-3">
+                    {{ _('Add Your First Product') }}
+                </a>
+            </div>
             {% endif %}
         </div>
     </div>
@@ -202,16 +205,35 @@
                                 required>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">{{ _('EPC (RFID)') }}
-                                *</label>
-                            <input type="text" class="form-control" name="epc"
-                                required>
-                        </div>
-                        <div class="mb-3">
                             <label class="form-label">{{ _('Producer') }}
                                 *</label>
                             <input type="text" class="form-control"
-                                name="producer" required>
+                                name="producer" list="producersList" required
+                                placeholder="Select or type producer name">
+                            <datalist id="producersList">
+                                <option value="Coca-Cola Company">
+                                <option value="PepsiCo">
+                                <option value="Nestle">
+                                <option value="Unilever">
+                                <option value="Procter & Gamble">
+                                <option value="Kraft Heinz">
+                                <option value="Mondelez International">
+                                <option value="Danone">
+                                <option value="General Mills">
+                                <option value="Kellogg's">
+                                <option value="Mars Inc.">
+                                <option value="Ferrero">
+                                <option value="Red Bull">
+                                <option value="Starbucks">
+                                <option value="Johnson & Johnson">
+                                <option value="Colgate-Palmolive">
+                                <option value="L'Oréal">
+                                <option value="Anheuser-Busch">
+                                <option value="Heineken">
+                                <option value="Diageo">
+                            </datalist>
+                            <small
+                                class="form-text text-muted">{{ _('Select from list or type custom name') }}</small>
                         </div>
                         <div class="mb-3">
                             <label
@@ -267,16 +289,13 @@
                                 required>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">{{ _('EPC (RFID)') }}
-                                *</label>
-                            <input type="text" class="form-control" id="editEpc"
-                                required>
-                        </div>
-                        <div class="mb-3">
                             <label class="form-label">{{ _('Producer') }}
                                 *</label>
                             <input type="text" class="form-control"
-                                id="editProducer" required>
+                                id="editProducer" list="producersList" required
+                                placeholder="Select or type producer name">
+                            <small
+                                class="form-text text-muted">{{ _('Select from list or type custom name') }}</small>
                         </div>
                         <div class="mb-3">
                             <label
@@ -325,6 +344,66 @@
                         data-bs-dismiss="modal">{{ _('Cancel') }}</button>
                     <button type="button" class="btn btn-info"
                         id="updateStockBtn">{{ _('Update Stock') }}</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Stock Items Modal (View EPCs for a product) -->
+    <div class="modal fade" id="stockItemsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content bg-dark text-white">
+                <div class="modal-header">
+                    <h5 class="modal-title">{{ _('Stock Items') }} - <span
+                            id="stockProductName"></span></h5>
+                    <button type="button" class="btn-close btn-close-white"
+                        data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="stockProductId">
+                    <div id="stockItemsLoading" class="text-center">
+                        <div class="spinner-border text-light" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                    <div id="stockItemsContent" style="display: none;">
+                        <div class="table-responsive"
+                            style="max-height: 400px; overflow-y: auto;">
+                            <table
+                                class="table table-dark table-hover table-sm">
+                                <thead class="sticky-top"
+                                    style="background-color: #212529;">
+                                    <tr>
+                                        <th style="width: 10%;">
+                                            {{ _('Stock ID') }}
+                                        </th>
+                                        <th style="width: 40%;">
+                                            {{ _('EPC (RFID Tag)') }}
+                                        </th>
+                                        <th style="width: 15%;">
+                                            {{ _('Status') }}
+                                        </th>
+                                        <th style="width: 20%;">
+                                            {{ _('Created') }}
+                                        </th>
+                                        <th style="width: 15%;">{{ _('Sold') }}
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody id="stockItemsTableBody">
+                                    <!-- Populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div id="stockItemsEmpty"
+                            class="text-center text-muted mt-3"
+                            style="display: none;">
+                            {{ _('No stock items found. Add inventory to generate RFID-tagged items.') }}
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary"
+                        data-bs-dismiss="modal">{{ _('Close') }}</button>
                 </div>
             </div>
         </div>

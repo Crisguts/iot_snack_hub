@@ -7,7 +7,6 @@ from services.db_service import (
     get_customer_purchases, get_purchase_details, get_customer_by_id,
     get_customer_by_membership
 )
-from services.scanner_service import scanner_service
 
 store_bp = Blueprint("store", __name__, url_prefix="/store")
 
@@ -119,7 +118,7 @@ def api_add_to_cart():
         return jsonify({'success': False, 'error': 'Product ID required'}), 400
     
     # Get product from DB
-    from services.db_service import get_product_by_id
+    from services.db_service import get_product_by_id, get_available_stock_items
     product = get_product_by_id(product_id)
     
     if not product:
@@ -128,6 +127,11 @@ def api_add_to_cart():
     if product.get('total_quantity', 0) < quantity:
         return jsonify({'success': False, 'error': 'Insufficient stock'}), 400
     
+    # Allocate stock items for this cart addition
+    stock_ids = get_available_stock_items(product_id, quantity)
+    if len(stock_ids) < quantity:
+        return jsonify({'success': False, 'error': 'Insufficient stock items'}), 400
+    
     # Add to cart
     cart = get_cart()
     
@@ -135,13 +139,18 @@ def api_add_to_cart():
     existing = next((item for item in cart if item['product_id'] == product_id), None)
     if existing:
         existing['quantity'] += quantity
+        # Track stock_ids
+        if 'stock_ids' not in existing:
+            existing['stock_ids'] = []
+        existing['stock_ids'].extend(stock_ids)
     else:
         cart.append({
             'product_id': product['product_id'],
             'name': product['name'],
             'price': product['price'],
             'quantity': quantity,
-            'image_url': product.get('image_url')
+            'image_url': product.get('image_url'),
+            'stock_ids': stock_ids
         })
     
     save_cart(cart)
@@ -284,12 +293,24 @@ def api_scan_product():
     # Determine if code is UPC (8-14 digits) or EPC (typically 24 hex chars)
     # Try UPC first (barcode), then EPC (RFID)
     product = None
+    stock_id = None
+    
     if code.isdigit() and 8 <= len(code) <= 14:
-        # Barcode scan (UPC)
+        # Barcode scan (UPC) - find product and allocate a random available stock item
         product = get_product_by_code(upc=code)
+        if product:
+            # Get one available stock item for this product
+            from services.db_service import get_available_stock_items
+            stock_ids = get_available_stock_items(product['product_id'], quantity=1)
+            if stock_ids:
+                stock_id = stock_ids[0]
+            else:
+                return jsonify({'success': False, 'error': 'Product out of stock'}), 400
     else:
-        # RFID scan (EPC) - typically longer alphanumeric
+        # RFID scan (EPC) - find specific stock item
         product = get_product_by_code(epc=code)
+        if product:
+            stock_id = product.get('stock_id')  # get_product_by_code adds this when EPC scanned
     
     if not product:
         return jsonify({'success': False, 'error': 'Product not found in system'}), 404
@@ -297,20 +318,28 @@ def api_scan_product():
     if product.get('total_quantity', 0) < 1:
         return jsonify({'success': False, 'error': 'Product out of stock'}), 400
     
-    # Add to cart
+    # Add to cart with stock_id tracking
     cart = get_cart()
     existing = next((item for item in cart if item['product_id'] == product['product_id']), None)
     
     if existing:
         existing['quantity'] += 1
+        # Track stock_ids for this cart item
+        if 'stock_ids' not in existing:
+            existing['stock_ids'] = []
+        if stock_id:
+            existing['stock_ids'].append(stock_id)
     else:
-        cart.append({
+        new_item = {
             'product_id': product['product_id'],
             'name': product['name'],
             'price': product['price'],
             'quantity': 1,
             'image_url': product.get('image_url')
-        })
+        }
+        if stock_id:
+            new_item['stock_ids'] = [stock_id]
+        cart.append(new_item)
     
     save_cart(cart)
     

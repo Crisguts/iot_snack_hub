@@ -143,10 +143,10 @@
                 class="btn {{ 'btn-primary' if current_language == 'fr' else 'btn-outline-light' }}">FR</a>
         </div>
     </div>
-    <div class="row vh-100" style="margin: 0;">
+    <div class="row m-0" style="height: 100vh;">
         <!-- Sidebar -->
-        <div
-            class="col-3 d-flex flex-column justify-content-center p-4 bg-dark text-white">
+        <div class="col-3 d-flex flex-column justify-content-center p-4 bg-dark text-white"
+            style="height: 100vh;">
             <div>
                 <h1 class="mb-2 text-center">{{ _('Smart Store') }}</h1>
                 <div id="date" class="fw-bold text-center"></div>
@@ -171,50 +171,48 @@
             </div>
         </div>
         <!-- Main content -->
-        <div class="col-9 bg-secondary overflow-auto">
-            <div class="w-100 p-4">
-                <!-- Bootstrap Alerts (server-side flashes) -->
-                {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                {% for category, message in messages %}
-                <div class="alert alert-{{ category }} alert-dismissible fade show"
-                    role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close"
-                        data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-                {% endfor %}
-                {% endif %}
-                {% endwith %}
-                <!-- Title -->
-                <h2 class="text-white text-center mb-4">{{ _('Client List') }}
-                </h2>
-                <!-- Active Search Display -->
-                {% if search %}
-                <div
-                    class="alert alert-info d-flex justify-content-between align-items-center">
-                    <span><i class="bi bi-search"></i>
-                        {{ _('Search results for:') }}
-                        <strong>{{ search }}</strong></span>
-                    <a href="{{ url_for('client.client') }}"
-                        class="btn btn-sm btn-secondary">{{ _('Clear Search') }}</a>
-                </div>
-                {% endif %}
-                <!-- Table Headers -->
-                <div
-                    class="row fw-bold border-bottom pb-2 mb-1 align-items-center">
-                    <div class="col-3">{{ _('First Name') }}</div>
-                    <div class="col-3">{{ _('Last Name') }}</div>
-                    <div class="col-4">{{ _('Email') }}</div>
-                    <div class="col-2 text-center">{{ _('Actions') }}</div>
-                </div>
+        <div class="col-9 bg-secondary p-4"
+            style="height: 100vh; overflow-y: auto;">
+            <!-- Bootstrap Alerts (server-side flashes) -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show"
+                role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"
+                    aria-label="Close"></button>
+            </div>
+            {% endfor %}
+            {% endif %}
+            {% endwith %}
+            <!-- Title -->
+            <h2 class="text-white text-center mb-4">{{ _('Client List') }}
+            </h2>
+            <!-- Active Search Display -->
+            {% if search %}
+            <div
+                class="alert alert-info d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-search"></i>
+                    {{ _('Search results for:') }}
+                    <strong>{{ search }}</strong></span>
+                <a href="{{ url_for('client.client') }}"
+                    class="btn btn-sm btn-secondary">{{ _('Clear Search') }}</a>
+            </div>
+            {% endif %}
+            <!-- Table Headers -->
+            <div class="row fw-bold border-bottom pb-2 mb-1 align-items-center">
+                <div class="col-3">{{ _('First Name') }}</div>
+                <div class="col-3">{{ _('Last Name') }}</div>
+                <div class="col-4">{{ _('Email') }}</div>
+                <div class="col-2 text-center">{{ _('Actions') }}</div>
             </div>
             <!-- Customer List -->
             <div class="customer-list-container px-4">
                 {% if customers %}
                 {% for customer in customers %}
                 <!-- data attributes for modal display -->
-                <div class="row align-items-center mb-1 mt-1 border-bottom Customer py-2"
+                <div class="row align-items-center mb-1 mt-1 border-bottom Customer py-2 text-white"
                     style="cursor:pointer;" data-bs-toggle="modal"
                     data-bs-target="#viewClientModal"
                     data-id="{{ customer.customer_id }}"
@@ -267,6 +265,7 @@
                 </ul>
             </nav>
         </div>
+    </div>
     </div>
     <!-- Edit Client Modal -->
     <div class="modal fade" id="editClientModal" tabindex="-1"

@@ -1,6 +1,6 @@
 # Smart Store IoT
 
-Automated store with self-checkout, RFID/barcode scanning, temperature monitoring, and customer management.
+Automated store with self-checkout, barcode/RFID scanning, temperature monitoring, and customer management.
 
 ## Features
 
@@ -11,8 +11,7 @@ Automated store with self-checkout, RFID/barcode scanning, temperature monitorin
 - Real-time dashboard with charts
 
 **Self-Checkout**
-- USB barcode + RFID scanner support
-- Auto-detect scanner ports
+- Barcode/RFID scanning via JavaScript inputs
 - Invisible scanner inputs (kiosk mode)
 - Guest checkout or member login
 - Point system (100 pts = $1)
@@ -37,8 +36,7 @@ smart-store/
 │   ├── db_service.py        # Supabase database operations
 │   ├── email_service.py     # SMTP/IMAP email system
 │   ├── gpio_service.py      # Raspberry Pi GPIO control
-│   ├── mqtt_client.py       # MQTT subscriber for sensors
-│   └── scanner_service.py   # Barcode/RFID scanner
+│   └── mqtt_client.py       # MQTT subscriber for sensors
 ├── static/                  # Frontend assets
 │   ├── css/styles.css
 │   └── js/                  # JavaScript modules
@@ -67,15 +65,14 @@ CREATE TABLE customers (
 );
 ```
 
-#### 2. products
+#### 2. product_info
 ```sql
-CREATE TABLE products (
+CREATE TABLE product_info (
     product_id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     category VARCHAR(100),
     price DECIMAL(10, 2) NOT NULL,
     upc VARCHAR(13) UNIQUE NOT NULL,
-    epc VARCHAR(24) UNIQUE NOT NULL,
     producer VARCHAR(255),
     image_url TEXT,
     total_quantity INTEGER DEFAULT 0,
@@ -83,17 +80,33 @@ CREATE TABLE products (
 );
 ```
 
-#### 3. inventory_receptions
+#### 3. product_stock
+```sql
+CREATE TABLE product_stock (
+    stock_id SERIAL PRIMARY KEY,
+    epc VARCHAR(24) UNIQUE NOT NULL,
+    product_id INTEGER REFERENCES product_info(product_id) ON DELETE CASCADE,
+    status VARCHAR(20) DEFAULT 'available',
+    created_at TIMESTAMP DEFAULT NOW(),
+    sold_at TIMESTAMP,
+    purchase_id INTEGER REFERENCES purchases(purchase_id)
+);
+
+CREATE INDEX idx_product_stock_status ON product_stock(status);
+CREATE INDEX idx_product_stock_product_id ON product_stock(product_id);
+```
+
+#### 4. inventory_receptions
 ```sql
 CREATE TABLE inventory_receptions (
     reception_id SERIAL PRIMARY KEY,
-    product_id INTEGER REFERENCES products(product_id) ON DELETE CASCADE,
+    product_id INTEGER REFERENCES product_info(product_id) ON DELETE CASCADE,
     quantity_received INTEGER NOT NULL,
     date_received TIMESTAMP DEFAULT NOW()
 );
 ```
 
-#### 4. purchases
+#### 5. purchases
 ```sql
 CREATE TABLE purchases (
     purchase_id SERIAL PRIMARY KEY,
@@ -104,18 +117,18 @@ CREATE TABLE purchases (
 );
 ```
 
-#### 5. purchase_items
+#### 6. purchase_items
 ```sql
 CREATE TABLE purchase_items (
     item_id SERIAL PRIMARY KEY,
     purchase_id INTEGER REFERENCES purchases(purchase_id) ON DELETE CASCADE,
-    product_id INTEGER REFERENCES products(product_id),
+    product_id INTEGER REFERENCES product_info(product_id),
     quantity INTEGER NOT NULL,
     price_at_purchase DECIMAL(10, 2) NOT NULL
 );
 ```
 
-#### 6. refrigerators
+#### 7. refrigerators
 ```sql
 CREATE TABLE refrigerators (
     fridge_id INTEGER PRIMARY KEY,
@@ -124,7 +137,7 @@ CREATE TABLE refrigerators (
 );
 ```
 
-#### 7. temperature_readings
+#### 8. temperature_readings
 ```sql
 CREATE TABLE temperature_readings (
     reading_id SERIAL PRIMARY KEY,
@@ -169,14 +182,10 @@ EMAIL_RECIPIENT=alert-recipient@gmail.com
 MQTT_BROKER=localhost
 MQTT_PORT=1883
 MQTT_TOPICS=Frig1,Frig2
+MQTT_AUTO_START=true
 
-# Scanner (for development - set to False to enable real hardware)
-SCANNER_MOCK_MODE=True
+# Mock Mode (for development without hardware)
 MOCK_MODE=True
-
-# RFID (optional - auto-detects if not set)
-# RFID_PORT=/dev/ttyUSB0
-# RFID_BAUD=9600
 ```
 
 **Database**
@@ -216,9 +225,9 @@ python3 app.py
 
 **ESP32**: Flash with DHT11 sensor code, publish to MQTT (`Frig1`, `Frig2`)  
 **Pi GPIO**: LEDs (pins 21, 20), Buzzer (16), Motor (17, 27, 22)  
-**Scanners**: USB barcode (plug & play), RFID auto-detects serial port
+**Scanners**: Barcode/RFID scanning handled via JavaScript with invisible inputs (scanners must be in default/keyboard mode)
 
-**Mock Mode**: Set `SCANNER_MOCK_MODE=True` and `MOCK_MODE=True` in `.env` to test without hardware
+**Mock Mode**: Set `MOCK_MODE=True` in `.env` to test GPIO without hardware
 
 ## Routes
 
@@ -230,5 +239,5 @@ python3 app.py
 - **No DB connection**: Check `.env` Supabase credentials
 - **Email alerts fail**: Use Gmail App Password, not regular password
 - **MQTT won't connect**: Check Mosquitto is running (`sudo systemctl status mosquitto`)
-- **Scanner not working**: Set `SCANNER_MOCK_MODE=False`, check USB connection
+- **GPIO not working**: Check `MOCK_MODE` setting and verify pin connections
 

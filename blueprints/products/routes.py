@@ -3,7 +3,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from services.db_service import (
     get_all_products, get_product_by_id, add_product, 
     update_product, delete_product, add_inventory_reception,
-    get_inventory_history
+    get_inventory_history, get_stock_items_for_product
 )
 
 products_bp = Blueprint("products", __name__, url_prefix="/products")
@@ -51,7 +51,7 @@ def add_product_page():
     # POST - create product
     data = request.form.to_dict()
     
-    required = ['name', 'category', 'price', 'upc', 'epc', 'producer']
+    required = ['name', 'category', 'price', 'upc', 'producer']
     missing = [f for f in required if not data.get(f)]
     
     if missing:
@@ -63,7 +63,6 @@ def add_product_page():
         category=data['category'],
         price=float(data['price']),
         upc=data['upc'],
-        epc=data['epc'],
         producer=data['producer'],
         image_url=data.get('image_url')
     )
@@ -96,7 +95,6 @@ def edit_product_page(product_id):
         'category': data.get('category'),
         'price': float(data.get('price', 0)),
         'upc': data.get('upc'),
-        'epc': data.get('epc'),
         'producer': data.get('producer'),
         'image_url': data.get('image_url')
     }
@@ -184,7 +182,7 @@ def api_add_product():
     try:
         data = request.json
         
-        required = ['name', 'category', 'price', 'upc', 'epc', 'producer']
+        required = ['name', 'category', 'price', 'upc', 'producer']
         missing = [f for f in required if not data.get(f)]
         
         if missing:
@@ -195,7 +193,6 @@ def api_add_product():
             category=data['category'],
             price=float(data['price']),
             upc=data['upc'],
-            epc=data['epc'],
             producer=data['producer'],
             image_url=data.get('image_url')
         )
@@ -219,7 +216,6 @@ def api_update_product(product_id):
             'category': data.get('category'),
             'price': float(data.get('price', 0)),
             'upc': data.get('upc'),
-            'epc': data.get('epc'),
             'producer': data.get('producer'),
             'image_url': data.get('image_url')
         }
@@ -253,38 +249,39 @@ def api_delete_product(product_id):
 @products_bp.route('/api/inventory/<int:product_id>', methods=['POST'])
 @admin_required
 def api_add_inventory(product_id):
-    """API endpoint to adjust inventory via AJAX (add or subtract)."""
+    """API endpoint to add inventory via AJAX (creates stock items with EPCs)."""
     try:
         data = request.json
         quantity = int(data.get('quantity', 0))
         
-        # Get current product to check stock levels
+        # Get current product to check it exists
         product = get_product_by_id(product_id)
         if not product:
             return jsonify({'success': False, 'error': 'Product not found'}), 404
         
-        current_stock = product.get('total_quantity', 0)
-        new_stock = current_stock + quantity
-        
-        # Check we don't go negative
-        if new_stock < 0:
+        # Only allow positive quantities (adding stock items)
+        if quantity <= 0:
             return jsonify({
                 'success': False, 
-                'error': f'Cannot subtract {abs(quantity)} - only {current_stock} units in stock'
+                'error': 'Quantity must be positive. To remove stock, delete individual items from Stock Items view.'
             }), 400
         
-        # Use the existing function for positive quantities, or update directly for negative/zero
-        if quantity > 0:
-            if add_inventory_reception(product_id, quantity):
-                return jsonify({'success': True})
-            else:
-                return jsonify({'success': False, 'error': 'Error adding inventory'}), 500
+        # Add inventory (creates stock items with EPCs)
+        if add_inventory_reception(product_id, quantity):
+            return jsonify({'success': True})
         else:
-            # Subtract inventory or set to 0 by updating the product directly
-            if update_product(product_id, total_quantity=new_stock):
-                return jsonify({'success': True})
-            else:
-                return jsonify({'success': False, 'error': 'Error updating inventory'}), 500
+            return jsonify({'success': False, 'error': 'Error adding inventory'}), 500
                 
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@products_bp.route('/api/products/<int:product_id>/stock', methods=['GET'])
+@admin_required
+def api_get_stock_items(product_id):
+    """API endpoint to get all stock items (EPCs) for a product."""
+    try:
+        stock_items = get_stock_items_for_product(product_id)
+        return jsonify({'success': True, 'stock_items': stock_items})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500

@@ -1,7 +1,8 @@
 # Payment management interface for admin users
 # Displays all purchases/payments with customer information
-from flask import Blueprint, render_template, request
+from flask import Blueprint, render_template, request, session, redirect, url_for, flash
 import math
+from functools import wraps
 from services.db_service import (
     get_all_purchases_paginated,
     get_purchases_count,
@@ -10,8 +11,19 @@ from services.db_service import (
 
 payments_bp = Blueprint("payments", __name__, url_prefix="/payments")
 
+def admin_required(f):
+    """Decorator to require admin access."""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if session.get('role') != 'admin':
+            flash('Admin access required', 'danger')
+            return redirect(url_for('auth.login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
 @payments_bp.route('/')
 @payments_bp.route('/list')
+@admin_required
 def payments_list():
     """Display paginated payments list with search functionality."""
     search = request.args.get('search', '').strip()

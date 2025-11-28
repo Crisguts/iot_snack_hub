@@ -50,8 +50,6 @@ h5 {
 }
 
 .customer-list-container {
-  max-height: 72vh;
-  overflow-y: auto;
   padding-right: 10px;
 }
 
