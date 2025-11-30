@@ -38,8 +38,13 @@
             >Products</a
           >
           <a
+            href="{{ url_for('payments.payments_list') }}"
+            class="Sidebar fw-bold mb-2"
+            >{{ _('Payments') }}</a
+          >
+          <a
             href="{{ url_for('inventory.inventory_report') }}"
-            class="Sidebar fw-bold mb-2 text-primary"
+            class="Sidebar fw-bold mb-2"
             >Inventory Report</a
           >
         </div>
@@ -53,27 +58,30 @@
       <!-- Main Content -->
       <div class="col-9 bg-secondary overflow-auto p-4">
         <h2 class="text-white mb-4">Inventory Report</h2>
-
-        <form method="GET" class="mb-4">
-          <div class="input-group">
-            <input
-              type="text"
-              name="search"
-              class="form-control"
-              placeholder="Search by name or category..."
-              value="{{ search }}"
-            />
-            <button class="btn btn-primary" type="submit">Search</button>
-            {% if search %}
-            <a
-              href="{{ url_for('inventory.inventory_report') }}"
-              class="btn btn-secondary"
-              >Clear</a
-            >
-            {% endif %}
+        <!-- Search Bar -->
+        <div class="card bg-dark mb-4 no-print">
+          <div class="card-body">
+            <form method="GET" class="mb-4">
+              <div class="input-group">
+                <input
+                  type="text"
+                  name="search"
+                  class="form-control"
+                  placeholder="Search by name or category..."
+                  value="{{ search }}"
+                />
+                <button class="btn btn-primary" type="submit">Search</button>
+                {% if search %}
+                <a
+                  href="{{ url_for('inventory.inventory_report') }}"
+                  class="btn btn-secondary"
+                  >Clear</a
+                >
+                {% endif %}
+              </div>
+            </form>
           </div>
-        </form>
-
+        </div>
         <p class="text-light" style="font-size: x-large">
           Total Stock Value:
           <strong>${{ "%.2f"|format(total_stock_value) }}</strong>
