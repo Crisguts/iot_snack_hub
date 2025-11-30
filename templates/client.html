@@ -162,6 +162,8 @@
                     class="Sidebar fw-bold">{{ _('Products') }}</a>
                 <a href="{{ url_for('payments.payments_list') }}"
                     class="Sidebar fw-bold">{{ _('Payments') }}</a>
+                <a href="{{ url_for('sales.sales_report') }}"
+                    class="Sidebar fw-bold mb-2">Sales Report</a>
             </div>
             <div class="d-flex flex-column align-items-center mt-auto">
                 <a id="logout" href="{{ url_for('auth.logout') }}"

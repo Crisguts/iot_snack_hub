@@ -751,7 +751,7 @@ def get_purchases_count(search=None):
         print(f"Error counting purchases: {e}")
         return 0
 
-
+"""Saoes Report"""
 def get_customer_purchases_with_details(customer_id):
     """Get all purchases for a specific customer with full details (for admin modal)."""
     try:
@@ -760,3 +760,105 @@ def get_customer_purchases_with_details(customer_id):
     except Exception as e:
         print(f"Error fetching customer purchases: {e}")
         return []
+
+        def get_sales_by_product(start_date, end_date, limit=None, offset=None, search=None):
+    """
+    Returns a paginated list of sold items per product.
+    Supports:
+        - date range
+        - name/category search
+        - limit + offset for pagination
+    """
+
+    try:
+        # Fetch purchase items joined with products
+        response = (
+            supabase.table("purchase_items")
+            .select("product_id, quantity, product_info(name, category), purchases(purchase_date)")
+            .gte("purchases.purchase_date", start_date)
+            .lte("purchases.purchase_date", end_date)
+            .execute()
+        )
+
+        raw = response.data or []
+
+        # Aggregate
+        agg = {}
+        for item in raw:
+            pid = item["product_id"]
+            qty = item["quantity"]
+            info = item["product_info"]
+            name = info["name"]
+            cat = info["category"]
+
+            if pid not in agg:
+                agg[pid] = {
+                    "product_id": pid,
+                    "name": name,
+                    "category": cat,
+                    "total_sold": 0
+                }
+
+            agg[pid]["total_sold"] += qty
+
+        products = list(agg.values())
+
+        # ---- SEARCH FILTER ----
+        if search:
+            s = search.lower()
+            products = [
+                p for p in products
+                if s in p["name"].lower() or s in p["category"].lower()
+            ]
+
+        total_count = len(products)
+
+        # ---- PAGINATION ----
+        if limit is not None and offset is not None:
+            products = products[offset : offset + limit]
+
+        return products, total_count
+
+    except Exception as e:
+        print("Error fetching paginated sales:", e)
+        return [], 0
+
+
+def get_total_sales_value(start_date, end_date):
+    """
+    Returns total revenue for a date range.
+    """
+    try:
+        resp = (
+            supabase.table("purchases")
+            .select("total_amount, purchase_date")
+            .gte("purchase_date", start_date)
+            .lte("purchase_date", end_date)
+            .execute()
+        )
+
+        records = resp.data or []
+        total = sum(float(r["total_amount"]) for r in records)
+
+        return total
+
+    except Exception as e:
+        print("Error fetching total sales value:", e)
+        return 0
+
+
+def get_top_and_bottom_sellers(start_date, end_date, limit=5):
+    """
+    Returns:
+      - top sellers (highest sold quantity)
+      - bottom sellers (lowest sold quantity)
+    """
+    sales = get_sales_by_product(start_date, end_date)
+
+    # Sort
+    sorted_sales = sorted(sales, key=lambda x: x["total_sold"], reverse=True)
+
+    top = sorted_sales[:limit]
+    bottom = sorted_sales[-limit:] if sorted_sales else []
+
+    return top, bottom
