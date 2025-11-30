@@ -761,7 +761,7 @@ def get_customer_purchases_with_details(customer_id):
         print(f"Error fetching customer purchases: {e}")
         return []
 
-        def get_sales_by_product(start_date, end_date, limit=None, offset=None, search=None):
+def get_sales_by_product(start_date, end_date, limit=None, offset=None, search=None):
     """
     Returns a paginated list of sold items per product.
     Supports:
