@@ -847,18 +847,31 @@ def get_total_sales_value(start_date, end_date):
         return 0
 
 
-def get_top_and_bottom_sellers(start_date, end_date, limit=5):
+def get_top_and_bottom_sellers(start_date, end_date):
     """
-    Returns:
-      - top sellers (highest sold quantity)
-      - bottom sellers (lowest sold quantity)
+    Returns the top 3 and bottom 3 selling products.
     """
-    sales = get_sales_by_product(start_date, end_date)
 
-    # Sort
-    sorted_sales = sorted(sales, key=lambda x: x["total_sold"], reverse=True)
+    # get_sales_by_product returns: (products_list, total_count)
+    products, _ = get_sales_by_product(start_date, end_date)
 
-    top = sorted_sales[:limit]
-    bottom = sorted_sales[-limit:] if sorted_sales else []
+    # Normalize data
+    clean_sales = []
+    for p in products:
+        if isinstance(p, dict):
+            clean_sales.append({
+                "product_id": p.get("product_id"),
+                "name": p.get("name"),
+                "category": p.get("category"),
+                "total_sold": p.get("total_sold", 0)
+            })
+
+    # Sort descending
+    sorted_sales = sorted(clean_sales, key=lambda x: x["total_sold"], reverse=True)
+
+    # Always 3 top + 3 bottom
+    top = sorted_sales[:3]
+    bottom = sorted_sales[-3:] if sorted_sales else []
 
     return top, bottom
+
