@@ -74,29 +74,25 @@ def blink(led_color: str, times: int = 3, delay: float = 0.3):
 
 
 def turn_fan_on(fridge_id=1):
+    """Turn on the fan motor for specified fridge"""
     try:
         if fridge_id not in fan_states:
             raise ValueError(f"Invalid fridge_id: {fridge_id}")
         
-        if enable is None or motor is None:
-            raise RuntimeError("GPIO hardware not initialized")
-        
-        # Always control hardware to ensure sync
+        # Control hardware
         enable.on()
         motor.backward()
         fan_states[fridge_id] = True
-        logger.info(f"Fan {fridge_id} turned ON.")
+        logger.info(f"Fan {fridge_id} turned ON - motor spinning")
     except Exception as e:
         logger.error(f"Error turning ON fan {fridge_id}: {e}")
         raise
 
 def turn_fan_off(fridge_id=1):
+    """Turn off the fan motor for specified fridge"""
     try:
         if fridge_id not in fan_states:
             raise ValueError(f"Invalid fridge_id: {fridge_id}")
-        
-        if enable is None or motor is None:
-            raise RuntimeError("GPIO hardware not initialized")
         
         # Update state first
         fan_states[fridge_id] = False
@@ -105,9 +101,9 @@ def turn_fan_off(fridge_id=1):
         if not any(fan_states.values()):
             motor.stop()
             enable.off()
-            logger.info(f"Fan {fridge_id} turned OFF - motor stopped.")
+            logger.info(f"Fan {fridge_id} turned OFF - motor stopped")
         else:
-            logger.info(f"Fan {fridge_id} turned OFF - motor still running for other fridge.")
+            logger.info(f"Fan {fridge_id} turned OFF - motor still running for fridge 2")
     except Exception as e:
         logger.error(f"Error turning OFF fan {fridge_id}: {e}")
         raise
