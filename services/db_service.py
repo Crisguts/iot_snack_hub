@@ -537,6 +537,8 @@ def create_customer_account(first_name, last_name, email, password_hash, phone=N
 
 def get_customer_by_email(email):
     """Finds a customer by their email address. Used for login."""
+    if not DB_AVAILABLE:
+        return None
     try:
         response = supabase.table("customers").select("*").eq("email", email).execute()
         return response.data[0] if response.data else None
@@ -547,6 +549,8 @@ def get_customer_by_email(email):
 
 def get_customer_by_id(customer_id):
     """Retrieves a customer's full information using their customer ID."""
+    if not DB_AVAILABLE:
+        return None
     try:
         response = supabase.table("customers").select("*").eq("customer_id", customer_id).execute()
         return response.data[0] if response.data else None
