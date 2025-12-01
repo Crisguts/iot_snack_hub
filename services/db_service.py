@@ -377,15 +377,28 @@ def get_product_by_code(upc=None, epc=None):
             # UPC lookup: find product type in product_info
             response = supabase.table("product_info").select("*").eq("upc", upc).execute()
             if response.data:
-                return response.data[0]
+                product = response.data[0]
+                
+                # Calculate total_quantity for this product
+                product_id = product.get("product_id")
+                stock_count = supabase.table("product_stock").select("stock_id").eq("product_id", product_id).eq("status", "available").execute()
+                product["total_quantity"] = len(stock_count.data) if stock_count.data else 0
+                
+                return product
         if epc:
             # EPC lookup: find stock item and join with product_info
             stock_item = get_stock_by_epc(epc)
             if stock_item and stock_item.get("product_info"):
                 # Return the product_info part, but include the stock_id for reference
                 product = stock_item["product_info"]
-                product["stock_id"] = stock_item["stock_id"]  # Add stock_id to track which item was scanned
-                product["epc"] = epc  # Add EPC back for display purposes
+                product["stock_id"] = stock_item["stock_id"]
+                product["epc"] = epc
+                
+                # Calculate total_quantity for this product
+                product_id = product.get("product_id")
+                stock_count = supabase.table("product_stock").select("stock_id").eq("product_id", product_id).eq("status", "available").execute()
+                product["total_quantity"] = len(stock_count.data) if stock_count.data else 0
+                
                 return product
         return None
     except Exception as e:
