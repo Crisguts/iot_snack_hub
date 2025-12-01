@@ -223,7 +223,7 @@
                                 <tbody>
                                     {% for purchase in data.purchases %}
                                     <tr>
-                                        <td>{{ purchase.date[:16] if purchase.date else 'N/A' }}
+                                        <td>{{ purchase.date.replace('T', ' ')[:16] if purchase.date else 'N/A' }}
                                         </td>
                                         <td>{{ purchase.quantity }}</td>
                                         <td>${{ "%.2f"|format(purchase.price) }}
@@ -344,7 +344,7 @@
                                     <td><span
                                             class="badge bg-secondary">#{{ purchase.purchase_id }}</span>
                                     </td>
-                                    <td>{{ purchase.purchase_date[:16] if purchase.purchase_date else 'N/A' }}
+                                    <td>{{ purchase.purchase_date.replace('T', ' ')[:16] if purchase.purchase_date else 'N/A' }}
                                     </td>
                                     <td>
                                         <span
@@ -422,8 +422,11 @@
         // Spending Chart
         {% if spending_by_month %}
         const spendingData = {{ spending_by_month | tojson }};
+        console.log('Spending data by month:', spendingData);
         const labels = Object.keys(spendingData).sort();
         const values = labels.map(label => spendingData[label]);
+        console.log('Chart labels:', labels);
+        console.log('Chart values:', values);
         const ctx = document.getElementById('spendingChart').getContext('2d');
         const chart = new Chart(ctx, {
             type: 'line',
