@@ -11,7 +11,8 @@ from services.db_service import (
 from services.gpio_service import (
     turn_fan_on,
     turn_fan_off,
-    get_fan_state
+    get_fan_state,
+    force_reinitialize_gpio
 )
 
 dashboard_bp = Blueprint('dashboard', __name__, url_prefix='/dashboard')
@@ -181,6 +182,25 @@ def toggle_fan(fridge_id):
         })
     except Exception as e:
         print(f"Error toggling fan {fridge_id}: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@dashboard_bp.route('/gpio/reinit', methods=['POST'])
+@admin_required
+def reinitialize_gpio():
+    """Force GPIO reinitialization"""
+    try:
+        success = force_reinitialize_gpio()
+        if success:
+            return jsonify({
+                'success': True,
+                'message': '✅ GPIO reinitialized successfully - hardware ready'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': '❌ GPIO reinitialization failed - check Pi logs for details'
+            }), 500
+    except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @dashboard_bp.route('/threshold/<int:fridge_id>', methods=['POST'])

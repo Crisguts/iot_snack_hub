@@ -40,20 +40,26 @@ def _initialize_gpio():
     try:
         # Force cleanup of any existing GPIO state
         from gpiozero import Device
-        Device.pin_factory.close()
-    except:
-        pass  # Ignore if nothing to close
+        if Device.pin_factory is not None:
+            logger.info("Closing existing pin factory...")
+            Device.pin_factory.close()
+            Device.pin_factory = None  # Force reset
+    except Exception as cleanup_error:
+        logger.warning(f"Pin factory cleanup warning: {cleanup_error}")
     
     try:
+        logger.info(f"Initializing GPIO pins: LED blue={BLUE_LED_PIN}, red={RED_LED_PIN}, buzzer={BUZZER_PIN}, enable={ENABLE_PIN}, motor fwd={MOTOR_FORWARD_PIN} bwd={MOTOR_BACKWARD_PIN}")
         blue_led = LED(BLUE_LED_PIN)
         red_led = LED(RED_LED_PIN)
         buzzer = Buzzer(BUZZER_PIN)
         enable = OutputDevice(ENABLE_PIN)
         motor = Motor(forward=MOTOR_FORWARD_PIN, backward=MOTOR_BACKWARD_PIN)
         _gpio_initialized = True
-        logger.info("GPIO hardware initialized successfully")
+        logger.info("✅ GPIO hardware initialized successfully - REAL HARDWARE READY")
     except Exception as e:
-        logger.error(f"GPIO init failed: {e}")
+        import traceback
+        logger.error(f"❌ GPIO init failed: {e}")
+        logger.error(f"Full traceback:\n{traceback.format_exc()}")
         # Create mock objects as fallback
         from unittest.mock import MagicMock
         blue_led = MagicMock()
@@ -63,6 +69,7 @@ def _initialize_gpio():
         motor = MagicMock()
         GPIO_AVAILABLE = False
         _gpio_initialized = True
+        logger.error("⚠️  Using MagicMock objects - HARDWARE WILL NOT WORK")
 
 # Auto-initialize on import
 _initialize_gpio()
@@ -151,6 +158,14 @@ def get_fan_state(fridge_id=None):
     if fridge_id is None:
         return fan_states
     return fan_states.get(fridge_id, None)
+
+def force_reinitialize_gpio():
+    """Force GPIO reinitialization - use when GPIO gets into bad state"""
+    global _gpio_initialized
+    logger.info("🔄 Force reinitializing GPIO...")
+    _gpio_initialized = False  # Reset flag
+    _initialize_gpio()
+    return type(enable).__name__ != 'MagicMock'  # Return True if real hardware
 
 def get_motor_state():
     return any(fan_states.values())
