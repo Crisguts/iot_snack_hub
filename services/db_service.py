@@ -382,12 +382,13 @@ def get_product_by_id(product_id):
         return None
 
 
-def get_product_by_code(upc=None, epc=None):
+def get_product_by_code(upc=None, epc=None, include_quantity=False):
     """Find product by barcode (UPC) or RFID tag (EPC).
     
     Args:
         upc: Product UPC barcode (finds product type)
         epc: Stock item EPC tag (finds specific stock item with product info)
+        include_quantity: If True, calculate total_quantity (slower). Default False for fast scanning.
     
     Returns:
         Product dictionary (from product_info or joined from product_stock)
@@ -399,10 +400,13 @@ def get_product_by_code(upc=None, epc=None):
             if response.data:
                 product = response.data[0]
                 
-                # Calculate total_quantity for this product
-                product_id = product.get("product_id")
-                stock_count = supabase.table("product_stock").select("stock_id").eq("product_id", product_id).eq("status", "available").execute()
-                product["total_quantity"] = len(stock_count.data) if stock_count.data else 0
+                # Only calculate total_quantity if explicitly requested
+                if include_quantity:
+                    product_id = product.get("product_id")
+                    stock_count = supabase.table("product_stock").select("stock_id").eq("product_id", product_id).eq("status", "available").execute()
+                    product["total_quantity"] = len(stock_count.data) if stock_count.data else 0
+                else:
+                    product["total_quantity"] = 1  # Assume available if found
                 
                 return product
         if epc:
@@ -414,10 +418,13 @@ def get_product_by_code(upc=None, epc=None):
                 product["stock_id"] = stock_item["stock_id"]
                 product["epc"] = epc
                 
-                # Calculate total_quantity for this product
-                product_id = product.get("product_id")
-                stock_count = supabase.table("product_stock").select("stock_id").eq("product_id", product_id).eq("status", "available").execute()
-                product["total_quantity"] = len(stock_count.data) if stock_count.data else 0
+                # Only calculate total_quantity if explicitly requested
+                if include_quantity:
+                    product_id = product.get("product_id")
+                    stock_count = supabase.table("product_stock").select("stock_id").eq("product_id", product_id).eq("status", "available").execute()
+                    product["total_quantity"] = len(stock_count.data) if stock_count.data else 0
+                else:
+                    product["total_quantity"] = 1  # Assume available if found
                 
                 return product
         return None

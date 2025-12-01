@@ -169,9 +169,11 @@ Please check the system manually or contact technical support."""
             for eid in reversed(email_ids[-5:]):  # Check only last 5
                 eid_str = eid.decode()
                 if eid_str in self.processed_emails:
+                    print(f"   Email {eid_str} already processed, skipping")
                     continue
 
-                status, msg_data = mail.fetch(eid, "(RFC822)")
+                # Fetch without marking as read - use BODY.PEEK instead of RFC822
+                status, msg_data = mail.fetch(eid, "(BODY.PEEK[])")
                 msg = email.message_from_bytes(msg_data[0][1])
                 subject = msg.get("subject", "")
                 from_addr = msg.get("from", "unknown")
@@ -184,6 +186,9 @@ Please check the system manually or contact technical support."""
                 else:
                     body = msg.get_payload(decode=True).decode(errors="ignore")
 
+                print(f"   📬 Email from {from_addr}: {subject[:50]}")
+                print(f"   Body preview: {body[:100]}")
+
                 # Stricter YES matching - must be standalone word, not in instructions
                 body_upper = body.upper()
                 # Check if YES is a standalone reply (not part of "Reply 'YES' to activate")
@@ -193,6 +198,7 @@ Please check the system manually or contact technical support."""
                     # Match YES as standalone word or at start of line
                     if line_stripped == 'YES' or line_stripped.startswith('YES ') or line_stripped.startswith('YES,'):
                         is_yes_reply = True
+                        print(f"   ✅ Found YES in line: {line_stripped[:50]}")
                         break
                 
                 if is_yes_reply:
@@ -203,13 +209,14 @@ Please check the system manually or contact technical support."""
                     print(f"   Subject: {subject}")
                     self._signal_fan(fridge_id)
                     self.send_confirmation(fridge_id)
+                    # Mark as read and processed
+                    mail.store(eid, '+FLAGS', '\\Seen')
                     self.processed_emails.add(eid_str)
                     self._save_processed_emails()
                     mail.logout()
                     return {"fan_on": True, "fridge_id": fridge_id}
-
-                self.processed_emails.add(eid_str)
-                self._save_processed_emails()
+                else:
+                    print(f"   ❌ No YES found in email")
 
             mail.logout()
             return None
@@ -272,14 +279,18 @@ Please check the system manually or contact technical support."""
         logger.info("Stopped email monitor")
 
     def _monitor_loop(self):
+        print("📧 Email monitoring thread started")
         while self.monitoring:
             try:
+                print("🔍 Checking inbox...")
                 result = self._check_email()
                 if result:
                     logger.info(f"Fan activation signal received: {result}")
+                    print(f"✅ Fan signal sent: {result}")
                 time.sleep(10)  # Check every 10 seconds for faster response
             except Exception as e:
                 logger.error(f"Monitor loop error: {e}")
+                print(f"❌ Email check error: {e}")
                 time.sleep(30)  # Retry after 30s on error
 
 # Global instance
