@@ -110,4 +110,5 @@ def inject_user():
     }
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=8080)
+    # Disable reloader to prevent GPIO conflicts (reloader spawns second process)
+    app.run(debug=True, host="0.0.0.0", port=8080, use_reloader=False)
