@@ -1,12 +1,12 @@
 # services/gpio_service.py
 import logging
 import time
+from unittest.mock import MagicMock
 
 try:
     from gpiozero import LED, Buzzer, Motor, OutputDevice
     GPIO_AVAILABLE = True
 except ImportError:
-    from unittest.mock import MagicMock
     LED = Buzzer = Motor = OutputDevice = MagicMock
     GPIO_AVAILABLE = False
 
@@ -37,7 +37,8 @@ try:
     logger.info("GPIO hardware initialized successfully")
 except Exception as e:
     logger.error(f"GPIO init failed: {e}")
-    # Create mock objects as fallback
+    # Create mock objects as fallback - MagicMock is already imported at top
+    from unittest.mock import MagicMock
     blue_led = MagicMock()
     red_led = MagicMock()
     buzzer = MagicMock()
