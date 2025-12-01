@@ -109,7 +109,9 @@ def api_latest():
             
             # Check threshold and send alert if exceeded
             threshold = get_fridge_threshold(fridge_id)
+            print(f"Dashboard: Fridge {fridge_id} - Temp: {temp}°C, Threshold: {threshold}°C")
             if temp > threshold:
+                print(f"Dashboard: 🚨 THRESHOLD EXCEEDED for Fridge {fridge_id}")
                 try:
                     from services.email_service import email_service
                     from services.db_service import supabase
@@ -119,14 +121,22 @@ def api_latest():
                     fridge_name = resp.data[0].get("name") if resp.data else f"Refrigerator {fridge_id}"
                     
                     # Send alert (email service handles its own duplicate prevention)
-                    email_service.send_temperature_alert(
+                    result = email_service.send_temperature_alert(
                         fridge_id=fridge_id,
                         current_temp=temp,
                         threshold=threshold,
                         fridge_name=fridge_name
                     )
+                    if result:
+                        print(f"Dashboard: ✅ Alert email sent for Fridge {fridge_id}")
+                    elif result is False:
+                        print(f"Dashboard: ⏱️ Alert on cooldown for Fridge {fridge_id}")
+                    else:
+                        print(f"Dashboard: ❌ Alert email failed for Fridge {fridge_id}")
                 except Exception as e:
-                    print(f"Error sending threshold alert: {e}")
+                    print(f"Dashboard: Error sending threshold alert: {e}")
+            else:
+                print(f"Dashboard: ✅ Fridge {fridge_id} within threshold")
         else:
             data[fridge_id] = {
                 'temperature': 0.0,

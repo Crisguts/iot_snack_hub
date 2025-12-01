@@ -47,15 +47,22 @@ class EmailService:
     def _send_email(self, subject, body, recipient=None):
         """Send email to specified recipient or default admin."""
         to_email = recipient if recipient else self.recipient
+        print(f"📤 Attempting to send email to {to_email}")
+        print(f"   Subject: {subject}")
         try:
             email_msg = f"Subject: {subject}\nTo: {to_email}\nFrom: {self.login}\n\n{body}"
+            print(f"   Connecting to SMTP {self.smtp_host}:{self.smtp_port}...")
             with smtplib.SMTP_SSL(self.smtp_host, self.smtp_port, context=self.context, timeout=30) as server:
+                print(f"   Logging in as {self.login}...")
                 server.login(self.login, self.password)
+                print(f"   Sending email...")
                 server.sendmail(self.login, to_email, email_msg.encode("utf-8"))
             logger.info(f"Email sent to {to_email}: {subject}")
+            print(f"✅ Email sent successfully to {to_email}")
             return True
         except Exception as e:
             logger.error(f"Email send failed to {to_email}: {e}")
+            print(f"❌ Email send FAILED: {e}")
             return False
 
     def send_test(self):
@@ -85,10 +92,13 @@ Reply 'NO' to ignore."""
         if current_time - last_sent < self.alert_cooldown:
             time_remaining = int(self.alert_cooldown - (current_time - last_sent))
             logger.info(f"Alert cooldown active for fridge {fridge_id}. {time_remaining}s remaining.")
+            print(f"⏱️ Email cooldown: {time_remaining}s remaining for fridge {fridge_id}")
             return False
         
         if not fridge_name:
             fridge_name = f"Refrigerator {fridge_id}"
+        
+        print(f"📧 Sending alert email for {fridge_name}: {current_temp}°C > {threshold}°C")
         
         body = f"""⚠️ Temperature Alert!
 
@@ -181,7 +191,21 @@ Please check the system manually or contact technical support."""
                 # Fetch without marking as read - use BODY.PEEK instead of RFC822
                 status, msg_data = mail.fetch(eid, "(BODY.PEEK[])")
                 msg = email.message_from_bytes(msg_data[0][1])
-                subject = msg.get("subject", "")
+                
+                # Decode subject (handles base64 encoded subjects like =?UTF-8?B?...=)
+                subject_raw = msg.get("subject", "")
+                subject = ""
+                try:
+                    decoded_parts = email.header.decode_header(subject_raw)
+                    for content, encoding in decoded_parts:
+                        if isinstance(content, bytes):
+                            subject += content.decode(encoding or 'utf-8', errors='ignore')
+                        else:
+                            subject += content
+                except Exception as e:
+                    logger.warning(f"Failed to decode subject: {e}")
+                    subject = subject_raw
+                
                 from_addr = msg.get("from", "unknown")
                 body = ""
                 if msg.is_multipart():
