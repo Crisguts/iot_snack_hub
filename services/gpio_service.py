@@ -3,10 +3,11 @@ import logging
 import time
 
 try:
-    from gpiozero import LED, Buzzer, Motor, OutputDevice, Device
+    from gpiozero import LED, Buzzer, Motor, OutputDevice
     GPIO_AVAILABLE = True
 except ImportError:
     GPIO_AVAILABLE = False
+    LED = Buzzer = Motor = OutputDevice = None
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -26,22 +27,7 @@ buzzer = None
 enable = None
 motor = None
 
-def _initialize_gpio():
-    """Initialize GPIO hardware once."""
-    global blue_led, red_led, buzzer, enable, motor
-    
-    if not GPIO_AVAILABLE:
-        logger.warning("gpiozero not available, GPIO disabled")
-        return
-    
-    try:
-        # Clean up any existing pin factory
-        if Device.pin_factory is not None:
-            Device.pin_factory.close()
-            Device.pin_factory = None
-    except:
-        pass
-    
+if GPIO_AVAILABLE:
     try:
         blue_led = LED(BLUE_LED_PIN)
         red_led = LED(RED_LED_PIN)
@@ -51,10 +37,7 @@ def _initialize_gpio():
         logger.info("GPIO hardware initialized successfully")
     except Exception as e:
         logger.error(f"GPIO initialization failed: {e}")
-        raise
-
-# Initialize on import
-_initialize_gpio()
+        blue_led = red_led = buzzer = enable = motor = None
 
 fan_states = {1: False, 2: False}
 
