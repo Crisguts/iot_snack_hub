@@ -154,8 +154,18 @@ Please check the system manually or contact technical support."""
     def _save_processed_emails(self):
         """Save processed email IDs to disk."""
         try:
+            # Ensure processed_emails is a set and contains only serializable items
+            if not isinstance(self.processed_emails, set):
+                logger.warning(f"processed_emails is not a set: {type(self.processed_emails)}")
+                self.processed_emails = set()
+                return
+            
+            # Convert to list of strings only
+            email_list = [str(e) for e in self.processed_emails if isinstance(e, (str, int, bytes))]
             with open(self.processed_emails_file, 'w') as f:
-                json.dump(list(self.processed_emails), f)
+                json.dump(email_list, f)
+        except TypeError as e:
+            logger.error(f"JSON serialization error: {e}. Type: {type(self.processed_emails)}")
         except Exception as e:
             logger.error(f"Failed to save processed emails: {e}")
 
