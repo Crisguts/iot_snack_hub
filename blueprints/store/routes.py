@@ -320,6 +320,13 @@ def api_scan_product():
     
     # Add to cart with stock_id tracking
     cart = get_cart()
+    
+    # For EPC scans, check if this specific stock_id is already in cart
+    if stock_id:
+        for item in cart:
+            if 'stock_ids' in item and stock_id in item['stock_ids']:
+                return jsonify({'success': False, 'error': 'This item is already in your cart'}), 400
+    
     existing = next((item for item in cart if item['product_id'] == product['product_id']), None)
     
     if existing:
