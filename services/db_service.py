@@ -942,6 +942,43 @@ def get_total_inventory_value(search=None):
         print(f"Error calculating inventory value: {e}")
         return 0.0
 
+
+def get_inventory_summary(search=None):
+    """Get inventory summary statistics: total products, low stock, critical, out of stock."""
+    try:
+        products = get_all_products()
+        
+        # Apply search filter if provided
+        if search:
+            search_lower = search.lower()
+            products = [
+                p for p in products
+                if (search_lower in p.get('name', '').lower() or
+                    search_lower in p.get('category', '').lower() or
+                    search_lower in p.get('producer', '').lower())
+            ]
+        
+        total_products = len(products)
+        low_stock_count = sum(1 for p in products if 5 <= p.get('total_quantity', 0) <= 10)
+        critical_count = sum(1 for p in products if 0 < p.get('total_quantity', 0) < 5)
+        out_of_stock_count = sum(1 for p in products if p.get('total_quantity', 0) == 0)
+        
+        return {
+            'total_products': total_products,
+            'low_stock_count': low_stock_count,
+            'critical_count': critical_count,
+            'out_of_stock_count': out_of_stock_count
+        }
+    except Exception as e:
+        print(f"Error calculating inventory summary: {e}")
+        return {
+            'total_products': 0,
+            'low_stock_count': 0,
+            'critical_count': 0,
+            'out_of_stock_count': 0
+        }
+
+
 # Customer activity report
 """
 Customer Activity Report
@@ -1009,21 +1046,40 @@ def get_customer_activity(start_date, end_date):
         # Count new customers (registered within date range)
         new_customers = 0
         returning_customers = 0
+        new_customers_list = []
+        returning_customers_list = []
         
         for customer in customers_response.data:
             customer_created = customer["created_at"][:10]  # Extract YYYY-MM-DD
             print(f"Customer {customer['customer_id']}: registered on {customer_created}")
             
+            # Get full customer details
+            customer_details = next(
+                (c for c in customers_response.data if c["customer_id"] == customer["customer_id"]),
+                None
+            )
+            
             if start_date <= customer_created <= end_date:
                 new_customers += 1
-                
+                if customer_details:
+                    new_customers_list.append(customer_details)
             else:
                 returning_customers += 1
+                if customer_details:
+                    returning_customers_list.append(customer_details)
+        
+        # Count guest purchases (purchases with null customer_id)
+        guest_purchases = sum(1 for p in filtered_purchases if p["customer_id"] is None)
         
         result = {
             "total_customers": total_customers,
             "new_customers": new_customers,
-            "returning_customers": returning_customers
+            "returning_customers": returning_customers,
+            "guest_purchases": guest_purchases,
+            "new_customers_list": new_customers_list,
+            "returning_customers_list": returning_customers_list,
+            "start_date": start_date,
+            "end_date": end_date
         }
         
         print(f"Final result: {result}")
@@ -1035,5 +1091,10 @@ def get_customer_activity(start_date, end_date):
         return {
             "total_customers": 0,
             "new_customers": 0,
-            "returning_customers": 0
+            "returning_customers": 0,
+            "guest_purchases": 0,
+            "new_customers_list": [],
+            "returning_customers_list": [],
+            "start_date": start_date,
+            "end_date": end_date
         }

@@ -1,3 +1,42 @@
+/* ========== THEME VARIABLES ========== */
+:root {
+  --bg-primary: #212529;
+  --bg-secondary: #6c757d;
+  --bg-dark: #343a40;
+  --text-primary: #ffffff;
+  --text-secondary: #adb5bd;
+  --text-muted: #6c757d;
+  --border-color: #495057;
+  --sidebar-bg: #212529;
+  --sidebar-text: #ffffff;
+  --sidebar-hover-bg: #4f4f4f;
+  --sidebar-hover-text: #dad9d9;
+  --card-bg: #343a40;
+  --table-bg: #343a40;
+  --table-hover-bg: #495057;
+  --input-bg: #495057;
+  --label-color: #ffffff;
+}
+
+body[data-theme="light"] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #e9ecef;
+  --bg-dark: #e9ecef;
+  --text-primary: #212529;
+  --text-secondary: #6c757d;
+  --text-muted: #6c757d;
+  --border-color: #dee2e6;
+  --sidebar-bg: #343a40;
+  --sidebar-text: #ffffff;
+  --sidebar-hover-bg: #4f4f4f;
+  --sidebar-hover-text: #dad9d9;
+  --card-bg: #ffffff;
+  --table-bg: #ffffff;
+  --table-hover-bg: #f8f9fa;
+  --input-bg: #ffffff;
+  --label-color: #212529;
+}
+
 /* ========== GLOBAL STYLES ========== */
 html,
 body {
@@ -7,31 +46,356 @@ body {
   overflow-x: hidden;
   overflow-y: hidden;
   font-family: "Segoe UI", sans-serif;
+  background-color: var(--bg-primary) !important;
+  color: var(--text-primary) !important;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 h1 {
-  color: #007bff;
+  color: #007bff !important;
 }
 
 h2,
+h3,
 h4,
-h5 {
-  color: #fff;
+h5,
+h6 {
+  color: var(--text-primary) !important;
 }
 
+/* ========== BOOTSTRAP OVERRIDES ========== */
+.bg-dark {
+  background-color: var(--sidebar-bg) !important;
+  color: var(--sidebar-text) !important;
+}
+
+.bg-dark #date,
+.bg-dark #clock {
+  color: var(--sidebar-text) !important;
+}
+
+.bg-secondary {
+  background-color: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+}
+
+.text-white {
+  color: var(--text-primary) !important;
+}
+
+.text-light {
+  color: var(--text-secondary) !important;
+}
+
+.text-muted {
+  color: var(--text-muted) !important;
+}
+
+label,
+.form-label {
+  color: var(--label-color) !important;
+}
+
+p {
+  color: var(--text-primary) !important;
+}
+
+strong {
+  color: var(--text-primary) !important;
+}
+
+small {
+  color: var(--text-secondary) !important;
+}
+
+h6 {
+  color: var(--text-primary) !important;
+}
+
+/* Force text visibility in all contexts */
+.text-light {
+  color: var(--text-primary) !important;
+}
+
+.card p.text-light,
+.card-body p.text-light,
+.card p,
+.card-body p {
+  color: var(--text-primary) !important;
+}
+
+/* ========== BADGES ========== */
+.badge {
+  transition: all 0.3s ease;
+}
+
+.badge.bg-success {
+  background-color: #198754 !important;
+  color: #ffffff !important;
+}
+
+.badge.bg-warning {
+  background-color: #ffc107 !important;
+  color: #000000 !important;
+}
+
+.badge.bg-danger {
+  background-color: #dc3545 !important;
+  color: #ffffff !important;
+}
+
+.badge.bg-info {
+  background-color: #0dcaf0 !important;
+  color: #000000 !important;
+}
+
+.badge.bg-primary {
+  background-color: #0d6efd !important;
+  color: #ffffff !important;
+}
+
+/* ========== TABLES ========== */
+.table-dark {
+  background-color: var(--table-bg) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+.table-dark th,
+.table-dark td {
+  background-color: var(--table-bg) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+.table-dark thead th {
+  background-color: var(--bg-dark) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+.table-dark tbody tr:hover {
+  background-color: var(--table-hover-bg) !important;
+}
+
+.table-hover tbody tr:hover {
+  background-color: var(--table-hover-bg) !important;
+}
+
+/* ========== CARDS ========== */
+.card.bg-dark {
+  background-color: var(--card-bg) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+.card.bg-dark .card-body {
+  background-color: var(--card-bg) !important;
+  color: var(--text-primary) !important;
+}
+
+.card.border-primary,
+.card.border-success,
+.card.border-warning,
+.card.border-danger,
+.card.border-info,
+.card.border-secondary {
+  background-color: var(--card-bg) !important;
+  color: var(--text-primary) !important;
+}
+
+.card.border-primary h2,
+.card.border-primary h6,
+.card.border-success h2,
+.card.border-success h6,
+.card.border-warning h2,
+.card.border-warning h6,
+.card.border-danger h2,
+.card.border-danger h6,
+.card.border-info h2,
+.card.border-info h6 {
+  /* Keep original bootstrap colors for headings */
+}
+
+.card.border-primary small,
+.card.border-success small,
+.card.border-warning small,
+.card.border-danger small,
+.card.border-info small {
+  color: var(--text-secondary) !important;
+}
+
+.card.bg-dark .card-title,
+.card.bg-dark .card-text {
+  color: var(--text-primary) !important;
+}
+
+.card.bg-dark h2,
+.card.bg-dark h5,
+.card.bg-dark h6 {
+  color: var(--text-primary) !important;
+}
+
+.card.bg-dark h4 {
+  color: var(--text-primary) !important;
+}
+
+.card.bg-dark p {
+  color: var(--text-primary) !important;
+}
+
+.card.bg-dark strong {
+  color: var(--text-primary) !important;
+}
+
+.card.bg-dark .card-header {
+  color: #ffffff !important;
+}
+
+.card.bg-dark .card-body {
+  color: var(--text-primary) !important;
+}
+
+.stat-card {
+  background: var(--card-bg) !important;
+  border-radius: 10px;
+  padding: 25px;
+  text-align: center;
+  transition: transform 0.2s;
+  border: 1px solid var(--border-color) !important;
+  margin-bottom: 20px;
+  color: var(--text-primary) !important;
+}
+
+.stat-card h6 {
+  color: var(--text-primary) !important;
+}
+
+.stat-card h2 {
+  /* Keep bootstrap color classes for colored numbers */
+}
+
+.stat-card small {
+  color: var(--text-secondary) !important;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+}
+
+.stat-card.total {
+  border-left: 5px solid #0d6efd !important;
+}
+
+.stat-card.new {
+  border-left: 5px solid #198754 !important;
+}
+
+.stat-card.returning {
+  border-left: 5px solid #ffc107 !important;
+}
+
+.chart-container {
+  background: var(--card-bg) !important;
+  border-radius: 10px;
+  padding: 30px;
+  border: 1px solid var(--border-color) !important;
+  margin-bottom: 20px;
+  color: var(--text-primary) !important;
+}
+
+/* ========== MODALS ========== */
+.modal-content.bg-dark {
+  background-color: var(--card-bg) !important;
+  color: var(--text-primary) !important;
+}
+
+/* ========== FORMS ========== */
+.form-control {
+  background-color: var(--input-bg) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+.form-select {
+  background-color: var(--input-bg) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: #80bdff !important;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25) !important;
+  background-color: var(--input-bg) !important;
+  color: var(--text-primary) !important;
+}
+
+/* ========== THEME TOGGLE BUTTON ========== */
+#themeToggle {
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 12px;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 15px auto;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+#themeToggle:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: scale(1.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+#themeToggle:active {
+  transform: scale(1.05);
+}
+
+body[data-theme="light"] #themeToggle {
+  background: rgba(0, 0, 0, 0.1);
+  border-color: rgba(0, 0, 0, 0.3);
+  color: #212529;
+}
+
+body[data-theme="light"] #themeToggle:hover {
+  background: rgba(0, 0, 0, 0.2);
+  border-color: rgba(0, 0, 0, 0.5);
+}
+
+/* Fix body background for pages using bg-dark class */
+body.bg-dark {
+  background-color: var(--bg-primary) !important;
+}
+
+body.bg-dark.text-white {
+  color: var(--text-primary) !important;
+}
+
+/* ========== SIDEBAR NAVIGATION ========== */
 .Sidebar {
   font-size: 18px;
   text-decoration: none;
-  color: white;
-  transition: background-color 0.3s ease;
+  color: var(--sidebar-text) !important;
+  transition: all 0.3s ease;
   text-align: center;
   border-radius: 8px;
   width: 100%;
+  padding: 8px;
 }
 
 .Sidebar:hover {
-  background-color: #4f4f4f;
-  color: #dad9d9;
+  background-color: var(--sidebar-hover-bg) !important;
+  color: var(--sidebar-hover-text) !important;
 }
 
 .link-div {
@@ -74,35 +438,137 @@ h5 {
   overflow: hidden;
 }
 
+.alert-info {
+  background-color: #0dcaf0 !important;
+  color: #000000 !important;
+  border-color: #0dcaf0 !important;
+}
+
+.alert-info .current-threshold-label {
+  color: #000000 !important;
+}
+
 /* ========== LOGIN CARD ========== */
 #loginBody {
   display: flex;
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background: linear-gradient(135deg, #1a1a1a, #2e2e2e);
+  background: var(--bg-primary) !important;
+  transition: background 0.3s ease;
+}
+
+body[data-theme="light"] #loginBody {
+  background: linear-gradient(135deg, #e9ecef, #f8f9fa) !important;
 }
 
 .login-card {
-  background-color: #343a40;
+  background-color: var(--card-bg) !important;
   padding: 2rem;
   border-radius: 15px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   width: 60vw;
   height: 60vh;
+  transition: all 0.3s ease;
+  color: var(--text-primary) !important;
 }
 
-.login-card h3 {
-  text-align: center;
-  margin-bottom: 1.5rem;
+body[data-theme="light"] .login-card {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.login-card h1,
+.login-card h2,
+.login-card h3,
+.login-card h4 {
+  color: var(--text-primary) !important;
+  text-shadow: none !important;
 }
 
 .login-card .btn-info {
   width: 100%;
 }
 
-.form-control {
-  margin: 10px 0 1rem 0;
+/* ========== INDEX/HOME PAGE ========== */
+.navbar {
+  background-color: var(--sidebar-bg) !important;
+  color: var(--sidebar-text) !important;
+  transition: all 0.3s ease;
+}
+
+.navbar .text-light {
+  color: var(--text-primary) !important;
+}
+
+body[data-theme="light"] .navbar {
+  background-color: #343a40 !important;
+}
+
+body[data-theme="light"] .navbar .text-light,
+body[data-theme="light"] .navbar h2 {
+  color: #ffffff !important;
+}
+
+.lead {
+  color: var(--text-secondary) !important;
+}
+
+footer {
+  background-color: var(--bg-dark) !important;
+  color: var(--text-secondary) !important;
+  transition: all 0.3s ease;
+}
+
+footer small {
+  color: var(--text-secondary) !important;
+}
+
+/* Home page hero section - override Bootstrap classes */
+.container h1.display-4 {
+  color: var(--text-primary) !important;
+}
+
+.container .lead {
+  color: var(--text-secondary) !important;
+}
+
+body[data-theme="light"] .container h1.display-4 {
+  color: #212529 !important;
+}
+
+body[data-theme="light"] .container .lead {
+  color: #495057 !important;
+}
+
+/* Override text-white class on body for theme support */
+body.text-white {
+  color: var(--text-primary) !important;
+}
+
+body[data-theme="light"].text-white {
+  color: #212529 !important;
+}
+
+/* ========== BUTTONS ========== */
+.btn-outline-light {
+  border-color: var(--text-primary) !important;
+  color: var(--text-primary) !important;
+  transition: all 0.3s ease;
+}
+
+.btn-outline-light:hover {
+  background-color: var(--text-primary) !important;
+  color: var(--bg-primary) !important;
+}
+
+body[data-theme="light"] .btn-outline-light {
+  border-color: #212529 !important;
+  color: #212529 !important;
+}
+
+body[data-theme="light"] .btn-outline-light:hover {
+  background-color: #212529 !important;
+  color: #ffffff !important;
 }
 
 /* ========== FRIDGE CARD ========== */
@@ -117,12 +583,6 @@ h5 {
 .email-card.visible {
   opacity: 1;
   transform: translateY(0);
-}
-
-.card.bg-dark {
-  background-color: rgba(0, 0, 0, 0.8);
-  border-radius: 12px;
-  padding: 1.5rem;
 }
 
 #fridge-dash {
@@ -152,20 +612,31 @@ h5 {
   width: 35px;
   height: 35px;
   border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 2px solid var(--text-primary);
   background: rgba(255, 255, 255, 0.1);
   position: relative;
+  transition: all 0.3s ease;
+}
+
+body[data-theme="light"] .fan-icon {
+  border-color: #212529;
+  background: rgba(0, 0, 0, 0.05);
 }
 
 .fan-blade {
   position: absolute;
   width: 14px;
   height: 3px;
-  background: #fff;
+  background: var(--text-primary);
   border-radius: 8px;
   top: 50%;
   left: 50%;
   transform-origin: 2px 50%;
+  transition: background 0.3s ease;
+}
+
+body[data-theme="light"] .fan-blade {
+  background: #212529;
 }
 
 .fan-blade:nth-child(1) {
@@ -185,11 +656,16 @@ h5 {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--text-primary);
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 2;
+  transition: background 0.3s ease;
+}
+
+body[data-theme="light"] .fan-center {
+  background: #212529;
 }
 
 @keyframes fanSpin {

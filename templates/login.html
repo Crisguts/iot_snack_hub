@@ -9,8 +9,13 @@
     <!-- Bootstrap CSS (CDN) -->
     <link rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 </head>
 <body id="loginBody">
+    <!-- Theme Toggle Button -->
+    <button id="themeToggle" title="Toggle Dark/Light Mode"
+        style="position: fixed; top: 20px; left: 20px; z-index: 9999;"></button>
     <!-- Fixed Language Switcher - Top Right -->
     <div style="position: fixed; top: 20px; right: 20px; z-index: 9999;">
         <div class="btn-group btn-group-sm" role="group">
@@ -43,10 +48,12 @@
         </h1>
         <h2 class="text-center mb-2"
             style="text-shadow: 2px 2px 4px rgba(0, 110, 11, 0.8);">
-            {{ _('Login') }}</h2>
+            {{ _('Login') }}
+        </h2>
         <h4 class="text-center mb-4"
             style="text-shadow: 2px 2px 4px rgba(0, 110, 11, 0.8);">
-            {{ _('Customer or Admin Access') }}</h4>
+            {{ _('Customer or Admin Access') }}
+        </h4>
         <!-- Login form -->
         <form id="loginForm" method="POST" action="{{ url_for('auth.login') }}">
             <input type="text" name="username" class="form-control mb-3"
@@ -69,6 +76,7 @@
     <script
         src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js">
     </script>
+    <script src="{{ url_for('static', filename='js/javascript.js') }}"></script>
     <!-- App JS: moved out of template into static -->
     <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
 </body>

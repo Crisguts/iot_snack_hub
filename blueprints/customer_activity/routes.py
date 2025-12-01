@@ -68,7 +68,8 @@ def export_activity_pdf():
         ["Metric", "Count"],
         ["Total Customers with Purchases", str(activity_data['total_customers'])],
         ["New Customers", str(activity_data['new_customers'])],
-        ["Returning Customers", str(activity_data['returning_customers'])]
+        ["Returning Customers", str(activity_data['returning_customers'])],
+        ["Guest Purchases", str(activity_data.get('guest_purchases', 0))]
     ]
     
     summary_table = Table(summary_data, colWidths=[300, 150])

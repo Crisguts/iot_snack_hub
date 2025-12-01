@@ -4,7 +4,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
 import io
-from services.db_service import (get_inventory_report_paginated, get_inventory_products, get_total_inventory_value)
+from services.db_service import (get_inventory_report_paginated, get_inventory_products, get_total_inventory_value, get_inventory_summary)
 
 inventory_bp = Blueprint('inventory', __name__, url_prefix='/inventory')
 
@@ -40,11 +40,15 @@ def inventory_report():
 
     # FIXED: Get total stock value for ALL products (not just current page)
     total_stock_value = get_total_inventory_value(search)
+    
+    # Get inventory summary statistics
+    summary = get_inventory_summary(search)
 
     return render_template(
         "inventory_report.html",
         products=products,
         total_stock_value=total_stock_value,
+        summary=summary,
         page=page,
         total_pages=total_pages,
         search=search
@@ -54,6 +58,7 @@ def inventory_report():
 @admin_required
 def export_inventory_pdf():
     products = get_inventory_products()
+    summary = get_inventory_summary()
 
     # stock_value is already computed in get_inventory_products()
     total_value = sum(p.get("stock_value", 0) for p in products)
@@ -66,6 +71,34 @@ def export_inventory_pdf():
 
     title = Paragraph("<b>Smart Store Inventory Report</b>", styles["Title"])
     elements.append(title)
+    elements.append(Paragraph("<br/>", styles["Normal"]))
+    
+    # Add summary statistics table
+    summary_data = [
+        ["Total Products", "Total Value", "Low Stock (5-10)", "Critical (<5)", "Out of Stock"],
+        [
+            str(summary['total_products']),
+            f"${sum(p.get('stock_value', 0) for p in products):,.2f}",
+            str(summary['low_stock_count']),
+            str(summary['critical_count']),
+            str(summary['out_of_stock_count'])
+        ]
+    ]
+    
+    summary_table = Table(summary_data, colWidths=[80, 100, 90, 80, 90])
+    summary_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#0d6efd")),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('BACKGROUND', (0, 1), (-1, 1), colors.HexColor("#e9ecef")),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('TOPPADDING', (0, 0), (-1, -1), 8),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+    ]))
+    
+    elements.append(summary_table)
     elements.append(Paragraph("<br/>", styles["Normal"]))
 
     # TABLE HEADER
