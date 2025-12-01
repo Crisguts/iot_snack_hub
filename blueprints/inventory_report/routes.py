@@ -55,11 +55,8 @@ def inventory_report():
 def export_inventory_pdf():
     products = get_inventory_products()
 
-    # Compute stock value
-    for p in products:
-        p["value"] = float(p["total_quantity"]) * float(p["price"])
-
-    total_value = sum(p["value"] for p in products)
+    # stock_value is already computed in get_inventory_products()
+    total_value = sum(p.get("stock_value", 0) for p in products)
 
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=letter)
@@ -83,7 +80,7 @@ def export_inventory_pdf():
             p["category"],
             p["total_quantity"],
             f"{float(p['price']):.2f}",
-            f"{p['value']:.2f}"
+            f"{p.get('stock_value', 0):.2f}"
         ])
 
     # Build the table
