@@ -684,8 +684,8 @@ def get_purchase_details(purchase_id):
         if not purchase.data:
             return None
         
-        # Get items
-        items = supabase.table("purchase_items").select("*, products(*)").eq("purchase_id", purchase_id).execute()
+        # Get items with product info (table is product_info, not products)
+        items = supabase.table("purchase_items").select("*, product_info(*)").eq("purchase_id", purchase_id).execute()
         
         return {
             "purchase": purchase.data,
