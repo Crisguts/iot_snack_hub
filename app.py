@@ -62,6 +62,7 @@ from blueprints.dashboard.mqtt_handler import mqtt_api
 from blueprints.store.routes import store_bp
 from blueprints.products.routes import products_bp
 from blueprints.payments.routes import payments_bp
+from blueprints.customer_activity.routes import customer_activity_bp
 
 app.register_blueprint(auth_bp)
 app.register_blueprint(client_bp)
@@ -70,6 +71,7 @@ app.register_blueprint(mqtt_api)
 app.register_blueprint(store_bp)
 app.register_blueprint(products_bp)
 app.register_blueprint(payments_bp)
+app.register_blueprint(customer_activity_bp)
 
 # Root routes
 @app.route("/")

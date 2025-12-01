@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Activity Report - Smart Store</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #212529;
+            color: white;
+        }
+        .sidebar {
+            background-color: #212529;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        .main-content {
+            background-color: #6c757d;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        .stat-card {
+            background: #343a40;
+            border-radius: 10px;
+            padding: 25px;
+            text-align: center;
+            transition: transform 0.2s;
+            border: 1px solid #495057;
+            margin-bottom: 20px;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        .stat-card.total {
+            border-left: 5px solid #0d6efd;
+        }
+        .stat-card.new {
+            border-left: 5px solid #198754;
+        }
+        .stat-card.returning {
+            border-left: 5px solid #ffc107;
+        }
+        .chart-container {
+            background: #343a40;
+            border-radius: 10px;
+            padding: 30px;
+            border: 1px solid #495057;
+            margin-bottom: 20px;
+        }
+        
+    </style>
+</head>
+<body class="container-fluid p-0">
+    <div class="row m-0">
+        <!-- Admin Sidebar -->
+        <div class="col-3 sidebar d-flex flex-column">
+            <h1 class="mb-2 text-center">Smart Store</h1>
+            <div id="date" class="fw-bold text-center"></div>
+            <div id="clock" class="fw-bold text-center mb-4"></div>
+            
+            <div class="d-flex flex-column link-div">
+                <a href="{{ url_for('dashboard.dashboard') }}"
+                    class="Sidebar fw-bold mb-2">{{ _('Dashboard') }}</a>
+                <a href="{{ url_for('client.client') }}"
+                    class="Sidebar fw-bold mb-2">{{ _('Clients') }}</a>
+                <a href="{{ url_for('products.products_list') }}"
+                    class="Sidebar fw-bold mb-2">{{ _('Products') }}</a>
+                <a href="{{ url_for('payments.payments_list') }}"
+                    class="Sidebar fw-bold mb-2">{{ _('Payments') }}</a>
+                <a href="{{ url_for('customer_activity.activity_report') }}" class="Sidebar fw-bold mb-2">
+                    Customer Activity
+                </a>    
+            </div>
+            
+            <div class="d-flex flex-column align-items-center mt-auto">
+                <a href="{{ url_for('auth.logout') }}" class="Sidebar fw-bold">
+                    Logout
+                </a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-9 main-content overflow-auto">
+            <h2 class="text-white mb-4">
+                <i class="fas fa-chart-bar me-2"></i>Customer Activity Report
+            </h2>
+
+            <!-- Date Filter -->
+            <div class="card bg-dark text-white mb-4 border-secondary">
+                <div class="card-body">
+                    <form method="GET" action="{{ url_for('customer_activity.activity_report') }}" class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Start Date</label>
+                            <input type="date" name="start_date" class="form-control" 
+                                   value="{{ start_date }}" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">End Date</label>
+                            <input type="date" name="end_date" class="form-control" 
+                                   value="{{ end_date }}" required>
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary me-2">
+                                <i class="fas fa-filter me-2"></i>Apply Filter
+                            </button>
+                            <a href="{{ url_for('customer_activity.export_activity_pdf', start_date=start_date, end_date=end_date) }}" 
+                               class="btn btn-danger">
+                                <i class="fas fa-file-pdf me-2"></i>Export PDF
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="stat-card total">
+                        <div class="d-flex justify-content-center align-items-center mb-2">
+                            <i class="fas fa-users fa-3x text-primary"></i>
+                        </div>
+                        <h6 class="text-light mb-2">Total Customers</h6>
+                        <h1 class="display-4 fw-bold text-primary mb-0">
+                            {{ activity_data.total_customers }}
+                        </h1>
+                        <small class="text-light">with purchases</small>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stat-card new">
+                        <div class="d-flex justify-content-center align-items-center mb-2">
+                            <i class="fas fa-user-plus fa-3x text-success"></i>
+                        </div>
+                        <h6 class="text-light mb-2">New Customers</h6>
+                        <h1 class="display-4 fw-bold text-success mb-0">
+                            {{ activity_data.new_customers }}
+                        </h1>
+                        {% if activity_data.total_customers > 0 %}
+                        <small class="text-light">
+                            {{ "%.1f"|format((activity_data.new_customers / activity_data.total_customers) * 100) }}%
+                        </small>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stat-card returning">
+                        <div class="d-flex justify-content-center align-items-center mb-2">
+                            <i class="fas fa-user-check fa-3x text-warning"></i>
+                        </div>
+                        <h6 class="text-light mb-2">Returning Customers</h6>
+                        <h1 class="display-4 fw-bold text-warning mb-0">
+                            {{ activity_data.returning_customers }}
+                        </h1>
+                        {% if activity_data.total_customers > 0 %}
+                        <small class="text-light">
+                            {{ "%.1f"|format((activity_data.returning_customers / activity_data.total_customers) * 100) }}%
+                        </small>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Insights -->
+            <div class="card bg-dark text-white border-secondary mt-4">
+                <div class="card-header bg-primary">
+                    <h5 class="mb-0">
+                        <i class="fas fa-lightbulb me-2"></i>Insights
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-check-circle text-success me-2"></i>Customer Retention</h6>
+                            {% if activity_data.total_customers > 0 %}
+                            <p class="mb-3 text-light">
+                                {{ "%.1f"|format((activity_data.returning_customers / activity_data.total_customers) * 100) }}% 
+                                of customers who made purchases in this period were returning customers.
+                                {% if (activity_data.returning_customers / activity_data.total_customers) > 0.5 %}
+                                <span class="badge bg-success">Good Retention</span>
+                                {% else %}
+                                <span class="badge bg-warning">Needs Improvement</span>
+                                {% endif %}
+                            </p>
+                            {% else %}
+                            <p class="mb-3 text-light">No customer data available for this period.</p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-chart-line text-info me-2"></i>Growth Indicator</h6>
+                            <p class="mb-3 text-light">
+                                {{ activity_data.new_customers }} new customers acquired during this period.
+                                {% if activity_data.new_customers > activity_data.returning_customers %}
+                                <span class="badge bg-info">Growing Customer Base</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/javascript.js') }}"></script>
+</body>
+</html>

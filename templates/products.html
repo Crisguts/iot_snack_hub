@@ -35,6 +35,9 @@
                     class="Sidebar fw-bold mb-2">{{ _('Products') }}</a>
                 <a href="{{ url_for('payments.payments_list') }}"
                     class="Sidebar fw-bold mb-2">{{ _('Payments') }}</a>
+                <a href="{{ url_for('customer_activity.activity_report') }}" class="Sidebar fw-bold mb-2">
+                    Customer Activity
+                </a>    
             </div>
             <div class="d-flex flex-column align-items-center mt-auto">
                 <a href="{{ url_for('auth.logout') }}"
