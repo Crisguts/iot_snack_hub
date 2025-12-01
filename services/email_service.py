@@ -30,7 +30,6 @@ class EmailService:
         self.context = ssl.create_default_context()
 
         # State handling - use absolute paths to ensure consistency
-        import os
         self.state_file = os.path.abspath("email_state.json")
         self.processed_emails_file = os.path.abspath("processed_emails.json")
         print(f"📧 Email state file: {self.state_file}")
@@ -195,6 +194,7 @@ Please check the system manually or contact technical support."""
                 status, msg_data = mail.fetch(eid, "(RFC822)")
                 msg = email.message_from_bytes(msg_data[0][1])
                 subject = msg.get("subject", "")
+                from_addr = msg.get("from", "unknown")
                 body = ""
                 if msg.is_multipart():
                     for part in msg.walk():
