@@ -29,15 +29,32 @@ motor = None
 
 if GPIO_AVAILABLE:
     try:
-        blue_led = LED(BLUE_LED_PIN)
-        red_led = LED(RED_LED_PIN)
-        buzzer = Buzzer(BUZZER_PIN)
-        enable = OutputDevice(ENABLE_PIN)
-        motor = Motor(forward=MOTOR_FORWARD_PIN, backward=MOTOR_BACKWARD_PIN)
-        logger.info("GPIO hardware initialized successfully")
+        import os
+        # Check if running on actual Pi hardware
+        if not os.path.exists('/dev/gpiomem'):
+            logger.warning("Not running on Raspberry Pi hardware")
+        else:
+            # Try to use RPi.GPIO pin factory for better compatibility
+            try:
+                from gpiozero.pins.rpigpio import RPiGPIOFactory
+                from gpiozero import Device
+                Device.pin_factory = RPiGPIOFactory()
+            except:
+                pass  # Use default factory
+            
+            blue_led = LED(BLUE_LED_PIN)
+            red_led = LED(RED_LED_PIN)
+            buzzer = Buzzer(BUZZER_PIN)
+            enable = OutputDevice(ENABLE_PIN)
+            motor = Motor(forward=MOTOR_FORWARD_PIN, backward=MOTOR_BACKWARD_PIN)
+            logger.info("GPIO hardware initialized successfully")
     except Exception as e:
+        import traceback
         logger.error(f"GPIO initialization failed: {e}")
+        logger.error(traceback.format_exc())
         blue_led = red_led = buzzer = enable = motor = None
+else:
+    logger.warning("gpiozero library not available")
 
 fan_states = {1: False, 2: False}
 
