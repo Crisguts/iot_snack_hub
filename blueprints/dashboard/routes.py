@@ -42,24 +42,27 @@ def dashboard():
         latest = get_latest_temperature_reading(fridge_id)
         threshold = get_fridge_threshold(fridge_id)
         
-        if latest:
+        # Handle None responses when DB is unavailable
+        if latest and isinstance(latest, dict):
             fridge_data[fridge_id] = {
                 'temperature': float(latest.get('temperature', 0)),
                 'humidity': float(latest.get('humidity', 0)),
                 'fan_on': current_fan_states[fridge_id],
-                'threshold': threshold
+                'threshold': threshold if threshold is not None else 24.0
             }
         else:
-            # No data in DB yet
+            # No data in DB yet or DB unavailable
             fridge_data[fridge_id] = {
                 'temperature': 0.0,
                 'humidity': 0.0,
                 'fan_on': current_fan_states[fridge_id],
-                'threshold': threshold
+                'threshold': threshold if threshold is not None else 24.0
             }
         
         # Get historical data for charts
         history = get_temperature_history(fridge_id, limit=50)
+        if not history or not isinstance(history, list):
+            history = []
         history.reverse()  # Oldest first for chart
         
         timestamps = []

@@ -2,7 +2,6 @@
 # Handles all database operations using Supabase PostgreSQL
 # This file contains functions grouped by feature area for easy navigation
 
-from unittest.mock import MagicMock
 import os
 import secrets
 from datetime import datetime
@@ -16,9 +15,19 @@ try:
     supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
     DB_AVAILABLE = True
 except Exception as e:
-    print(f"DB mock loaded: {e}")
-    supabase = MagicMock()
+    print(f"⚠️ DB connection failed: {e}")
+    supabase = None
     DB_AVAILABLE = False
+
+
+def requires_db(func):
+    """Decorator to ensure DB is available before executing function."""
+    def wrapper(*args, **kwargs):
+        if not DB_AVAILABLE:
+            print(f"⚠️ DB not available for {func.__name__}")
+            return None
+        return func(*args, **kwargs)
+    return wrapper
 
 
 def init_db():
