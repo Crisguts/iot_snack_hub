@@ -100,6 +100,10 @@ def turn_fan_on(fridge_id=1):
         if fridge_id not in fan_states:
             raise ValueError(f"Invalid fridge_id: {fridge_id}")
         
+        # Diagnostic: Check if GPIO objects are real or mocks
+        logger.info(f"turn_fan_on called - enable type: {type(enable).__name__}, motor type: {type(motor).__name__}")
+        logger.info(f"GPIO_AVAILABLE: {GPIO_AVAILABLE}, _gpio_initialized: {_gpio_initialized}")
+        
         # Control hardware
         enable.on()
         motor.backward()
