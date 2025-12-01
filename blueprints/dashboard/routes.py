@@ -8,11 +8,13 @@ from services.db_service import (
     get_fridge_threshold,
     update_fridge_threshold
 )
+from services.gpio_service import (
+    turn_fan_on,
+    turn_fan_off,
+    get_fan_state
+)
 
 dashboard_bp = Blueprint('dashboard', __name__, url_prefix='/dashboard')
-
-# Fan states (stored in memory for now, could be in DB)
-fan_states = {1: False, 2: False}
 
 def admin_required(f):
     """Decorator to require admin access."""
@@ -31,6 +33,9 @@ def dashboard():
     fridge_data = {}
     historical_data = {}
     
+    # Get current fan states from GPIO service
+    current_fan_states = get_fan_state()
+    
     # Get data for both fridges
     for fridge_id in [1, 2]:
         # Get latest reading
@@ -41,7 +46,7 @@ def dashboard():
             fridge_data[fridge_id] = {
                 'temperature': float(latest.get('temperature', 0)),
                 'humidity': float(latest.get('humidity', 0)),
-                'fan_on': fan_states[fridge_id],
+                'fan_on': current_fan_states[fridge_id],
                 'threshold': threshold
             }
         else:
@@ -49,7 +54,7 @@ def dashboard():
             fridge_data[fridge_id] = {
                 'temperature': 0.0,
                 'humidity': 0.0,
-                'fan_on': fan_states[fridge_id],
+                'fan_on': current_fan_states[fridge_id],
                 'threshold': threshold
             }
         
@@ -90,6 +95,7 @@ def dashboard():
 def api_latest():
     """API endpoint for real-time fridge data updates from database"""
     data = {}
+    current_fan_states = get_fan_state()
     
     for fridge_id in [1, 2]:
         latest = get_latest_temperature_reading(fridge_id)
@@ -97,13 +103,13 @@ def api_latest():
             data[fridge_id] = {
                 'temperature': float(latest.get('temperature', 0)),
                 'humidity': float(latest.get('humidity', 0)),
-                'fan_on': fan_states[fridge_id]
+                'fan_on': current_fan_states[fridge_id]
             }
         else:
             data[fridge_id] = {
                 'temperature': 0.0,
                 'humidity': 0.0,
-                'fan_on': fan_states[fridge_id]
+                'fan_on': current_fan_states[fridge_id]
             }
     
     return jsonify({'success': True, 'data': data})
@@ -112,29 +118,26 @@ def api_latest():
 @admin_required
 def fan_states_endpoint():
     """Get all fan states"""
-    return jsonify({'success': True, 'fan_states': fan_states})
+    current_fan_states = get_fan_state()
+    return jsonify({'success': True, 'fan_states': current_fan_states})
 
 @dashboard_bp.route('/fan/<int:fridge_id>', methods=['POST'])
 @admin_required
 def toggle_fan(fridge_id):
     """Toggle fan for a specific fridge"""
-    if fridge_id not in fan_states:
+    if fridge_id not in [1, 2]:
         return jsonify({'success': False, 'error': 'Invalid fridge ID'}), 400
     
     try:
-        # Toggle state
-        fan_states[fridge_id] = not fan_states[fridge_id]
-        new_state = fan_states[fridge_id]
+        # Get current state from GPIO service
+        current_state = get_fan_state(fridge_id)
+        new_state = not current_state
         
-        # Control actual fan hardware (mocked)
-        try:
-            from services.gpio_service import turn_fan_on, turn_fan_off
-            if new_state:
-                turn_fan_on(fridge_id)
-            else:
-                turn_fan_off(fridge_id)
-        except:
-            print(f"[MOCK] Fan {fridge_id} -> {'ON' if new_state else 'OFF'}")
+        # Control fan hardware
+        if new_state:
+            turn_fan_on(fridge_id)
+        else:
+            turn_fan_off(fridge_id)
         
         return jsonify({
             'success': True,
@@ -142,6 +145,7 @@ def toggle_fan(fridge_id):
             'fridge_id': fridge_id
         })
     except Exception as e:
+        print(f"Error toggling fan {fridge_id}: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @dashboard_bp.route('/threshold/<int:fridge_id>', methods=['POST'])
@@ -203,8 +207,7 @@ def check_email_signals():
             fridge_id = state.get('fridge_id', 1)
             
             try:
-                from services.gpio_service import turn_fan_on
-                fan_states[fridge_id] = True
+                # Turn on fan via GPIO service (tracks state automatically)
                 turn_fan_on(fridge_id)
                 
                 # Send success confirmation
