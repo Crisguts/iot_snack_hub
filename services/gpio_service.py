@@ -38,6 +38,13 @@ def _initialize_gpio():
         return
     
     try:
+        # Force cleanup of any existing GPIO state
+        from gpiozero import Device
+        Device.pin_factory.close()
+    except:
+        pass  # Ignore if nothing to close
+    
+    try:
         blue_led = LED(BLUE_LED_PIN)
         red_led = LED(RED_LED_PIN)
         buzzer = Buzzer(BUZZER_PIN)
