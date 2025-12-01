@@ -101,8 +101,16 @@ def turn_fan_on(fridge_id=1):
             raise ValueError(f"Invalid fridge_id: {fridge_id}")
         
         # Diagnostic: Check if GPIO objects are real or mocks
-        logger.info(f"turn_fan_on called - enable type: {type(enable).__name__}, motor type: {type(motor).__name__}")
+        enable_type = type(enable).__name__
+        motor_type = type(motor).__name__
+        logger.info(f"turn_fan_on called - enable type: {enable_type}, motor type: {motor_type}")
         logger.info(f"GPIO_AVAILABLE: {GPIO_AVAILABLE}, _gpio_initialized: {_gpio_initialized}")
+        
+        # CRITICAL: Prevent MagicMock calls - raise error if not real hardware
+        if enable_type == 'MagicMock' or motor_type == 'MagicMock':
+            error_msg = f"Cannot control fan - GPIO hardware not available (enable: {enable_type}, motor: {motor_type})"
+            logger.error(error_msg)
+            raise RuntimeError(error_msg)
         
         # Control hardware
         enable.on()
@@ -118,6 +126,12 @@ def turn_fan_off(fridge_id=1):
     try:
         if fridge_id not in fan_states:
             raise ValueError(f"Invalid fridge_id: {fridge_id}")
+        
+        # CRITICAL: Prevent MagicMock calls
+        if type(enable).__name__ == 'MagicMock' or type(motor).__name__ == 'MagicMock':
+            error_msg = "Cannot control fan - GPIO hardware not available"
+            logger.error(error_msg)
+            raise RuntimeError(error_msg)
         
         # Update state first
         fan_states[fridge_id] = False
