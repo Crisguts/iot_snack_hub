@@ -58,10 +58,8 @@ def turn_fan_on(fridge_id=1):
     try:
         if fridge_id not in fan_states:
             raise ValueError(f"Invalid fridge_id: {fridge_id}")
-        if fan_states[fridge_id]:
-            logger.info(f"Fan {fridge_id} already on.")
-            return
         
+        # Always control hardware to ensure sync
         enable.on()
         motor.backward()
         fan_states[fridge_id] = True
@@ -73,11 +71,17 @@ def turn_fan_off(fridge_id=1):
     try:
         if fridge_id not in fan_states:
             raise ValueError(f"Invalid fridge_id: {fridge_id}")
+        
+        # Update state first
         fan_states[fridge_id] = False
+        
+        # Only stop motor if both fridges are off
         if not any(fan_states.values()):
             motor.stop()
             enable.off()
-        logger.info(f"Fan {fridge_id} turned OFF.")
+            logger.info(f"Fan {fridge_id} turned OFF - motor stopped.")
+        else:
+            logger.info(f"Fan {fridge_id} turned OFF - motor still running for other fridge.")
     except Exception as e:
         logger.error(f"Error turning OFF fan {fridge_id}: {e}")
 
