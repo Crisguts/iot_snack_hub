@@ -1,3 +1,4 @@
+# Sales Report routes - provides product sales analysis and revenue reports
 from flask import Blueprint, render_template, request, session, redirect, flash, url_for
 from datetime import datetime
 from services.db_service import (
@@ -10,6 +11,7 @@ sales_bp = Blueprint("sales", __name__, url_prefix="/sales")
 
 
 def admin_required(f):
+    """Decorator that restricts access to admin users only."""
     from functools import wraps
     @wraps(f)
     def wrapper(*args, **kwargs):
@@ -23,6 +25,8 @@ def admin_required(f):
 @sales_bp.route("/")
 @admin_required
 def sales_report():
+    """Displays sales report with product performance, revenue totals, and top/bottom sellers.
+    Supports date range filtering, product search, and pagination."""
 
     # Date Range
     start = request.args.get("start", "")

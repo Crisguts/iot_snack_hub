@@ -498,7 +498,7 @@ def account():
                         'date': purchase.get('purchase_date'),
                         'product_name': product.get('name'),
                         'quantity': item.get('quantity', 1),
-                        'price': float(item.get('price', 0))
+                        'price': float(item.get('price_at_purchase', 0))
                     })
     
     # Group item search results

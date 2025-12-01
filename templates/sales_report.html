@@ -54,34 +54,35 @@
         <!-- Main -->
         <div class="col-9 bg-secondary p-4"
             style="height: 100vh; overflow-y: auto;">
-            <h2 class="text-white mb-4">Sales Report</h2>
+            <h2 class="text-white mb-4">{{ _("Sales Report") }}</h2>
             <form method="GET" class="row mb-4">
                 <div class="col-5">
-                    <label>Date From</label>
+                    <label>{{ _("Date From") }}</label>
                     <input type="date" name="start" class="form-control"
                         value="{{ start_date }}">
                 </div>
                 <div class="col-5">
-                    <label>Date To</label>
+                    <label>{{ _("Date To") }}</label>
                     <input type="date" name="end" class="form-control"
                         value="{{ end_date }}">
                 </div>
                 <div class="col-2 d-flex align-items-end">
-                    <button class="btn btn-primary w-100">Filter</button>
+                    <button
+                        class="btn btn-primary w-100">{{ _("Filter") }}</button>
                 </div>
             </form>
-            <h4>Total Sales Value</h4>
+            <h4>{{ _("Total Sales Value") }}</h4>
             <p class="text-light fs-4">
                 <strong>${{ "%.2f"|format(total_sales) }}</strong>
             </p>
             <!-- Sales by product -->
-            <h4>Sold Items by Product</h4>
+            <h4>{{ _("Sold Items by Product") }}</h4>
             <table class="table table-dark table-hover table-sm mt-3">
                 <thead>
                     <tr>
-                        <th>Product</th>
-                        <th>Category</th>
-                        <th>Units Sold</th>
+                        <th>{{ _("Product") }}</th>
+                        <th>{{ _("Category") }}</th>
+                        <th>{{ _("Units Sold") }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -100,7 +101,7 @@
                     <li class="page-item {% if page <= 1 %}disabled{% endif %}">
                         <a class="page-link"
                             href="{{ url_for('sales.sales_report', page=page-1, start=start_date, end=end_date, search=search) }}">
-                            Previous
+                            {{ _("Previous") }}
                         </a>
                     </li>
                     {% for p in range(1, total_pages + 1) %}
@@ -115,20 +116,20 @@
                         class="page-item {% if page >= total_pages %}disabled{% endif %}">
                         <a class="page-link"
                             href="{{ url_for('sales.sales_report', page=page+1, start=start_date, end=end_date, search=search) }}">
-                            Next
+                            {{ _("Next") }}
                         </a>
                     </li>
                 </ul>
             </nav>
             <!-- TOP SELLERS -->
-            <h4 class="mt-4">Top Sellers</h4>
+            <h4 class="mt-4">{{ _("Top Sellers") }}</h4>
             <table class="table table-dark table-hover table-sm mt-3">
                 <thead>
                     <tr>
-                        <th>Product ID</th>
-                        <th>Product</th>
-                        <th>Category</th>
-                        <th>Units Sold</th>
+                        <th>{{ _("Product ID") }}</th>
+                        <th>{{ _("Product") }}</th>
+                        <th>{{ _("Category") }}</th>
+                        <th>{{ _("Units Sold") }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -143,14 +144,14 @@
                 </tbody>
             </table>
             <!-- BOTTOM SELLERS -->
-            <h4 class="mt-4">Least Sold Items</h4>
+            <h4 class="mt-4">{{ _("Least Sold Items") }}</h4>
             <table class="table table-dark table-hover table-sm mt-3">
                 <thead>
                     <tr>
-                        <th>Product ID</th>
-                        <th>Product</th>
-                        <th>Category</th>
-                        <th>Units Sold</th>
+                        <th>{{ _("Product ID") }}</th>
+                        <th>{{ _("Product") }}</th>
+                        <th>{{ _("Category") }}</th>
+                        <th>{{ _("Units Sold") }}</th>
                     </tr>
                 </thead>
                 <tbody>
