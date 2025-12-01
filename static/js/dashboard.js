@@ -163,7 +163,7 @@ if (window.dashboardInitialized) {
             }
         }).catch(() => { });
     }
-    setInterval(checkEmailSignals, 10000);
+    setInterval(checkEmailSignals, 5000);  // Check every 5 seconds for faster response
     setTimeout(checkEmailSignals, 2000);
 
     // ===================== MODAL / CHARTS =====================

@@ -227,10 +227,13 @@ def check_email_signals():
         
         if state and state.get('action') == 'activate_fan':
             fridge_id = state.get('fridge_id', 1)
+            print(f"🔔 Dashboard detected fan activation signal for fridge {fridge_id}")
             
             try:
                 # Turn on fan via GPIO service (tracks state automatically)
+                print(f"🌀 Turning on fan for fridge {fridge_id}...")
                 turn_fan_on(fridge_id)
+                print(f"✅ Fan activated successfully")
                 
                 # Send success confirmation
                 email_service.send_confirmation(fridge_id)

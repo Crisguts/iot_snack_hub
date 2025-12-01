@@ -29,9 +29,11 @@ class EmailService:
         # SSL context
         self.context = ssl.create_default_context()
 
-        # State handling
-        self.state_file = "email_state.json"
-        self.processed_emails_file = "processed_emails.json"
+        # State handling - use absolute paths to ensure consistency
+        import os
+        self.state_file = os.path.abspath("email_state.json")
+        self.processed_emails_file = os.path.abspath("processed_emails.json")
+        print(f"📧 Email state file: {self.state_file}")
         self.processed_emails = self._load_processed_emails()  # Persistent tracking
         
         # Alert cooldown tracking (prevent spam)
@@ -171,6 +173,7 @@ Please check the system manually or contact technical support."""
     def _check_email(self):
         """Checks latest emails for YES replies"""
         try:
+            logger.info("Checking inbox for email replies...")
             mail = imaplib.IMAP4_SSL(self.imap_host)
             mail.login(self.login, self.password)
             mail.select("inbox")
@@ -178,8 +181,11 @@ Please check the system manually or contact technical support."""
             status, data = mail.search(None, "UNSEEN")
             email_ids = data[0].split()
             if not email_ids:
+                logger.info("No unread emails found")
                 mail.logout()
                 return None
+            
+            logger.info(f"Found {len(email_ids)} unread email(s)")
 
             for eid in reversed(email_ids[-5:]):  # Check only last 5
                 eid_str = eid.decode()
@@ -212,6 +218,9 @@ Please check the system manually or contact technical support."""
                 if is_yes_reply:
                     fridge_id = self._extract_fridge_id(subject, body)
                     logger.info(f"YES reply detected for fridge {fridge_id}")
+                    print(f"🎯 YES REPLY DETECTED! Fridge {fridge_id}")
+                    print(f"   From: {from_addr}")
+                    print(f"   Subject: {subject}")
                     self._signal_fan(fridge_id)
                     self.send_confirmation(fridge_id)
                     self.processed_emails.add(eid_str)
@@ -244,9 +253,12 @@ Please check the system manually or contact technical support."""
             }
             with open(self.state_file, "w") as f:
                 json.dump(state, f)
+            print(f"✅ Wrote state file: {self.state_file}")
+            print(f"   State: {state}")
             logger.info(f"Fan activation signaled for fridge {fridge_id}")
         except Exception as e:
             logger.error(f"Failed to write fan activation: {e}")
+            print(f"❌ Failed to write state file: {e}")
 
     def get_and_clear_state(self):
         """Read and clear state file"""
@@ -256,9 +268,11 @@ Please check the system manually or contact technical support."""
             with open(self.state_file, "r") as f:
                 state = json.load(f)
             os.remove(self.state_file)
+            print(f"📬 Read and cleared state file: {state}")
             return state
         except Exception as e:
             logger.error(f"State read error: {e}")
+            print(f"❌ Failed to read state file: {e}")
             return None
 
     # --- Background thread ---
@@ -283,10 +297,10 @@ Please check the system manually or contact technical support."""
                 result = self._check_email()
                 if result:
                     logger.info(f"Fan activation signal received: {result}")
-                time.sleep(30)
+                time.sleep(10)  # Check every 10 seconds for faster response
             except Exception as e:
                 logger.error(f"Monitor loop error: {e}")
-                time.sleep(60)
+                time.sleep(30)  # Retry after 30s on error
 
 # Global instance
 email_service = EmailService()
