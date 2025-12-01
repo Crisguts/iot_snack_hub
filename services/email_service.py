@@ -157,14 +157,20 @@ Please check the system manually or contact technical support."""
             mail.login(self.login, self.password)
             mail.select("inbox")
 
-            status, data = mail.search(None, "UNSEEN")
+            # Search for UNSEEN emails FROM the recipient (replies to our alerts)
+            # This filters out promotions, spam, etc.
+            search_criteria = f'(UNSEEN FROM "{self.recipient}")'
+            print(f"   🔍 Searching for: {search_criteria}")
+            status, data = mail.search(None, search_criteria)
             email_ids = data[0].split()
             if not email_ids:
-                logger.info("No unread emails found")
+                logger.info("No unread replies from recipient found")
+                print(f"   ℹ️ No replies from {self.recipient}")
                 mail.logout()
                 return None
             
-            logger.info(f"Found {len(email_ids)} unread email(s)")
+            logger.info(f"Found {len(email_ids)} unread reply(s) from {self.recipient}")
+            print(f"   📨 Found {len(email_ids)} reply(s) from {self.recipient}")
 
             for eid in reversed(email_ids[-5:]):  # Check only last 5
                 eid_str = eid.decode()
@@ -188,6 +194,14 @@ Please check the system manually or contact technical support."""
 
                 print(f"   📬 Email from {from_addr}: {subject[:50]}")
                 print(f"   Body preview: {body[:100]}")
+
+                # Verify it's a reply to our temperature alert (check for RE: or alert keywords)
+                subject_upper = subject.upper()
+                is_alert_reply = any(keyword in subject_upper for keyword in ['RE:', 'IOT', 'ALERT', 'FRIDGE', 'REFRIGERATOR', 'TEMPERATURE'])
+                
+                if not is_alert_reply:
+                    print(f"   ⏭️ Not an alert reply (subject doesn't match), skipping")
+                    continue
 
                 # Stricter YES matching - must be standalone word, not in instructions
                 body_upper = body.upper()
