@@ -134,7 +134,7 @@
                                 class="form-control mb-3"
                                 value="{{ fridge.threshold or '' }}"
                                 placeholder="{{ _('Set threshold') }}">
-                            <button
+                            <button onclick="updateThreshold({{ id }})"
                                 class="btn btn-primary w-100 mb-2 fw-bold">{{ _('Apply') }}</button>
                             <button class="btn btn-outline-light w-100"
                                 data-bs-toggle="collapse"

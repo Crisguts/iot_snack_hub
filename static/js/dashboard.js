@@ -86,6 +86,48 @@ if (window.dashboardInitialized) {
             });
     });
 
+    // ===================== THRESHOLD UPDATE =====================
+    window.updateThreshold = function (fridgeId) {
+        const input = document.getElementById(`threshold${fridgeId}`);
+        const newThreshold = parseFloat(input.value);
+
+        if (isNaN(newThreshold)) {
+            showNotification("Please enter a valid number", "danger");
+            return;
+        }
+
+        if (newThreshold < 0 || newThreshold > 50) {
+            showNotification("Threshold must be between 0-50°C", "danger");
+            return;
+        }
+
+        fetch(`/dashboard/threshold/${fridgeId}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ threshold: newThreshold })
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(`Threshold updated to ${newThreshold}°C for Fridge ${fridgeId}`, "success");
+                    // Update the modal if it's open for this fridge
+                    const modal = document.getElementById("fridgeModal");
+                    if (modal && modal.getAttribute("data-current-fridge") == fridgeId) {
+                        const thresholdLabel = modal.querySelector(".current-threshold-label");
+                        if (thresholdLabel) {
+                            const currentText = thresholdLabel.textContent.split('--')[0];
+                            thresholdLabel.textContent = currentText + newThreshold + "°C";
+                        }
+                    }
+                } else {
+                    showNotification("Failed to update threshold: " + (data.error || "Unknown error"), "danger");
+                }
+            })
+            .catch(err => {
+                showNotification("Network error: " + err.message, "danger");
+            });
+    };
+
     // ===================== EMAIL TEST =====================
     const testEmailBtn = document.getElementById("testEmailBtn");
     if (testEmailBtn) testEmailBtn.addEventListener("click", () => {

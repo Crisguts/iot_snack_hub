@@ -308,10 +308,17 @@ def get_fridge_threshold(fridge_id):
 def update_fridge_threshold(fridge_id, new_threshold):
     """Update temperature threshold for a fridge."""
     try:
-        supabase.table("refrigerators").update({
+        response = supabase.table("refrigerators").update({
             "temperature_threshold": new_threshold
         }).eq("fridge_id", fridge_id).execute()
-        return True
+        
+        # Verify update succeeded by checking response
+        if response.data and len(response.data) > 0:
+            print(f"Threshold updated: Fridge {fridge_id} -> {new_threshold}°C")
+            return True
+        else:
+            print(f"Warning: Update returned no data for fridge {fridge_id}")
+            return False
     except Exception as e:
         print(f"Error updating threshold: {e}")
         return False
