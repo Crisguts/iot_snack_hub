@@ -21,30 +21,44 @@ ENABLE_PIN = 22
 MOTOR_FORWARD_PIN = 17
 MOTOR_BACKWARD_PIN = 27
 
-# Initialize GPIO components
+# Initialize GPIO components (only once)
 blue_led = None
 red_led = None
 buzzer = None
 enable = None
 motor = None
+_gpio_initialized = False
 
-try:
-    blue_led = LED(BLUE_LED_PIN)
-    red_led = LED(RED_LED_PIN)
-    buzzer = Buzzer(BUZZER_PIN)
-    enable = OutputDevice(ENABLE_PIN)
-    motor = Motor(forward=MOTOR_FORWARD_PIN, backward=MOTOR_BACKWARD_PIN)
-    logger.info("GPIO hardware initialized successfully")
-except Exception as e:
-    logger.error(f"GPIO init failed: {e}")
-    # Create mock objects as fallback - MagicMock is already imported at top
-    from unittest.mock import MagicMock
-    blue_led = MagicMock()
-    red_led = MagicMock()
-    buzzer = MagicMock()
-    enable = MagicMock()
-    motor = MagicMock()
-    GPIO_AVAILABLE = False
+def _initialize_gpio():
+    """Initialize GPIO hardware once. Called on first import."""
+    global blue_led, red_led, buzzer, enable, motor, _gpio_initialized, GPIO_AVAILABLE
+    
+    if _gpio_initialized:
+        logger.info("GPIO already initialized, skipping")
+        return
+    
+    try:
+        blue_led = LED(BLUE_LED_PIN)
+        red_led = LED(RED_LED_PIN)
+        buzzer = Buzzer(BUZZER_PIN)
+        enable = OutputDevice(ENABLE_PIN)
+        motor = Motor(forward=MOTOR_FORWARD_PIN, backward=MOTOR_BACKWARD_PIN)
+        _gpio_initialized = True
+        logger.info("GPIO hardware initialized successfully")
+    except Exception as e:
+        logger.error(f"GPIO init failed: {e}")
+        # Create mock objects as fallback
+        from unittest.mock import MagicMock
+        blue_led = MagicMock()
+        red_led = MagicMock()
+        buzzer = MagicMock()
+        enable = MagicMock()
+        motor = MagicMock()
+        GPIO_AVAILABLE = False
+        _gpio_initialized = True
+
+# Auto-initialize on import
+_initialize_gpio()
 
 fan_states = {1: False, 2: False}
 
