@@ -57,26 +57,6 @@ class EmailService:
             logger.error(f"Email send failed to {to_email}: {e}")
             return False
 
-    def _load_processed_emails(self):
-        """Load processed email IDs from disk."""
-        try:
-            if os.path.exists(self.processed_emails_file):
-                with open(self.processed_emails_file, 'r') as f:
-                    data = json.load(f)
-                    return set(data[-1000:])  # Keep last 1000 to prevent bloat
-            return set()
-        except Exception as e:
-            logger.error(f"Failed to load processed emails: {e}")
-            return set()
-    
-    def _save_processed_emails(self):
-        """Save processed email IDs to disk."""
-        try:
-            with open(self.processed_emails_file, 'w') as f:
-                json.dump(list(self.processed_emails), f)
-        except Exception as e:
-            logger.error(f"Failed to save processed emails: {e}")
-
     def send_test(self):
         body = f"""This is a test email from your IoT Smart Store.
 
