@@ -420,15 +420,8 @@
             });
         }
         // Spending Chart
-        {
-            %
-            if spending_by_month %
-        }
-        const spendingData = {
-            {
-                spending_by_month | tojson
-            }
-        };
+        {% if spending_by_month %}
+        const spendingData = {{ spending_by_month | tojson }};
         const labels = Object.keys(spendingData).sort();
         const values = labels.map(label => spendingData[label]);
         const ctx = document.getElementById('spendingChart').getContext('2d');
@@ -507,9 +500,8 @@
                     chart.update();
                 }, 100);
             });
-        } {
-            % endif %
         }
+        {% endif %}
     </script>
 </body>
 </html>

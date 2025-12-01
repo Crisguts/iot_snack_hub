@@ -31,7 +31,8 @@ class EmailService:
 
         # State handling
         self.state_file = "email_state.json"
-        self.processed_emails = set()
+        self.processed_emails_file = "processed_emails.json"
+        self.processed_emails = self._load_processed_emails()  # Persistent tracking
 
         # Background thread
         self.monitoring = False
@@ -50,6 +51,26 @@ class EmailService:
         except Exception as e:
             logger.error(f"Email send failed to {to_email}: {e}")
             return False
+
+    def _load_processed_emails(self):
+        """Load processed email IDs from disk."""
+        try:
+            if os.path.exists(self.processed_emails_file):
+                with open(self.processed_emails_file, 'r') as f:
+                    data = json.load(f)
+                    return set(data[-1000:])  # Keep last 1000 to prevent bloat
+            return set()
+        except Exception as e:
+            logger.error(f"Failed to load processed emails: {e}")
+            return set()
+    
+    def _save_processed_emails(self):
+        """Save processed email IDs to disk."""
+        try:
+            with open(self.processed_emails_file, 'w') as f:
+                json.dump(list(self.processed_emails), f)
+        except Exception as e:
+            logger.error(f"Failed to save processed emails: {e}")
 
     def send_test(self):
         body = f"""This is a test email from your IoT Smart Store.
@@ -102,6 +123,28 @@ Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 Please check the system manually or contact technical support."""
         return self._send_email(f"❌ Fan Activation Error - Fridge {fridge_id}", body)
 
+    # --- Persistent email tracking ---
+    def _load_processed_emails(self):
+        """Load processed email IDs from disk."""
+        try:
+            if os.path.exists(self.processed_emails_file):
+                with open(self.processed_emails_file, 'r') as f:
+                    data = json.load(f)
+                    # Keep only recent emails (last 1000) to prevent file bloat
+                    return set(data[-1000:])
+            return set()
+        except Exception as e:
+            logger.error(f"Failed to load processed emails: {e}")
+            return set()
+    
+    def _save_processed_emails(self):
+        """Save processed email IDs to disk."""
+        try:
+            with open(self.processed_emails_file, 'w') as f:
+                json.dump(list(self.processed_emails), f)
+        except Exception as e:
+            logger.error(f"Failed to save processed emails: {e}")
+
     # --- Receiving replies ---
     def _check_email(self):
         """Checks latest emails for YES replies"""
@@ -133,16 +176,29 @@ Please check the system manually or contact technical support."""
                 else:
                     body = msg.get_payload(decode=True).decode(errors="ignore")
 
-                if "YES" in body.upper():
+                # Stricter YES matching - must be standalone word, not in instructions
+                body_upper = body.upper()
+                # Check if YES is a standalone reply (not part of "Reply 'YES' to activate")
+                is_yes_reply = False
+                for line in body_upper.split('\n'):
+                    line_stripped = line.strip()
+                    # Match YES as standalone word or at start of line
+                    if line_stripped == 'YES' or line_stripped.startswith('YES ') or line_stripped.startswith('YES,'):
+                        is_yes_reply = True
+                        break
+                
+                if is_yes_reply:
                     fridge_id = self._extract_fridge_id(subject, body)
                     logger.info(f"YES reply detected for fridge {fridge_id}")
                     self._signal_fan(fridge_id)
                     self.send_confirmation(fridge_id)
                     self.processed_emails.add(eid_str)
+                    self._save_processed_emails()
                     mail.logout()
                     return {"fan_on": True, "fridge_id": fridge_id}
 
                 self.processed_emails.add(eid_str)
+                self._save_processed_emails()
 
             mail.logout()
             return None
