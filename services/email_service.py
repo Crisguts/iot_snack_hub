@@ -33,7 +33,8 @@ class EmailService:
         self.state_file = os.path.abspath("email_state.json")
         self.processed_emails_file = os.path.abspath("processed_emails.json")
         print(f"📧 Email state file: {self.state_file}")
-        self.processed_emails = self._load_processed_emails()  # Persistent tracking
+        # Don't load from disk - only track in current session to avoid blocking new replies
+        self.processed_emails = set()  # Fresh each restart
         
         # Alert cooldown tracking (prevent spam)
         self.last_alert_time = {}  # {fridge_id: timestamp}
@@ -157,20 +158,19 @@ Please check the system manually or contact technical support."""
             mail.login(self.login, self.password)
             mail.select("inbox")
 
-            # Search for UNSEEN emails FROM the recipient (replies to our alerts)
-            # This filters out promotions, spam, etc.
-            search_criteria = f'(UNSEEN FROM "{self.recipient}")'
-            print(f"   🔍 Searching for: {search_criteria}")
-            status, data = mail.search(None, search_criteria)
+            # Search for ALL UNSEEN emails, will filter by subject validation below
+            # This ensures we catch replies even if FROM address is different
+            print(f"   🔍 Searching for UNSEEN emails...")
+            status, data = mail.search(None, "UNSEEN")
             email_ids = data[0].split()
             if not email_ids:
-                logger.info("No unread replies from recipient found")
-                print(f"   ℹ️ No replies from {self.recipient}")
+                logger.info("No unread emails found")
+                print(f"   ℹ️ No unread emails")
                 mail.logout()
                 return None
             
-            logger.info(f"Found {len(email_ids)} unread reply(s) from {self.recipient}")
-            print(f"   📨 Found {len(email_ids)} reply(s) from {self.recipient}")
+            logger.info(f"Found {len(email_ids)} unread email(s)")
+            print(f"   📨 Found {len(email_ids)} unread email(s)")
 
             for eid in reversed(email_ids[-5:]):  # Check only last 5
                 eid_str = eid.decode()

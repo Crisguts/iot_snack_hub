@@ -76,15 +76,18 @@
                             <p><strong><i
                                         class="fas fa-user me-2"></i>{{ _('Name:') }}</strong>
                                 {{ customer.first_name }}
-                                {{ customer.last_name }}</p>
+                                {{ customer.last_name }}
+                            </p>
                             <p><strong><i
                                         class="fas fa-envelope me-2"></i>{{ _('Email:') }}</strong>
-                                {{ customer.email }}</p>
+                                {{ customer.email }}
+                            </p>
                         </div>
                         <div class="col-md-6">
                             <p><strong><i
                                         class="fas fa-card me-2"></i>{{ _('Membership #:') }}</strong>
-                                {{ customer.membership_number }}</p>
+                                {{ customer.membership_number }}
+                            </p>
                             <p><strong><i
                                         class="fas fa-star me-2"></i>{{ _('Loyalty Points:') }}</strong>
                                 <span
@@ -102,7 +105,8 @@
                                 class="fas fa-shopping-cart me-2"></i>{{ _("Total Purchases") }}
                         </h6>
                         <h2 class="text-success mb-0">
-                            {{ total_purchases_count }}</h2>
+                            {{ total_purchases_count }}
+                        </h2>
                         <small
                             class="text-muted">{{ 'in selected period' if start_date or end_date else 'all time' }}</small>
                     </div>
@@ -420,8 +424,15 @@
             });
         }
         // Spending Chart
-        {% if spending_by_month %}
-        const spendingData = {{ spending_by_month | tojson }};
+        {
+            %
+            if spending_by_month %
+        }
+        const spendingData = {
+            {
+                spending_by_month | tojson
+            }
+        };
         console.log('Spending data by month:', spendingData);
         const labels = Object.keys(spendingData).sort();
         const values = labels.map(label => spendingData[label]);
@@ -503,8 +514,9 @@
                     chart.update();
                 }, 100);
             });
+        } {
+            % endif %
         }
-        {% endif %}
     </script>
 </body>
 </html>

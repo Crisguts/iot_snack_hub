@@ -158,9 +158,9 @@ if (window.dashboardInitialized) {
             if (data.success && data.fan_activated) {
                 const id = data.fridge_id;
                 const toggle = document.querySelector(`.fanToggle[data-fridge="${id}"]`);
-                if (toggle) { 
-                    toggle.checked = true; 
-                    updateFanAnimation(id, true); 
+                if (toggle) {
+                    toggle.checked = true;
+                    updateFanAnimation(id, true);
                 } else {
                     console.warn(`No fan toggle found for fridge ${id}`);
                 }
