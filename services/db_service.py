@@ -942,3 +942,98 @@ def get_total_inventory_value(search=None):
         print(f"Error calculating inventory value: {e}")
         return 0.0
 
+# Customer activity report
+"""
+Customer Activity Report
+"""
+
+def get_customer_activity(start_date, end_date):
+    """
+    Get customer activity statistics for a date range.
+    Args:
+        start_date (str): Start date in format 'YYYY-MM-DD'
+        end_date (str): End date in format 'YYYY-MM-DD'
+    """
+    try:
+        
+        # Step 1: Get ALL purchases and filter in Python (most reliable method)
+        purchases_response = supabase.table("purchases")\
+            .select("customer_id, purchase_date")\
+            .execute()
+        
+        print(f"Total purchases in DB: {len(purchases_response.data)}")
+        
+        # Filter purchases by date range in Python
+        filtered_purchases = []
+        for purchase in purchases_response.data:
+            purchase_date_str = purchase["purchase_date"][:10]  # Get YYYY-MM-DD
+            if start_date <= purchase_date_str <= end_date:
+                filtered_purchases.append(purchase)
+        
+        print(f"Purchases in date range: {len(filtered_purchases)}")
+        
+        if not filtered_purchases:
+            print("No purchases found in date range")
+            return {
+                "total_customers": 0,
+                "new_customers": 0,
+                "returning_customers": 0
+            }
+        
+        # Get unique customer IDs who made purchases (exclude None)
+        customer_ids = list(set(
+            purchase["customer_id"] 
+            for purchase in filtered_purchases 
+            if purchase["customer_id"] is not None
+        ))
+        total_customers = len(customer_ids)
+        print(f"Unique customers: {total_customers}")
+        print(f"Customer IDs: {customer_ids}")
+        
+        if total_customers == 0:
+            print("No registered customers made purchases (all guest purchases)")
+            return {
+                "total_customers": 0,
+                "new_customers": 0,
+                "returning_customers": 0
+            }
+        
+        # Get customer registration dates
+        customers_response = supabase.table("customers")\
+            .select("customer_id, created_at")\
+            .in_("customer_id", customer_ids)\
+            .execute()
+        
+        print(f"Customer data retrieved: {len(customers_response.data)}")
+        
+        # Count new customers (registered within date range)
+        new_customers = 0
+        returning_customers = 0
+        
+        for customer in customers_response.data:
+            customer_created = customer["created_at"][:10]  # Extract YYYY-MM-DD
+            print(f"Customer {customer['customer_id']}: registered on {customer_created}")
+            
+            if start_date <= customer_created <= end_date:
+                new_customers += 1
+                
+            else:
+                returning_customers += 1
+        
+        result = {
+            "total_customers": total_customers,
+            "new_customers": new_customers,
+            "returning_customers": returning_customers
+        }
+        
+        print(f"Final result: {result}")
+        
+        return result
+        
+    except Exception as e:
+        print(f"ERROR in get_customer_activity: {e}")
+        return {
+            "total_customers": 0,
+            "new_customers": 0,
+            "returning_customers": 0
+        }

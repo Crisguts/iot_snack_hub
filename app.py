@@ -64,6 +64,7 @@ from blueprints.products.routes import products_bp
 from blueprints.payments.routes import payments_bp
 from blueprints.sales_report.routes import sales_bp
 from blueprints.inventory_report.routes import inventory_bp
+from blueprints.customer_activity.routes import customer_activity_bp
 
 app.register_blueprint(sales_bp)
 app.register_blueprint(auth_bp)
@@ -74,6 +75,7 @@ app.register_blueprint(store_bp)
 app.register_blueprint(products_bp)
 app.register_blueprint(payments_bp)
 app.register_blueprint(inventory_bp)
+app.register_blueprint(customer_activity_bp)
 
 # Root routes
 @app.route("/")
