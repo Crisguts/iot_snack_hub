@@ -33,6 +33,10 @@ class EmailService:
         self.state_file = "email_state.json"
         self.processed_emails_file = "processed_emails.json"
         self.processed_emails = self._load_processed_emails()  # Persistent tracking
+        
+        # Alert cooldown tracking (prevent spam)
+        self.last_alert_time = {}  # {fridge_id: timestamp}
+        self.alert_cooldown = 300  # 5 minutes between alerts for same fridge
 
         # Background thread
         self.monitoring = False
@@ -90,7 +94,17 @@ Reply 'NO' to ignore."""
         )
     
     def send_temperature_alert(self, fridge_id, current_temp, threshold, fridge_name=None):
-        """Send temperature alert email when threshold is exceeded."""
+        """Send temperature alert email when threshold is exceeded.
+        Includes cooldown to prevent spam (5 min between alerts per fridge)."""
+        # Check cooldown
+        current_time = time.time()
+        last_sent = self.last_alert_time.get(fridge_id, 0)
+        
+        if current_time - last_sent < self.alert_cooldown:
+            time_remaining = int(self.alert_cooldown - (current_time - last_sent))
+            logger.info(f"Alert cooldown active for fridge {fridge_id}. {time_remaining}s remaining.")
+            return False
+        
         if not fridge_name:
             fridge_name = f"Refrigerator {fridge_id}"
         
@@ -105,7 +119,15 @@ Reply 'YES' to activate cooling fan.
 Reply 'NO' to ignore this alert.
 
 Fridge ID: {fridge_id}"""
-        return self._send_email(f"🚨 IoT Alert - {fridge_name}", body)
+        
+        success = self._send_email(f"🚨 IoT Alert - {fridge_name}", body)
+        
+        if success:
+            # Update last alert time
+            self.last_alert_time[fridge_id] = current_time
+            logger.info(f"Temperature alert sent for fridge {fridge_id}. Cooldown active for {self.alert_cooldown}s")
+        
+        return success
 
     def send_confirmation(self, fridge_id):
         body = f"""Fan activation confirmed for Refrigerator {fridge_id}.
