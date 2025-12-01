@@ -751,7 +751,7 @@ def get_purchases_count(search=None):
         print(f"Error counting purchases: {e}")
         return 0
 
-"""Saoes Report"""
+"""Sales Report"""
 def get_customer_purchases_with_details(customer_id):
     """Get all purchases for a specific customer with full details (for admin modal)."""
     try:
@@ -875,3 +875,126 @@ def get_top_and_bottom_sellers(start_date, end_date):
 
     return top, bottom
 
+"""Inventory Report"""
+
+def get_inventory_report_paginated(limit, offset, search=None):
+    """
+    Fetch all products for the Inventory Report (admin view) - paginated + search.
+    """
+
+    try:
+        # Fetch all products
+        response = supabase.table("product_info").select("*").order("product_id").execute()
+        all_products = response.data or []
+
+        stock_response = supabase.table("product_stock")\
+            .select("product_id, status")\
+            .execute()
+        
+        # Count available stock per product
+        stock_counts = {}
+        for item in stock_response.data:
+            if item["status"] == "available":
+                product_id = item["product_id"]
+                stock_counts[product_id] = stock_counts.get(product_id, 0) + 1
+                
+        # Compute stock value
+        for p in all_products:
+            qty = stock_counts.get(p["product_id"], 0)
+            price = float(p.get("price", 0) or 0)
+            
+            p["total_quantity"] = qty  # Add this field for compatibility
+            p["stock_value"] = qty * price
+
+        # SEARCH FILTER
+        if search:
+            search_lower = search.lower()
+            filtered = [
+                p for p in all_products
+                if search_lower in p.get("name", "").lower()
+                or search_lower in p.get("category", "").lower()
+            ]
+        else:
+            filtered = all_products
+
+        paginated = filtered[offset : offset + limit]
+
+        return paginated, len(filtered)
+
+    except Exception as e:
+        print("Error fetching paginated products:", e)
+        return [], 0
+
+def get_inventory_products():
+    try:
+        response = supabase.table("product_info").select(
+            "product_id, name, category, price"
+        ).order("name", desc=False).execute()
+        products = response.data or []
+    # Get stock counts
+        stock_response = supabase.table("product_stock")\
+            .select("product_id, status")\
+            .execute()
+        
+        # Count available stock per product
+        stock_counts = {}
+        for item in stock_response.data:
+            if item["status"] == "available":
+                product_id = item["product_id"]
+                stock_counts[product_id] = stock_counts.get(product_id, 0) + 1
+        
+        # Add total_quantity to each product
+        for p in products:
+            p["total_quantity"] = stock_counts.get(p["product_id"], 0)
+        
+        return products
+    
+    except Exception as e:
+        print("Error fetching inventory products:", e)
+        return []
+    
+def get_total_inventory_value(search=None):
+    """
+    Calculate the TOTAL stock value for ALL products (respects search filter).
+    This ensures the total remains consistent across pagination pages.
+    """
+    try:
+        # Fetch all products
+        response = supabase.table("product_info").select("*").execute()
+        all_products = response.data or []
+
+        # Get stock counts
+        stock_response = supabase.table("product_stock")\
+            .select("product_id, status")\
+            .execute()
+        
+        # Count available stock per product
+        stock_counts = {}
+        for item in stock_response.data:
+            if item["status"] == "available":
+                product_id = item["product_id"]
+                stock_counts[product_id] = stock_counts.get(product_id, 0) + 1
+
+
+        # Apply search filter if provided
+        if search:
+            search_lower = search.lower()
+            all_products = [
+                p for p in all_products
+                if search_lower in p.get("name", "").lower()
+                or search_lower in p.get("category", "").lower()
+            ]
+
+        # Calculate total stock value
+        total_value = 0.0
+        for p in all_products:
+            qty = stock_counts.get(p["product_id"], 0)
+            price = float(p.get("price", 0) or 0)
+            total_value += qty * price
+
+
+        return total_value
+
+    except Exception as e:
+        print("Error calculating total inventory value:", e)
+        return 0.0
