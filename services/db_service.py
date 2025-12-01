@@ -56,18 +56,31 @@ def add_stock_item(product_id, epc=None):
         return None
 
 
-def get_available_stock_items(product_id, quantity=1):
+def get_available_stock_items(product_id, quantity=1, exclude_stock_ids=None):
     """Finds available stock items for a product.
-    Returns a list of stock_id values up to the requested quantity."""
+    Returns a list of stock_id values up to the requested quantity.
+    
+    Args:
+        product_id: The product to find stock for
+        quantity: How many stock items to return
+        exclude_stock_ids: List of stock_ids to exclude (already in cart)
+    """
     try:
-        response = (
+        if exclude_stock_ids is None:
+            exclude_stock_ids = []
+        
+        query = (
             supabase.table("product_stock")
             .select("stock_id, epc")
             .eq("product_id", product_id)
             .eq("status", "available")
-            .limit(quantity)
-            .execute()
         )
+        
+        # Exclude stock_ids already allocated in cart
+        if exclude_stock_ids:
+            query = query.not_.in_("stock_id", exclude_stock_ids)
+        
+        response = query.limit(quantity).execute()
         return [item["stock_id"] for item in (response.data or [])]
     except Exception as e:
         print(f"Error fetching available stock: {e}")

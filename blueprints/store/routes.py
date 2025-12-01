@@ -294,20 +294,29 @@ def api_scan_product():
     # Try UPC first (barcode), then EPC (RFID)
     product = None
     stock_id = None
+    is_epc_scan = False
     
     if code.isdigit() and 8 <= len(code) <= 14:
         # Barcode scan (UPC) - find product and allocate a random available stock item
         product = get_product_by_code(upc=code)
         if product:
-            # Get one available stock item for this product
+            # Get stock_ids already in cart to exclude them
+            cart = get_cart()
+            existing_cart_item = next((item for item in cart if item['product_id'] == product['product_id']), None)
+            already_allocated = []
+            if existing_cart_item and 'stock_ids' in existing_cart_item:
+                already_allocated = existing_cart_item['stock_ids']
+            
+            # Get one available stock item for this product (excluding already allocated ones)
             from services.db_service import get_available_stock_items
-            stock_ids = get_available_stock_items(product['product_id'], quantity=1)
+            stock_ids = get_available_stock_items(product['product_id'], quantity=1, exclude_stock_ids=already_allocated)
             if stock_ids:
                 stock_id = stock_ids[0]
             else:
                 return jsonify({'success': False, 'error': 'Product out of stock'}), 400
     else:
         # RFID scan (EPC) - find specific stock item
+        is_epc_scan = True
         product = get_product_by_code(epc=code)
         if product:
             stock_id = product.get('stock_id')  # get_product_by_code adds this when EPC scanned
@@ -321,8 +330,8 @@ def api_scan_product():
     # Add to cart with stock_id tracking
     cart = get_cart()
     
-    # For EPC scans, check if this specific stock_id is already in cart
-    if stock_id:
+    # For EPC scans ONLY, check if this specific stock_id is already in cart
+    if is_epc_scan and stock_id:
         for item in cart:
             if 'stock_ids' in item and stock_id in item['stock_ids']:
                 return jsonify({'success': False, 'error': 'This item is already in your cart'}), 400
