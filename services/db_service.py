@@ -751,7 +751,7 @@ def get_purchases_count(search=None):
         print(f"Error counting purchases: {e}")
         return 0
 
-"""Saoes Report"""
+"""Sales Report"""
 def get_customer_purchases_with_details(customer_id):
     """Get all purchases for a specific customer with full details (for admin modal)."""
     try:
@@ -773,12 +773,20 @@ def get_sales_by_product(start_date, end_date, limit=None, offset=None, search=N
     try:
         # Fetch purchase items joined with products
         response = (
-            supabase.table("purchase_items")
-            .select("product_id, quantity, product_info(name, category), purchases(purchase_date)")
-            .gte("purchases.purchase_date", start_date)
-            .lte("purchases.purchase_date", end_date)
-            .execute()
+    supabase
+    .table("purchase_items")
+    .select("""
+        product_id,
+        quantity,
+        product_info(name, category),
+        purchases!inner(
+            purchase_date
         )
+    """)
+    .gte("purchases.purchase_date", start_date)
+    .lte("purchases.purchase_date", end_date)
+    .execute()
+)
 
         raw = response.data or []
 
