@@ -1,4 +1,4 @@
-# Smart Store IoT
+# Snack Hub Smart Store 
 
 Automated store with self-checkout, barcode/RFID scanning, temperature monitoring, and customer management.
 
