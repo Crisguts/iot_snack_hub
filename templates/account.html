@@ -7,6 +7,11 @@
         href="{{ url_for('static', filename='css/styles.css') }}">
     <link rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script
+        src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js">
+    </script>
 </head>
 <body class="container-fluid bg-dark text-white p-0">
     <!-- Fixed Language Switcher - Top Right -->
@@ -25,6 +30,7 @@
             <h1 class="mb-2 text-center">{{ _('Smart Store') }}</h1>
             <div id="date" class="fw-bold text-center"></div>
             <div id="clock" class="fw-bold text-center mb-4"></div>
+            <button id="themeToggle" title="Toggle Dark/Light Mode"></button>
             <div class="d-flex flex-column align-items-center link-div">
                 <a href="{{ url_for('store.store_home') }}"
                     class="Sidebar fw-bold mb-2">{{ _('Shop') }}</a>
@@ -50,48 +56,219 @@
             <div class="alert alert-{{ category }} alert-dismissible fade show"
                 role="alert">
                 {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"
-                    aria-label="Close"></button>
+                <button type="button" class="btn-close"
+                    data-bs-dismiss="alert"></button>
             </div>
             {% endfor %}
             {% endif %}
             {% endwith %}
-            <h2 class="text-white mb-4">{{ _('My Account') }}</h2>
-            <!-- Account Info -->
-            <div class="card bg-dark text-white mb-4">
+            <h2 class="text-white mb-4"><i
+                    class="fas fa-user-circle me-2"></i>{{ _('My Account') }}
+            </h2>
+            <!-- Account Info Card -->
+            <div class="card bg-dark text-white mb-4 border-primary">
                 <div class="card-body">
-                    <h4>{{ _('Account Information') }}</h4>
+                    <h4><i
+                            class="fas fa-id-card me-2"></i>{{ _('Account Information') }}
+                    </h4>
                     <div class="row mt-3">
                         <div class="col-md-6">
-                            <p><strong>{{ _('Name:') }}</strong>
+                            <p><strong><i
+                                        class="fas fa-user me-2"></i>{{ _('Name:') }}</strong>
                                 {{ customer.first_name }}
                                 {{ customer.last_name }}
                             </p>
-                            <p><strong>{{ _('Email:') }}</strong>
-                                {{ customer.email }}</p>
+                            <p><strong><i
+                                        class="fas fa-envelope me-2"></i>{{ _('Email:') }}</strong>
+                                {{ customer.email }}
+                            </p>
                         </div>
                         <div class="col-md-6">
-                            <p><strong>{{ _('Membership #:') }}</strong>
+                            <p><strong><i
+                                        class="fas fa-card me-2"></i>{{ _('Membership #:') }}</strong>
                                 {{ customer.membership_number }}
                             </p>
-                            <p><strong>{{ _('Points:') }}</strong> <span
+                            <p><strong><i
+                                        class="fas fa-star me-2"></i>{{ _('Loyalty Points:') }}</strong>
+                                <span
                                     class="badge bg-success fs-5">{{ points }}</span>
                             </p>
                         </div>
                     </div>
                 </div>
             </div>
+            <!-- Purchase Summary Statistics -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="stat-card border-success">
+                        <h6 class="text-light mb-2"><i
+                                class="fas fa-shopping-cart me-2"></i>{{ _("Total Purchases") }}
+                        </h6>
+                        <h2 class="text-success mb-0">
+                            {{ total_purchases_count }}
+                        </h2>
+                        <small
+                            class="text-muted">{{ 'in selected period' if start_date or end_date else 'all time' }}</small>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stat-card border-primary">
+                        <h6 class="text-light mb-2"><i
+                                class="fas fa-dollar-sign me-2"></i>{{ _("Total Spent") }}
+                        </h6>
+                        <h2 class="text-primary mb-0">
+                            ${{ "%.2f"|format(total_spending) }}</h2>
+                        <small
+                            class="text-muted">{{ _("in selected period") if start_date or end_date else _("all time") }}</small>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stat-card border-warning">
+                        <h6 class="text-light mb-2"><i
+                                class="fas fa-calculator me-2"></i>{{ _("Average Order") }}
+                        </h6>
+                        <h2 class="text-warning mb-0">
+                            ${{ "%.2f"|format(total_spending / total_purchases_count if total_purchases_count > 0 else 0) }}
+                        </h2>
+                        <small
+                            class="text-muted">{{ _("per purchase") }}</small>
+                    </div>
+                </div>
+            </div>
+            <!-- Spending Chart -->
+            {% if spending_by_month %}
+            <div class="chart-container mb-4">
+                <h5 class="mb-3"><i
+                        class="fas fa-chart-line me-2"></i>{{ _("Spending Over Time") }}
+                </h5>
+                <canvas id="spendingChart" height="80"></canvas>
+            </div>
+            {% endif %}
+            <!-- Date Filter & Item Search -->
+            <div class="card bg-dark text-white mb-4 border-secondary">
+                <div class="card-body">
+                    <h5 class="mb-3"><i
+                            class="fas fa-filter me-2"></i>{{ _("Filters & Search") }}
+                    </h5>
+                    <form method="GET" action="{{ url_for('store.account') }}">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label
+                                    class="form-label">{{ _("Start Date") }}</label>
+                                <input type="date" name="start_date"
+                                    class="form-control"
+                                    value="{{ start_date }}">
+                            </div>
+                            <div class="col-md-3">
+                                <label
+                                    class="form-label">{{ _("End Date") }}</label>
+                                <input type="date" name="end_date"
+                                    class="form-control" value="{{ end_date }}">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label"><i
+                                        class="fas fa-search me-2"></i>{{ _("Search for Item") }}</label>
+                                <input type="text" name="search_item"
+                                    class="form-control"
+                                    placeholder="{{ _("Enter product name...") }}"
+                                    value="{{ search_item }}">
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <button type="submit"
+                                    class="btn btn-primary w-100">
+                                    <i
+                                        class="fas fa-search me-2"></i>{{ _("Apply") }}
+                                </button>
+                            </div>
+                        </div>
+                        {% if start_date or end_date or search_item %}
+                        <div class="mt-3">
+                            <a href="{{ url_for('store.account') }}"
+                                class="btn btn-sm btn-outline-light">
+                                <i
+                                    class="fas fa-times me-2"></i>{{ _("Clear Filters") }}
+                            </a>
+                        </div>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+            <!-- Item Search Results -->
+            {% if search_item and item_summary %}
+            <div class="card bg-dark text-white mb-4 border-info">
+                <div class="card-header bg-info text-dark">
+                    <h5 class="mb-0"><i
+                            class="fas fa-search me-2"></i>{{ _("Search Results for") }}
+                        "{{ search_item }}"</h5>
+                </div>
+                <div class="card-body">
+                    {% for item_name, data in item_summary.items() %}
+                    <div class="mb-4">
+                        <h5 class="text-info"><i
+                                class="fas fa-box me-2"></i>{{ item_name }}</h5>
+                        <p class="mb-2">
+                            <strong>{{ _("Total Purchased:") }}</strong>
+                            {{ data.total_quantity }}
+                            {{ _("time") }}{{ 's' if data.total_quantity != 1 else '' }}
+                        </p>
+                        <h6 class="mt-3">{{ _("Purchase Details:") }}</h6>
+                        <div class="table-responsive">
+                            <table
+                                class="table table-dark table-sm table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>{{ _("Date & Time") }}</th>
+                                        <th>{{ _("Quantity") }}</th>
+                                        <th>{{ _("Price Each") }}</th>
+                                        <th>{{ _("Subtotal") }}</th>
+                                        <th>{{ _("Receipt") }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for purchase in data.purchases %}
+                                    <tr>
+                                        <td>{{ purchase.date.replace('T', ' ')[:16] if purchase.date else 'N/A' }}
+                                        </td>
+                                        <td>{{ purchase.quantity }}</td>
+                                        <td>${{ "%.2f"|format(purchase.price) }}
+                                        </td>
+                                        <td><strong>${{ "%.2f"|format(purchase.price * purchase.quantity) }}</strong>
+                                        </td>
+                                        <td>
+                                            <a href="{{ url_for('store.view_receipt', purchase_id=purchase.purchase_id) }}"
+                                                class="btn btn-sm btn-outline-primary">
+                                                <i
+                                                    class="fas fa-receipt me-1"></i>{{ _("View") }}
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% elif search_item %}
+            <div class="alert alert-warning">
+                <i
+                    class="fas fa-info-circle me-2"></i>{{ _("No items found matching") }}
+                "{{ search_item }}"
+            </div>
+            {% endif %}
             <!-- Change Password Section -->
-            <div class="card bg-dark text-white mb-4">
+            <div class="card bg-dark text-white mb-4 border-warning">
                 <div class="card-body">
                     <div
                         class="d-flex justify-content-between align-items-center">
-                        <h4 class="mb-0">{{ _('Change Password') }}</h4>
-                        <button class="btn btn-sm btn-outline-light"
+                        <h4 class="mb-0"><i
+                                class="fas fa-key me-2"></i>{{ _('Change Password') }}
+                        </h4>
+                        <button class="btn btn-sm btn-outline-warning"
                             type="button" data-bs-toggle="collapse"
-                            data-bs-target="#passwordForm" aria-expanded="false"
-                            aria-controls="passwordForm">
-                            <i class="bi bi-chevron-down"></i>
+                            data-bs-target="#passwordForm">
+                            <i class="fas fa-chevron-down"></i>
                             {{ _('Show Form') }}
                         </button>
                     </div>
@@ -121,8 +298,10 @@
                                     required minlength="6">
                             </div>
                             <div class="col-12">
-                                <button type="submit"
-                                    class="btn btn-warning">{{ _('Update Password') }}</button>
+                                <button type="submit" class="btn btn-warning">
+                                    <i
+                                        class="fas fa-check me-2"></i>{{ _('Update Password') }}
+                                </button>
                                 <small
                                     class="text-muted ms-3">{{ _('Minimum 6 characters') }}</small>
                             </div>
@@ -130,43 +309,90 @@
                     </div>
                 </div>
             </div>
-            <!-- Purchase History -->
-            <h3 class="text-white mb-3">{{ _('Purchase History') }}</h3>
-            {% if purchases %}
-            <div class="table-responsive">
-                <table class="table table-dark table-hover">
-                    <thead>
-                        <tr>
-                            <th>{{ _('Purchase ID') }}</th>
-                            <th>{{ _('Date') }}</th>
-                            <th>{{ _('Total') }}</th>
-                            <th>{{ _('Points Earned') }}</th>
-                            <th>{{ _('Action') }}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for purchase in purchases %}
-                        <tr>
-                            <td>#{{ purchase.purchase_id }}</td>
-                            <td>{{ purchase.purchase_date[:10] }}</td>
-                            <td>${{ "%.2f"|format(purchase.total_amount) }}</td>
-                            <td>{{ purchase.points_earned }}</td>
-                            <td>
-                                <a href="{{ url_for('store.view_receipt', purchase_id=purchase.purchase_id) }}"
-                                    class="btn btn-sm btn-primary">{{ _('View Receipt') }}</a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+            <!-- Receipt History -->
+            <div class="card bg-dark text-white mb-4 border-secondary">
+                <div class="card-header bg-primary">
+                    <h4 class="mb-0"><i
+                            class="fas fa-receipt me-2"></i>{{ _('Receipt History') }}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    {% if purchases %}
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover">
+                            <thead>
+                                <tr>
+                                    <th><i
+                                            class="fas fa-hashtag me-2"></i>{{ _("Purchase ID") }}
+                                    </th>
+                                    <th><i
+                                            class="fas fa-calendar me-2"></i>{{ _("Date & Time") }}
+                                    </th>
+                                    <th><i
+                                            class="fas fa-list me-2"></i>{{ _("Items") }}
+                                    </th>
+                                    <th><i
+                                            class="fas fa-dollar-sign me-2"></i>{{ _("Total") }}
+                                    </th>
+                                    <th><i
+                                            class="fas fa-star me-2"></i>{{ _("Points Earned") }}
+                                    </th>
+                                    <th><i
+                                            class="fas fa-file-invoice me-2"></i>{{ _("Action") }}
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for purchase in purchases %}
+                                <tr>
+                                    <td><span
+                                            class="badge bg-secondary">#{{ purchase.purchase_id }}</span>
+                                    </td>
+                                    <td>{{ purchase.purchase_date.replace('T', ' ')[:16] if purchase.purchase_date else 'N/A' }}
+                                    </td>
+                                    <td>
+                                        <span
+                                            class="badge bg-info">{{ purchase.purchase_items|length }}
+                                            {{ _("item(s)") }}</span>
+                                    </td>
+                                    <td><strong>${{ "%.2f"|format(purchase.total_amount) }}</strong>
+                                    </td>
+                                    <td><span
+                                            class="badge bg-success">{{ purchase.points_earned }}</span>
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('store.view_receipt', purchase_id=purchase.purchase_id) }}"
+                                            class="btn btn-sm btn-primary">
+                                            <i
+                                                class="fas fa-eye me-1"></i>{{ _('View Receipt') }}
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% if purchases|length >= 50 %}
+                    <div class="alert alert-info mt-3">
+                        <i
+                            class="fas fa-info-circle me-2"></i>{{ _("Showing 50 most recent purchases. Use date filters to view specific periods.") }}
+                    </div>
+                    {% endif %}
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i
+                            class="fas fa-shopping-bag fa-3x text-muted mb-3"></i>
+                        <p class="text-light">{{ _('No purchase history yet') }}
+                        </p>
+                        <a href="{{ url_for('store.store_home') }}"
+                            class="btn btn-primary">
+                            <i
+                                class="fas fa-shopping-cart me-2"></i>{{ _('Start Shopping') }}
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
             </div>
-            {% else %}
-            <div class="text-center text-light mt-4">
-                <p>{{ _('No purchase history yet') }}</p>
-                <a href="{{ url_for('store.store_home') }}"
-                    class="btn btn-primary">{{ _('Start Shopping') }}</a>
-            </div>
-            {% endif %}
         </div>
     </div>
     <script
@@ -174,29 +400,122 @@
     </script>
     <script src="{{ url_for('static', filename='js/javascript.js') }}"></script>
     <script>
-        // Auto-dismiss alerts after 3 seconds
+        // Auto-dismiss alerts
         setTimeout(() => {
-            const alerts = document.querySelectorAll('.alert');
-            alerts.forEach(alert => {
+            document.querySelectorAll('.alert').forEach(alert => {
                 const bsAlert = new bootstrap.Alert(alert);
                 bsAlert.close();
             });
         }, 3000);
-        // Toggle password form button text and icon
+        // Toggle password form
         var passwordForm = document.getElementById('passwordForm');
         if (passwordForm) {
             passwordForm.addEventListener('show.bs.collapse', function() {
                 var btn = document.querySelector(
                     '[data-bs-target="#passwordForm"]');
                 btn.innerHTML =
-                    '<i class="bi bi-chevron-up"></i> Hide Form';
+                    '<i class="fas fa-chevron-up"></i> Hide Form';
             });
             passwordForm.addEventListener('hide.bs.collapse', function() {
                 var btn = document.querySelector(
                     '[data-bs-target="#passwordForm"]');
                 btn.innerHTML =
-                    '<i class="bi bi-chevron-down"></i> Show Form';
+                    '<i class="fas fa-chevron-down"></i> Show Form';
             });
+        }
+        // Spending Chart
+        {
+            %
+            if spending_by_month %
+        }
+        const spendingData = {
+            {
+                spending_by_month | tojson
+            }
+        };
+        console.log('Spending data by month:', spendingData);
+        const labels = Object.keys(spendingData).sort();
+        const values = labels.map(label => spendingData[label]);
+        console.log('Chart labels:', labels);
+        console.log('Chart values:', values);
+        const ctx = document.getElementById('spendingChart').getContext('2d');
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Spending ($)',
+                    data: values,
+                    borderColor: '#0d6efd',
+                    backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: getComputedStyle(document
+                                .documentElement).getPropertyValue(
+                                '--text-primary').trim()
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            color: getComputedStyle(document
+                                .documentElement).getPropertyValue(
+                                '--text-secondary').trim(),
+                            callback: function(value) {
+                                return '$' + value.toFixed(2);
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            color: getComputedStyle(document
+                                .documentElement).getPropertyValue(
+                                '--text-secondary').trim()
+                        },
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        }
+                    }
+                }
+            }
+        });
+        // Update chart colors on theme change
+        const themeToggle = document.getElementById('themeToggle');
+        if (themeToggle) {
+            themeToggle.addEventListener('click', function() {
+                setTimeout(() => {
+                    const textPrimary = getComputedStyle(
+                            document.documentElement)
+                        .getPropertyValue('--text-primary')
+                        .trim();
+                    const textSecondary = getComputedStyle(
+                            document.documentElement)
+                        .getPropertyValue('--text-secondary')
+                        .trim();
+                    chart.options.plugins.legend.labels.color =
+                        textPrimary;
+                    chart.options.scales.y.ticks.color =
+                        textSecondary;
+                    chart.options.scales.x.ticks.color =
+                        textSecondary;
+                    chart.update();
+                }, 100);
+            });
+        } {
+            % endif %
         }
     </script>
 </body>

@@ -62,7 +62,11 @@ from blueprints.dashboard.mqtt_handler import mqtt_api
 from blueprints.store.routes import store_bp
 from blueprints.products.routes import products_bp
 from blueprints.payments.routes import payments_bp
+from blueprints.sales_report.routes import sales_bp
+from blueprints.inventory_report.routes import inventory_bp
+from blueprints.customer_activity.routes import customer_activity_bp
 
+app.register_blueprint(sales_bp)
 app.register_blueprint(auth_bp)
 app.register_blueprint(client_bp)
 app.register_blueprint(dashboard_bp)
@@ -70,6 +74,8 @@ app.register_blueprint(mqtt_api)
 app.register_blueprint(store_bp)
 app.register_blueprint(products_bp)
 app.register_blueprint(payments_bp)
+app.register_blueprint(inventory_bp)
+app.register_blueprint(customer_activity_bp)
 
 # Root routes
 @app.route("/")
@@ -104,4 +110,5 @@ def inject_user():
     }
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=8080)
+    # Disable reloader to prevent GPIO conflicts (reloader spawns second process)
+    app.run(debug=True, host="0.0.0.0", port=8080, use_reloader=False)

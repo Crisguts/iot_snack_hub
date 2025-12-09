@@ -4,7 +4,7 @@ from datetime import datetime
 from werkzeug.security import check_password_hash, generate_password_hash
 from services.db_service import (
     get_all_products, get_product_by_code, create_purchase,
-    get_customer_purchases, get_purchase_details, get_customer_by_id,
+    get_purchase_details, get_customer_by_id,
     get_customer_by_membership
 )
 
@@ -294,20 +294,29 @@ def api_scan_product():
     # Try UPC first (barcode), then EPC (RFID)
     product = None
     stock_id = None
+    is_epc_scan = False
     
     if code.isdigit() and 8 <= len(code) <= 14:
         # Barcode scan (UPC) - find product and allocate a random available stock item
         product = get_product_by_code(upc=code)
         if product:
-            # Get one available stock item for this product
+            # Get stock_ids already in cart to exclude them
+            cart = get_cart()
+            existing_cart_item = next((item for item in cart if item['product_id'] == product['product_id']), None)
+            already_allocated = []
+            if existing_cart_item and 'stock_ids' in existing_cart_item:
+                already_allocated = existing_cart_item['stock_ids']
+            
+            # Get one available stock item for this product (excluding already allocated ones)
             from services.db_service import get_available_stock_items
-            stock_ids = get_available_stock_items(product['product_id'], quantity=1)
+            stock_ids = get_available_stock_items(product['product_id'], quantity=1, exclude_stock_ids=already_allocated)
             if stock_ids:
                 stock_id = stock_ids[0]
             else:
                 return jsonify({'success': False, 'error': 'Product out of stock'}), 400
     else:
         # RFID scan (EPC) - find specific stock item
+        is_epc_scan = True
         product = get_product_by_code(epc=code)
         if product:
             stock_id = product.get('stock_id')  # get_product_by_code adds this when EPC scanned
@@ -320,6 +329,13 @@ def api_scan_product():
     
     # Add to cart with stock_id tracking
     cart = get_cart()
+    
+    # For EPC scans ONLY, check if this specific stock_id is already in cart
+    if is_epc_scan and stock_id:
+        for item in cart:
+            if 'stock_ids' in item and stock_id in item['stock_ids']:
+                return jsonify({'success': False, 'error': 'This item is already in your cart'}), 400
+    
     existing = next((item for item in cart if item['product_id'] == product['product_id']), None)
     
     if existing:
@@ -447,20 +463,101 @@ def api_complete_purchase():
 # --- Customer Account ---
 @store_bp.route('/account')
 def account():
-    """Customer account page with purchase history."""
+    """Customer account page with purchase history and reporting."""
     if session.get('role') != 'customer':
         flash('Please login as a customer', 'warning')
         return redirect(url_for('auth.login'))
     
     customer_id = session.get('customer_id')
-    purchases = get_customer_purchases(customer_id, limit=20)
     
-    # Get customer points
+    # Get filter parameters
+    start_date = request.args.get('start_date', '')
+    end_date = request.args.get('end_date', '')
+    search_item = request.args.get('search_item', '')
+    
+    # Get all customer purchases for analysis
+    from services.db_service import supabase
+    try:
+        # Base query
+        query = supabase.table("purchases").select("*, purchase_items(*, product_info(*))").eq("customer_id", customer_id).order("purchase_date", desc=True)
+        
+        # Apply date filters if provided
+        if start_date:
+            query = query.gte("purchase_date", start_date)
+        if end_date:
+            # Add one day to include the end date fully
+            from datetime import datetime, timedelta
+            end_date_plus_one = (datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1)).strftime('%Y-%m-%d')
+            query = query.lt("purchase_date", end_date_plus_one)
+        
+        response = query.execute()
+        all_purchases = response.data or []
+        
+    except Exception as e:
+        print(f"Error fetching purchases: {e}")
+        all_purchases = []
+    
+    # Calculate total spending in period
+    total_spending = sum(float(p.get('total_amount', 0)) for p in all_purchases)
+    total_purchases_count = len(all_purchases)
+    
+    # Process item search if provided
+    item_search_results = []
+    if search_item:
+        search_lower = search_item.lower()
+        for purchase in all_purchases:
+            for item in purchase.get('purchase_items', []):
+                product = item.get('product_info', {})
+                if product and search_lower in product.get('name', '').lower():
+                    item_search_results.append({
+                        'purchase_id': purchase.get('purchase_id'),
+                        'date': purchase.get('purchase_date'),
+                        'product_name': product.get('name'),
+                        'quantity': item.get('quantity', 1),
+                        'price': float(item.get('price_at_purchase', 0))
+                    })
+    
+    # Group item search results
+    item_summary = {}
+    if item_search_results:
+        for result in item_search_results:
+            name = result['product_name']
+            if name not in item_summary:
+                item_summary[name] = {
+                    'total_quantity': 0,
+                    'purchases': []
+                }
+            item_summary[name]['total_quantity'] += result['quantity']
+            item_summary[name]['purchases'].append({
+                'date': result['date'],
+                'quantity': result['quantity'],
+                'price': result['price'],
+                'purchase_id': result['purchase_id']
+            })
+    
+    # Get customer info and points
     from services.db_service import get_customer_by_email
     customer = get_customer_by_email(session.get('username'))
     points = customer.get('points', 0) if customer else 0
     
-    return render_template('account.html', purchases=purchases, points=points, customer=customer)
+    # Prepare spending data for chart (group by month)
+    spending_by_month = {}
+    for purchase in all_purchases:
+        date_str = purchase.get('purchase_date', '')[:7]  # YYYY-MM
+        amount = float(purchase.get('total_amount', 0))
+        spending_by_month[date_str] = spending_by_month.get(date_str, 0) + amount
+    
+    return render_template('account.html', 
+                         purchases=all_purchases[:50],  # Limit display to 50 most recent
+                         points=points, 
+                         customer=customer,
+                         total_spending=total_spending,
+                         total_purchases_count=total_purchases_count,
+                         start_date=start_date,
+                         end_date=end_date,
+                         search_item=search_item,
+                         item_summary=item_summary,
+                         spending_by_month=spending_by_month)
 
 @store_bp.route('/change-password', methods=['POST'])
 def change_password():

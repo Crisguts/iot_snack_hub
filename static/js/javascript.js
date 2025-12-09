@@ -55,6 +55,43 @@
     setInterval(updateDateTime, 1000);
     updateDateTime();
 
+    /* ========== Dark/Light Mode Toggle ========== */
+    function initThemeToggle() {
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        applyTheme(savedTheme);
+
+        const themeToggle = $('#themeToggle');
+        if (themeToggle) {
+            updateToggleIcon(savedTheme);
+            themeToggle.addEventListener('click', () => {
+                const currentTheme = document.body.getAttribute('data-theme') || 'dark';
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                applyTheme(newTheme);
+                localStorage.setItem('theme', newTheme);
+                updateToggleIcon(newTheme);
+            });
+        }
+    }
+
+    function applyTheme(theme) {
+        document.body.setAttribute('data-theme', theme);
+    }
+
+    function updateToggleIcon(theme) {
+        const themeToggle = $('#themeToggle');
+        if (!themeToggle) return;
+
+        if (theme === 'light') {
+            themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
+            themeToggle.title = 'Switch to Dark Mode';
+        } else {
+            themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+            themeToggle.title = 'Switch to Light Mode';
+        }
+    }
+
+    initThemeToggle();
+
     /* ========== Auto-dismiss alerts ========== */
     setTimeout(() => {
         $$(".alert").forEach((alert) => {

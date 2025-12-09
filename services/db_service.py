@@ -1,6 +1,7 @@
-# Database service layer - Supabase PostgreSQL integration
-# Handles all database operations for customers, products, purchases, and temperature readings
-from unittest.mock import MagicMock
+# Database Service Layer
+# Handles all database operations using Supabase PostgreSQL
+# This file contains functions grouped by feature area for easy navigation
+
 import os
 import secrets
 from datetime import datetime
@@ -14,37 +15,39 @@ try:
     supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
     DB_AVAILABLE = True
 except Exception as e:
-    print(f"⚠️ DB mock loaded: {e}")
-    supabase = MagicMock()
+    print(f"⚠️ DB connection failed: {e}")
+    supabase = None
     DB_AVAILABLE = False
 
 
+def requires_db(func):
+    """Decorator to ensure DB is available before executing function."""
+    def wrapper(*args, **kwargs):
+        if not DB_AVAILABLE:
+            print(f"⚠️ DB not available for {func.__name__}")
+            return None
+        return func(*args, **kwargs)
+    return wrapper
+
+
 def init_db():
-    """Initialize database connection (Supabase tables are managed online)."""
-    print("✅ Supabase connection ready." if DB_AVAILABLE else "⚠️ Mock DB active")
+    """Initializes database connection."""
+    print("Supabase connection ready." if DB_AVAILABLE else "Mock DB active")
 
 
 # =============================================================================
-# EPC Generator and Stock Management Functions
+# STOCK MANAGEMENT - EPC Generation and Inventory Tracking
 # =============================================================================
 
 def generate_epc():
-    """Generate a unique 24-character hexadecimal EPC code for RFID tags.
-    Format: 24 hex characters (e.g., '3034257BF7194E4FAFA8B9B8')
-    """
-    return secrets.token_hex(12).upper()  # 12 bytes = 24 hex chars
+    """Generates a unique 24-character EPC code for RFID tags."""
+    return secrets.token_hex(12).upper()
 
 
 def add_stock_item(product_id, epc=None):
-    """Add a single stock item with unique EPC to product_stock table.
-    
-    Args:
-        product_id: ID of the product this stock item belongs to
-        epc: Optional EPC code (if None, will be auto-generated)
-    
-    Returns:
-        stock_id of the created item, or None on error
-    """
+    """Creates a new stock item with a unique EPC tag.
+    If no EPC is provided, one will be generated automatically.
+    Returns the stock_id of the created item."""
     try:
         if not epc:
             epc = generate_epc()
@@ -62,25 +65,31 @@ def add_stock_item(product_id, epc=None):
         return None
 
 
-def get_available_stock_items(product_id, quantity=1):
-    """Get available stock items for a product.
+def get_available_stock_items(product_id, quantity=1, exclude_stock_ids=None):
+    """Finds available stock items for a product.
+    Returns a list of stock_id values up to the requested quantity.
     
     Args:
-        product_id: Product to find stock for
-        quantity: Number of items needed
-    
-    Returns:
-        List of stock_id values (up to quantity requested)
+        product_id: The product to find stock for
+        quantity: How many stock items to return
+        exclude_stock_ids: List of stock_ids to exclude (already in cart)
     """
     try:
-        response = (
+        if exclude_stock_ids is None:
+            exclude_stock_ids = []
+        
+        query = (
             supabase.table("product_stock")
             .select("stock_id, epc")
             .eq("product_id", product_id)
             .eq("status", "available")
-            .limit(quantity)
-            .execute()
         )
+        
+        # Exclude stock_ids already allocated in cart
+        if exclude_stock_ids:
+            query = query.not_.in_("stock_id", exclude_stock_ids)
+        
+        response = query.limit(quantity).execute()
         return [item["stock_id"] for item in (response.data or [])]
     except Exception as e:
         print(f"Error fetching available stock: {e}")
@@ -88,15 +97,7 @@ def get_available_stock_items(product_id, quantity=1):
 
 
 def mark_stock_as_sold(stock_id, purchase_id):
-    """Mark a stock item as sold and link to purchase.
-    
-    Args:
-        stock_id: ID of the stock item to mark as sold
-        purchase_id: ID of the purchase this item belongs to
-    
-    Returns:
-        True on success, False on error
-    """
+    """Marks a stock item as sold and links it to a purchase record."""
     try:
         supabase.table("product_stock").update({
             "status": "sold",
@@ -110,14 +111,8 @@ def mark_stock_as_sold(stock_id, purchase_id):
 
 
 def get_stock_items_for_product(product_id):
-    """Get all stock items for a product (for admin stock modal).
-    
-    Args:
-        product_id: Product to get stock items for
-    
-    Returns:
-        List of stock items with their EPCs, status, and timestamps
-    """
+    """Retrieves all stock items for a product including EPCs, status, and timestamps.
+    Used in admin stock management modal."""
     try:
         response = (
             supabase.table("product_stock")
@@ -133,14 +128,7 @@ def get_stock_items_for_product(product_id):
 
 
 def get_stock_by_epc(epc):
-    """Find stock item by EPC and join with product info.
-    
-    Args:
-        epc: The EPC code to search for
-    
-    Returns:
-        Dictionary with stock item and product details, or None if not found
-    """
+    """Finds a stock item by its EPC code and returns it with product details."""
     try:
         response = (
             supabase.table("product_stock")
@@ -155,10 +143,11 @@ def get_stock_by_epc(epc):
 
 
 # =============================================================================
-# Customer Management Functions
+# CUSTOMER MANAGEMENT - Account Creation, Updates, and Lookups
 # =============================================================================
+
 def get_customers():
-    """Fetch all customers sorted by name."""
+    """Retrieves all customers from the database sorted alphabetically."""
     try:
         response = (
             supabase.table("customers")
@@ -174,7 +163,7 @@ def get_customers():
 
 
 def add_customer(first_name, last_name, email, dob, phone_num=None):
-    """Add a new customer to Supabase."""
+    """Creates a new customer record with the provided information."""
     try:
         data = {
             "first_name": first_name,
@@ -191,7 +180,7 @@ def add_customer(first_name, last_name, email, dob, phone_num=None):
 
 
 def update_customer(customer_id, first_name, last_name, email, phone_num=None):
-    """Update customer info."""
+    """Updates an existing customer's information."""
     try:
         supabase.table("customers").update({
             "first_name": first_name,
@@ -206,7 +195,7 @@ def update_customer(customer_id, first_name, last_name, email, phone_num=None):
 
 
 def delete_customer(customer_id):
-    """Delete a customer by ID."""
+    """Removes a customer from the database."""
     try:
         supabase.table("customers").delete().eq("customer_id", customer_id).execute()
         return True
@@ -216,7 +205,7 @@ def delete_customer(customer_id):
 
 
 def get_customers_paginated(limit, offset, search=None):
-    """Fetch paginated customer list with optional search filter."""
+    """Retrieves a specific page of customers with optional name or email search."""
     try:
         # Fetch all customers first
         response = supabase.table("customers").select("*").order("first_name").order("last_name").execute()
@@ -243,7 +232,7 @@ def get_customers_paginated(limit, offset, search=None):
 
 
 def get_customer_count(search=None):
-    """Return total customer count for pagination calculations."""
+    """Counts total customers, optionally filtered by search term."""
     try:
         # Fetch all customers
         response = supabase.table("customers").select("customer_id").execute()
@@ -270,9 +259,12 @@ def get_customer_count(search=None):
         return 0
 
 
-# Temperature monitoring functions
+# =============================================================================
+# TEMPERATURE MONITORING - IoT Sensor Data and Fridge Thresholds
+# =============================================================================
+
 def get_latest_temperature_reading(fridge_id):
-    """Fetch most recent temperature reading for a fridge."""
+    """Gets the most recent temperature reading for a specific fridge."""
     try:
         response = (
             supabase.table("temperature_readings")
@@ -289,7 +281,7 @@ def get_latest_temperature_reading(fridge_id):
 
 
 def get_temperature_history(fridge_id, limit=50):
-    """Get recent temperature readings for charts and history."""
+    """Retrieves recent temperature readings for displaying charts and history."""
     try:
         response = (
             supabase.table("temperature_readings")
@@ -305,9 +297,8 @@ def get_temperature_history(fridge_id, limit=50):
         return []
 
 
-# Fridge threshold management
 def get_fridge_threshold(fridge_id):
-    """Get temperature threshold setting for a fridge."""
+    """Gets the temperature threshold setting for a fridge."""
     try:
         response = (
             supabase.table("refrigerators")
@@ -326,10 +317,17 @@ def get_fridge_threshold(fridge_id):
 def update_fridge_threshold(fridge_id, new_threshold):
     """Update temperature threshold for a fridge."""
     try:
-        supabase.table("refrigerators").update({
+        response = supabase.table("refrigerators").update({
             "temperature_threshold": new_threshold
         }).eq("fridge_id", fridge_id).execute()
-        return True
+        
+        # Verify update succeeded by checking response
+        if response.data and len(response.data) > 0:
+            print(f"Threshold updated: Fridge {fridge_id} -> {new_threshold}°C")
+            return True
+        else:
+            print(f"Warning: Update returned no data for fridge {fridge_id}")
+            return False
     except Exception as e:
         print(f"Error updating threshold: {e}")
         return False
@@ -393,12 +391,13 @@ def get_product_by_id(product_id):
         return None
 
 
-def get_product_by_code(upc=None, epc=None):
+def get_product_by_code(upc=None, epc=None, include_quantity=False):
     """Find product by barcode (UPC) or RFID tag (EPC).
     
     Args:
         upc: Product UPC barcode (finds product type)
         epc: Stock item EPC tag (finds specific stock item with product info)
+        include_quantity: If True, calculate total_quantity (slower). Default False for fast scanning.
     
     Returns:
         Product dictionary (from product_info or joined from product_stock)
@@ -408,15 +407,34 @@ def get_product_by_code(upc=None, epc=None):
             # UPC lookup: find product type in product_info
             response = supabase.table("product_info").select("*").eq("upc", upc).execute()
             if response.data:
-                return response.data[0]
+                product = response.data[0]
+                
+                # Only calculate total_quantity if explicitly requested
+                if include_quantity:
+                    product_id = product.get("product_id")
+                    stock_count = supabase.table("product_stock").select("stock_id").eq("product_id", product_id).eq("status", "available").execute()
+                    product["total_quantity"] = len(stock_count.data) if stock_count.data else 0
+                else:
+                    product["total_quantity"] = 1  # Assume available if found
+                
+                return product
         if epc:
             # EPC lookup: find stock item and join with product_info
             stock_item = get_stock_by_epc(epc)
             if stock_item and stock_item.get("product_info"):
                 # Return the product_info part, but include the stock_id for reference
                 product = stock_item["product_info"]
-                product["stock_id"] = stock_item["stock_id"]  # Add stock_id to track which item was scanned
-                product["epc"] = epc  # Add EPC back for display purposes
+                product["stock_id"] = stock_item["stock_id"]
+                product["epc"] = epc
+                
+                # Only calculate total_quantity if explicitly requested
+                if include_quantity:
+                    product_id = product.get("product_id")
+                    stock_count = supabase.table("product_stock").select("stock_id").eq("product_id", product_id).eq("status", "available").execute()
+                    product["total_quantity"] = len(stock_count.data) if stock_count.data else 0
+                else:
+                    product["total_quantity"] = 1  # Assume available if found
+                
                 return product
         return None
     except Exception as e:
@@ -425,20 +443,8 @@ def get_product_by_code(upc=None, epc=None):
 
 
 def add_product(name, category, price, upc, producer, image_url=None):
-    """Add new product to database (product_info table).
-    Note: Stock quantity is calculated from product_stock table, not stored here.
-    
-    Args:
-        name: Product name
-        category: Product category
-        price: Product price
-        upc: Universal Product Code (barcode)
-        producer: Product producer/manufacturer
-        image_url: Optional product image URL
-    
-    Returns:
-        Created product dictionary, or None on error
-    """
+    """Creates a new product in the database.
+    Stock quantity is managed separately through the product_stock table."""
     try:
         data = {
             "name": name,
@@ -456,7 +462,7 @@ def add_product(name, category, price, upc, producer, image_url=None):
 
 
 def update_product(product_id, **kwargs):
-    """Update product fields."""
+    """Updates one or more fields of an existing product."""
     try:
         supabase.table("product_info").update(kwargs).eq("product_id", product_id).execute()
         return True
@@ -466,7 +472,7 @@ def update_product(product_id, **kwargs):
 
 
 def delete_product(product_id):
-    """Delete product."""
+    """Removes a product from the database."""
     try:
         supabase.table("product_info").delete().eq("product_id", product_id).execute()
         return True
@@ -476,16 +482,7 @@ def delete_product(product_id):
 
 
 def add_inventory_reception(product_id, quantity, date_received=None):
-    """Record stock reception, generate EPCs, and update product inventory.
-    
-    Args:
-        product_id: ID of the product receiving stock
-        quantity: Number of items being added
-        date_received: Optional timestamp (defaults to now)
-    
-    Returns:
-        True on success, False on error
-    """
+    """Records incoming stock, generates EPC tags for each item, and updates inventory."""
     try:
         if not date_received:
             date_received = datetime.now().isoformat()
@@ -511,7 +508,7 @@ def add_inventory_reception(product_id, quantity, date_received=None):
 
 
 def get_inventory_history(product_id):
-    """Get reception history for a product."""
+    """Retrieves the reception history for a specific product."""
     try:
         response = supabase.table("inventory_receptions").select("*").eq("product_id", product_id).order("date_received", desc=True).execute()
         return response.data or []
@@ -520,9 +517,12 @@ def get_inventory_history(product_id):
         return []
 
 
-# Customer account functions (with authentication)
+# =============================================================================
+# CUSTOMER AUTHENTICATION - Account Creation and Login Functions
+# =============================================================================
+
 def create_customer_account(first_name, last_name, email, password_hash, phone=None, dob=None):
-    """Create new customer with membership number and loyalty points."""
+    """Creates a customer account with login credentials, membership number, and loyalty points."""
     try:
         # Generate unique membership number
         membership_number = f"MB{int(datetime.now().timestamp() * 1000)}"
@@ -544,8 +544,9 @@ def create_customer_account(first_name, last_name, email, password_hash, phone=N
         return None
 
 
+@requires_db
 def get_customer_by_email(email):
-    """Get customer by email (for login)."""
+    """Finds a customer by their email address. Used for login."""
     try:
         response = supabase.table("customers").select("*").eq("email", email).execute()
         return response.data[0] if response.data else None
@@ -554,8 +555,9 @@ def get_customer_by_email(email):
         return None
 
 
+@requires_db
 def get_customer_by_id(customer_id):
-    """Get customer by ID."""
+    """Retrieves a customer's full information using their customer ID."""
     try:
         response = supabase.table("customers").select("*").eq("customer_id", customer_id).execute()
         return response.data[0] if response.data else None
@@ -565,7 +567,7 @@ def get_customer_by_id(customer_id):
 
 
 def get_customer_by_membership(membership_number):
-    """Get customer by membership number."""
+    """Finds a customer using their membership number."""
     try:
         response = supabase.table("customers").select("*").eq("membership_number", membership_number).execute()
         return response.data[0] if response.data else None
@@ -575,7 +577,7 @@ def get_customer_by_membership(membership_number):
 
 
 def get_customer_by_rfid(rfid_tag):
-    """Get customer by RFID card tag."""
+    """Finds a customer using their RFID card tag."""
     try:
         response = supabase.table("customers").select("*").eq("rfid_card", rfid_tag).execute()
         return response.data[0] if response.data else None
@@ -585,7 +587,7 @@ def get_customer_by_rfid(rfid_tag):
 
 
 def update_customer_points(customer_id, points_to_add):
-    """Add loyalty points to customer account."""
+    """Adds or removes loyalty points from a customer's account."""
     try:
         # Get current points
         response = supabase.table("customers").select("points").eq("customer_id", customer_id).single().execute()
@@ -599,20 +601,13 @@ def update_customer_points(customer_id, points_to_add):
         return False
 
 
-# Purchase and receipt functions
+# =============================================================================
+# PURCHASE MANAGEMENT - Creating and Retrieving Purchase Records
+# =============================================================================
+
 def create_purchase(customer_id, total_amount, points_earned, items, points_redeemed=0):
-    """Create purchase record with items, mark stock as sold, and update inventory.
-    
-    Args:
-        customer_id: Customer ID (can be None for guest purchases)
-        total_amount: Total purchase amount after any discounts
-        points_earned: Points to award (0 for guests)
-        items: List of purchase items (each with product_id, quantity, price, and optional stock_ids)
-        points_redeemed: Points customer redeemed for discount (deducted from their account)
-    
-    Returns:
-        purchase_id on success, None on error
-    """
+    """Creates a complete purchase record including items, updates stock status, and manages loyalty points.
+    Supports both customer and guest purchases."""
     try:
         # Create purchase record
         purchase_data = {
@@ -667,7 +662,7 @@ def create_purchase(customer_id, total_amount, points_earned, items, points_rede
 
 
 def get_customer_purchases(customer_id, limit=20):
-    """Get purchase history for customer."""
+    """Retrieves purchase history for a specific customer."""
     try:
         response = supabase.table("purchases").select("*").eq("customer_id", customer_id).order("purchase_date", desc=True).limit(limit).execute()
         return response.data or []
@@ -677,15 +672,15 @@ def get_customer_purchases(customer_id, limit=20):
 
 
 def get_purchase_details(purchase_id):
-    """Get full purchase details with items."""
+    """Retrieves complete details for a purchase including all items and product information."""
     try:
         # Get purchase
         purchase = supabase.table("purchases").select("*").eq("purchase_id", purchase_id).single().execute()
         if not purchase.data:
             return None
         
-        # Get items
-        items = supabase.table("purchase_items").select("*, products(*)").eq("purchase_id", purchase_id).execute()
+        # Get items with product info (table is product_info, not products)
+        items = supabase.table("purchase_items").select("*, product_info(*)").eq("purchase_id", purchase_id).execute()
         
         return {
             "purchase": purchase.data,
@@ -697,7 +692,7 @@ def get_purchase_details(purchase_id):
 
 
 def get_all_purchases_paginated(limit, offset, search=None):
-    """Fetch all purchases with customer info (admin view) - paginated."""
+    """Retrieves all purchases with customer information for admin view. Supports pagination and search."""
     try:
         # Fetch all purchases with customer info
         response = supabase.table("purchases").select("*, customers(customer_id, first_name, last_name, email, membership_number)").order("purchase_date", desc=True).execute()
@@ -727,7 +722,7 @@ def get_all_purchases_paginated(limit, offset, search=None):
 
 
 def get_purchases_count(search=None):
-    """Get total count of purchases for pagination."""
+    """Counts total purchases for pagination calculations."""
     try:
         response = supabase.table("purchases").select("*, customers(first_name, last_name, email, membership_number)").execute()
         all_purchases = response.data or []
@@ -751,12 +746,355 @@ def get_purchases_count(search=None):
         print(f"Error counting purchases: {e}")
         return 0
 
+# =============================================================================
+# SALES REPORT - Product Sales Analysis and Revenue Tracking
+# =============================================================================
 
 def get_customer_purchases_with_details(customer_id):
-    """Get all purchases for a specific customer with full details (for admin modal)."""
+    """Retrieves all purchases for a customer with complete details for admin review."""
     try:
         response = supabase.table("purchases").select("*").eq("customer_id", customer_id).order("purchase_date", desc=True).execute()
         return response.data or []
     except Exception as e:
         print(f"Error fetching customer purchases: {e}")
         return []
+
+def get_sales_by_product(start_date, end_date, limit=None, offset=None, search=None):
+    """Calculates total units sold per product within a date range.
+    Supports pagination and searching by product name or category."""
+
+    try:
+        # First get all purchases in the date range
+        purchases_response = (
+            supabase.table("purchases")
+            .select("purchase_id, purchase_date")
+            .gte("purchase_date", start_date)
+            .lte("purchase_date", end_date)
+            .execute()
+        )
+        
+        purchase_ids = [p["purchase_id"] for p in (purchases_response.data or [])]
+        
+        if not purchase_ids:
+            return [], 0
+        
+        # Then get purchase items for those purchases with product info
+        response = (
+            supabase.table("purchase_items")
+            .select("product_id, quantity, product_info(name, category)")
+            .in_("purchase_id", purchase_ids)
+            .execute()
+        )
+
+        raw = response.data or []
+
+        # Aggregate
+        agg = {}
+        for item in raw:
+            pid = item["product_id"]
+            qty = item["quantity"]
+            info = item["product_info"]
+            name = info["name"]
+            cat = info["category"]
+
+            if pid not in agg:
+                agg[pid] = {
+                    "product_id": pid,
+                    "name": name,
+                    "category": cat,
+                    "total_sold": 0
+                }
+
+            agg[pid]["total_sold"] += qty
+
+        products = list(agg.values())
+
+        # ---- SEARCH FILTER ----
+        if search:
+            s = search.lower()
+            products = [
+                p for p in products
+                if s in p["name"].lower() or s in p["category"].lower()
+            ]
+
+        total_count = len(products)
+
+        # ---- PAGINATION ----
+        if limit is not None and offset is not None:
+            products = products[offset : offset + limit]
+
+        return products, total_count
+
+    except Exception as e:
+        print("Error fetching paginated sales:", e)
+        return [], 0
+
+
+def get_total_sales_value(start_date, end_date):
+    """Calculates total revenue for all purchases within a date range."""
+    try:
+        resp = (
+            supabase.table("purchases")
+            .select("total_amount, purchase_date")
+            .gte("purchase_date", start_date)
+            .lte("purchase_date", end_date)
+            .execute()
+        )
+
+        records = resp.data or []
+        total = sum(float(r["total_amount"]) for r in records)
+
+        return total
+
+    except Exception as e:
+        print("Error fetching total sales value:", e)
+        return 0
+
+
+def get_top_and_bottom_sellers(start_date, end_date):
+    """Returns the top 3 best-selling and bottom 3 least-selling products for a date range."""
+
+    # get_sales_by_product returns: (products_list, total_count)
+    products, _ = get_sales_by_product(start_date, end_date)
+
+    # Normalize data
+    clean_sales = []
+    for p in products:
+        if isinstance(p, dict):
+            clean_sales.append({
+                "product_id": p.get("product_id"),
+                "name": p.get("name"),
+                "category": p.get("category"),
+                "total_sold": p.get("total_sold", 0)
+            })
+
+    # Sort descending
+    sorted_sales = sorted(clean_sales, key=lambda x: x["total_sold"], reverse=True)
+
+    # Always 3 top + 3 bottom
+    top = sorted_sales[:3]
+    bottom = sorted_sales[-3:] if sorted_sales else []
+
+    return top, bottom
+
+
+# =============================================================================
+# INVENTORY REPORT - Stock Levels and Value Analysis
+# =============================================================================
+
+def get_inventory_report_paginated(limit=10, offset=0, search=None):
+    """Generates a paginated inventory report with product details and stock counts."""
+    try:
+        # Get all products with their stock counts
+        products = get_all_products()
+        
+        # Add stock_value field (price * quantity)
+        for p in products:
+            p['stock_value'] = p.get('price', 0) * p.get('total_quantity', 0)
+        
+        # Apply search filter if provided
+        if search:
+            search_lower = search.lower()
+            products = [
+                p for p in products
+                if (search_lower in p.get('name', '').lower() or
+                    search_lower in p.get('category', '').lower() or
+                    search_lower in p.get('producer', '').lower())
+            ]
+        
+        # Apply pagination
+        paginated = products[offset:offset + limit]
+        
+        return paginated, len(products)
+    except Exception as e:
+        print(f"Error fetching inventory report: {e}")
+        return [], 0
+
+
+def get_inventory_products():
+    """Get all products with inventory information for reporting."""
+    try:
+        products = get_all_products()
+        # Add stock_value field for PDF export
+        for p in products:
+            p['stock_value'] = p.get('price', 0) * p.get('total_quantity', 0)
+        return products
+    except Exception as e:
+        print(f"Error fetching inventory products: {e}")
+        return []
+
+
+def get_total_inventory_value(search=None):
+    """Calculates the total value of all inventory stock."""
+    try:
+        products = get_all_products()
+        
+        # Apply search filter if provided
+        if search:
+            search_lower = search.lower()
+            products = [
+                p for p in products
+                if (search_lower in p.get('name', '').lower() or
+                    search_lower in p.get('category', '').lower() or
+                    search_lower in p.get('producer', '').lower())
+            ]
+        
+        total_value = sum(
+            p.get('price', 0) * p.get('total_quantity', 0) 
+            for p in products
+        )
+        return total_value
+    except Exception as e:
+        print(f"Error calculating inventory value: {e}")
+        return 0.0
+
+
+def get_inventory_summary(search=None):
+    """Calculates inventory statistics including low stock, critical, and out-of-stock items."""
+    try:
+        products = get_all_products()
+        
+        # Apply search filter if provided
+        if search:
+            search_lower = search.lower()
+            products = [
+                p for p in products
+                if (search_lower in p.get('name', '').lower() or
+                    search_lower in p.get('category', '').lower() or
+                    search_lower in p.get('producer', '').lower())
+            ]
+        
+        total_products = len(products)
+        low_stock_count = sum(1 for p in products if 5 <= p.get('total_quantity', 0) <= 10)
+        critical_count = sum(1 for p in products if 0 < p.get('total_quantity', 0) < 5)
+        out_of_stock_count = sum(1 for p in products if p.get('total_quantity', 0) == 0)
+        
+        return {
+            'total_products': total_products,
+            'low_stock_count': low_stock_count,
+            'critical_count': critical_count,
+            'out_of_stock_count': out_of_stock_count
+        }
+    except Exception as e:
+        print(f"Error calculating inventory summary: {e}")
+        return {
+            'total_products': 0,
+            'low_stock_count': 0,
+            'critical_count': 0,
+            'out_of_stock_count': 0
+        }
+
+
+# =============================================================================
+# CUSTOMER ACTIVITY REPORT - New vs Returning Customer Analysis
+# =============================================================================
+
+def get_customer_activity(start_date, end_date):
+    """Analyzes customer activity for a date range, distinguishing between new and returning customers."""
+    try:
+        
+        # Step 1: Get ALL purchases and filter in Python (most reliable method)
+        purchases_response = supabase.table("purchases")\
+            .select("customer_id, purchase_date")\
+            .execute()
+        
+        print(f"Total purchases in DB: {len(purchases_response.data)}")
+        
+        # Filter purchases by date range in Python
+        filtered_purchases = []
+        for purchase in purchases_response.data:
+            purchase_date_str = purchase["purchase_date"][:10]  # Get YYYY-MM-DD
+            if start_date <= purchase_date_str <= end_date:
+                filtered_purchases.append(purchase)
+        
+        print(f"Purchases in date range: {len(filtered_purchases)}")
+        
+        if not filtered_purchases:
+            print("No purchases found in date range")
+            return {
+                "total_customers": 0,
+                "new_customers": 0,
+                "returning_customers": 0
+            }
+        
+        # Get unique customer IDs who made purchases (exclude None)
+        customer_ids = list(set(
+            purchase["customer_id"] 
+            for purchase in filtered_purchases 
+            if purchase["customer_id"] is not None
+        ))
+        total_customers = len(customer_ids)
+        print(f"Unique customers: {total_customers}")
+        print(f"Customer IDs: {customer_ids}")
+        
+        if total_customers == 0:
+            print("No registered customers made purchases (all guest purchases)")
+            return {
+                "total_customers": 0,
+                "new_customers": 0,
+                "returning_customers": 0
+            }
+        
+        # Get customer registration dates
+        customers_response = supabase.table("customers")\
+            .select("customer_id, created_at")\
+            .in_("customer_id", customer_ids)\
+            .execute()
+        
+        print(f"Customer data retrieved: {len(customers_response.data)}")
+        
+        # Count new customers (registered within date range)
+        new_customers = 0
+        returning_customers = 0
+        new_customers_list = []
+        returning_customers_list = []
+        
+        for customer in customers_response.data:
+            customer_created = customer["created_at"][:10]  # Extract YYYY-MM-DD
+            print(f"Customer {customer['customer_id']}: registered on {customer_created}")
+            
+            # Get full customer details
+            customer_details = next(
+                (c for c in customers_response.data if c["customer_id"] == customer["customer_id"]),
+                None
+            )
+            
+            if start_date <= customer_created <= end_date:
+                new_customers += 1
+                if customer_details:
+                    new_customers_list.append(customer_details)
+            else:
+                returning_customers += 1
+                if customer_details:
+                    returning_customers_list.append(customer_details)
+        
+        # Count guest purchases (purchases with null customer_id)
+        guest_purchases = sum(1 for p in filtered_purchases if p["customer_id"] is None)
+        
+        result = {
+            "total_customers": total_customers,
+            "new_customers": new_customers,
+            "returning_customers": returning_customers,
+            "guest_purchases": guest_purchases,
+            "new_customers_list": new_customers_list,
+            "returning_customers_list": returning_customers_list,
+            "start_date": start_date,
+            "end_date": end_date
+        }
+        
+        print(f"Final result: {result}")
+        
+        return result
+        
+    except Exception as e:
+        print(f"ERROR in get_customer_activity: {e}")
+        return {
+            "total_customers": 0,
+            "new_customers": 0,
+            "returning_customers": 0,
+            "guest_purchases": 0,
+            "new_customers_list": [],
+            "returning_customers_list": [],
+            "start_date": start_date,
+            "end_date": end_date
+        }

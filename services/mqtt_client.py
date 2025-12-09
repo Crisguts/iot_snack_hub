@@ -146,6 +146,8 @@ def _check_threshold_and_alert(fridge_id, temperature):
                                 email_service.start_monitoring()
                             except Exception as mon_err:
                                 print(f"mqtt_client: email monitoring already running or failed: {mon_err}")
+                    elif ok is False:
+                        print(f"mqtt_client: ⏱️ Email alert on cooldown for {fridge_name}")
                     else:
                         print(f"mqtt_client: ❌ Email alert failed to send for {fridge_name}")
                 else:

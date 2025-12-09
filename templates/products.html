@@ -5,9 +5,11 @@
     <title>{{ _('Product Management') }} - {{ _('Smart Store') }}</title>
     <!-- v2.1 - Fixed scrolling and buttons -->
     <link rel="stylesheet"
-        href="{{ url_for('static', filename='css/styles.css') }}?v=3">
+        href="{{ url_for('static', filename='css/styles.css') }}">
     <link rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body class="container-fluid bg-dark text-white p-0">
     <!-- Fixed Language Switcher - Top Right -->
@@ -26,6 +28,7 @@
             <h1 class="mb-2 text-center">{{ _('Smart Store') }}</h1>
             <div id="date" class="fw-bold text-center"></div>
             <div id="clock" class="fw-bold text-center mb-4"></div>
+            <button id="themeToggle" title="Toggle Dark/Light Mode"></button>
             <div class="d-flex flex-column align-items-center link-div">
                 <a href="{{ url_for('dashboard.dashboard') }}"
                     class="Sidebar fw-bold mb-2">{{ _('Dashboard') }}</a>
@@ -35,6 +38,14 @@
                     class="Sidebar fw-bold mb-2">{{ _('Products') }}</a>
                 <a href="{{ url_for('payments.payments_list') }}"
                     class="Sidebar fw-bold mb-2">{{ _('Payments') }}</a>
+                <a href="{{ url_for('sales.sales_report') }}"
+                    class="Sidebar fw-bold mb-2">Sales Report</a>
+                <a href="{{ url_for('inventory.inventory_report') }}"
+                    class="Sidebar fw-bold mb-2">{{ _('Inventory Report') }}</a>
+                <a href="{{ url_for('customer_activity.activity_report') }}"
+                    class="Sidebar fw-bold mb-2">
+                    Customer Activity
+                </a>
             </div>
             <div class="d-flex flex-column align-items-center mt-auto">
                 <a href="{{ url_for('auth.logout') }}"

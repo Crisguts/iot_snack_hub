@@ -29,9 +29,16 @@ class EmailService:
         # SSL context
         self.context = ssl.create_default_context()
 
-        # State handling
-        self.state_file = "email_state.json"
-        self.processed_emails = set()
+        # State handling - use absolute paths to ensure consistency
+        self.state_file = os.path.abspath("email_state.json")
+        self.processed_emails_file = os.path.abspath("processed_emails.json")
+        print(f"📧 Email state file: {self.state_file}")
+        # Don't load from disk - only track in current session to avoid blocking new replies
+        self.processed_emails = set()  # Fresh each restart
+        
+        # Alert cooldown tracking (prevent spam)
+        self.last_alert_time = {}  # {fridge_id: timestamp}
+        self.alert_cooldown = 300  # 5 minutes between alerts for same fridge
 
         # Background thread
         self.monitoring = False
@@ -40,15 +47,22 @@ class EmailService:
     def _send_email(self, subject, body, recipient=None):
         """Send email to specified recipient or default admin."""
         to_email = recipient if recipient else self.recipient
+        print(f"📤 Attempting to send email to {to_email}")
+        print(f"   Subject: {subject}")
         try:
             email_msg = f"Subject: {subject}\nTo: {to_email}\nFrom: {self.login}\n\n{body}"
+            print(f"   Connecting to SMTP {self.smtp_host}:{self.smtp_port}...")
             with smtplib.SMTP_SSL(self.smtp_host, self.smtp_port, context=self.context, timeout=30) as server:
+                print(f"   Logging in as {self.login}...")
                 server.login(self.login, self.password)
+                print(f"   Sending email...")
                 server.sendmail(self.login, to_email, email_msg.encode("utf-8"))
             logger.info(f"Email sent to {to_email}: {subject}")
+            print(f"✅ Email sent successfully to {to_email}")
             return True
         except Exception as e:
             logger.error(f"Email send failed to {to_email}: {e}")
+            print(f"❌ Email send FAILED: {e}")
             return False
 
     def send_test(self):
@@ -69,9 +83,22 @@ Reply 'NO' to ignore."""
         )
     
     def send_temperature_alert(self, fridge_id, current_temp, threshold, fridge_name=None):
-        """Send temperature alert email when threshold is exceeded."""
+        """Send temperature alert email when threshold is exceeded.
+        Includes cooldown to prevent spam (5 min between alerts per fridge)."""
+        # Check cooldown
+        current_time = time.time()
+        last_sent = self.last_alert_time.get(fridge_id, 0)
+        
+        if current_time - last_sent < self.alert_cooldown:
+            time_remaining = int(self.alert_cooldown - (current_time - last_sent))
+            logger.info(f"Alert cooldown active for fridge {fridge_id}. {time_remaining}s remaining.")
+            print(f"⏱️ Email cooldown: {time_remaining}s remaining for fridge {fridge_id}")
+            return False
+        
         if not fridge_name:
             fridge_name = f"Refrigerator {fridge_id}"
+        
+        print(f"📧 Sending alert email for {fridge_name}: {current_temp}°C > {threshold}°C")
         
         body = f"""⚠️ Temperature Alert!
 
@@ -84,7 +111,15 @@ Reply 'YES' to activate cooling fan.
 Reply 'NO' to ignore this alert.
 
 Fridge ID: {fridge_id}"""
-        return self._send_email(f"🚨 IoT Alert - {fridge_name}", body)
+        
+        success = self._send_email(f"🚨 IoT Alert - {fridge_name}", body)
+        
+        if success:
+            # Update last alert time
+            self.last_alert_time[fridge_id] = current_time
+            logger.info(f"Temperature alert sent for fridge {fridge_id}. Cooldown active for {self.alert_cooldown}s")
+        
+        return success
 
     def send_confirmation(self, fridge_id):
         body = f"""Fan activation confirmed for Refrigerator {fridge_id}.
@@ -102,28 +137,86 @@ Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 Please check the system manually or contact technical support."""
         return self._send_email(f"❌ Fan Activation Error - Fridge {fridge_id}", body)
 
+    # --- Persistent email tracking ---
+    def _load_processed_emails(self):
+        """Load processed email IDs from disk."""
+        try:
+            if os.path.exists(self.processed_emails_file):
+                with open(self.processed_emails_file, 'r') as f:
+                    data = json.load(f)
+                    # Keep only recent emails (last 1000) to prevent file bloat
+                    return set(data[-1000:])
+            return set()
+        except Exception as e:
+            logger.error(f"Failed to load processed emails: {e}")
+            return set()
+    
+    def _save_processed_emails(self):
+        """Save processed email IDs to disk."""
+        try:
+            # Ensure processed_emails is a set and contains only serializable items
+            if not isinstance(self.processed_emails, set):
+                logger.warning(f"processed_emails is not a set: {type(self.processed_emails)}")
+                self.processed_emails = set()
+                return
+            
+            # Convert to list of strings only
+            email_list = [str(e) for e in self.processed_emails if isinstance(e, (str, int, bytes))]
+            with open(self.processed_emails_file, 'w') as f:
+                json.dump(email_list, f)
+        except TypeError as e:
+            logger.error(f"JSON serialization error: {e}. Type: {type(self.processed_emails)}")
+        except Exception as e:
+            logger.error(f"Failed to save processed emails: {e}")
+
     # --- Receiving replies ---
     def _check_email(self):
         """Checks latest emails for YES replies"""
         try:
+            logger.info("Checking inbox for email replies...")
             mail = imaplib.IMAP4_SSL(self.imap_host)
             mail.login(self.login, self.password)
             mail.select("inbox")
 
+            # Search for ALL UNSEEN emails, will filter by subject validation below
+            # This ensures we catch replies even if FROM address is different
+            print(f"   🔍 Searching for UNSEEN emails...")
             status, data = mail.search(None, "UNSEEN")
             email_ids = data[0].split()
             if not email_ids:
+                logger.info("No unread emails found")
+                print(f"   ℹ️ No unread emails")
                 mail.logout()
                 return None
+            
+            logger.info(f"Found {len(email_ids)} unread email(s)")
+            print(f"   📨 Found {len(email_ids)} unread email(s)")
 
             for eid in reversed(email_ids[-5:]):  # Check only last 5
                 eid_str = eid.decode()
                 if eid_str in self.processed_emails:
+                    print(f"   Email {eid_str} already processed, skipping")
                     continue
 
-                status, msg_data = mail.fetch(eid, "(RFC822)")
+                # Fetch without marking as read - use BODY.PEEK instead of RFC822
+                status, msg_data = mail.fetch(eid, "(BODY.PEEK[])")
                 msg = email.message_from_bytes(msg_data[0][1])
-                subject = msg.get("subject", "")
+                
+                # Decode subject (handles base64 encoded subjects like =?UTF-8?B?...=)
+                subject_raw = msg.get("subject", "")
+                subject = ""
+                try:
+                    decoded_parts = email.header.decode_header(subject_raw)
+                    for content, encoding in decoded_parts:
+                        if isinstance(content, bytes):
+                            subject += content.decode(encoding or 'utf-8', errors='ignore')
+                        else:
+                            subject += content
+                except Exception as e:
+                    logger.warning(f"Failed to decode subject: {e}")
+                    subject = subject_raw
+                
+                from_addr = msg.get("from", "unknown")
                 body = ""
                 if msg.is_multipart():
                     for part in msg.walk():
@@ -133,16 +226,45 @@ Please check the system manually or contact technical support."""
                 else:
                     body = msg.get_payload(decode=True).decode(errors="ignore")
 
-                if "YES" in body.upper():
+                print(f"   📬 Email from {from_addr}: {subject[:50]}")
+                print(f"   Body preview: {body[:100]}")
+
+                # Verify it's a reply to our temperature alert (check for RE: or alert keywords)
+                subject_upper = subject.upper()
+                is_alert_reply = any(keyword in subject_upper for keyword in ['RE:', 'IOT', 'ALERT', 'FRIDGE', 'REFRIGERATOR', 'TEMPERATURE'])
+                
+                if not is_alert_reply:
+                    print(f"   ⏭️ Not an alert reply (subject doesn't match), skipping")
+                    continue
+
+                # Stricter YES matching - must be standalone word, not in instructions
+                body_upper = body.upper()
+                # Check if YES is a standalone reply (not part of "Reply 'YES' to activate")
+                is_yes_reply = False
+                for line in body_upper.split('\n'):
+                    line_stripped = line.strip()
+                    # Match YES as standalone word or at start of line
+                    if line_stripped == 'YES' or line_stripped.startswith('YES ') or line_stripped.startswith('YES,'):
+                        is_yes_reply = True
+                        print(f"   ✅ Found YES in line: {line_stripped[:50]}")
+                        break
+                
+                if is_yes_reply:
                     fridge_id = self._extract_fridge_id(subject, body)
                     logger.info(f"YES reply detected for fridge {fridge_id}")
+                    print(f"🎯 YES REPLY DETECTED! Fridge {fridge_id}")
+                    print(f"   From: {from_addr}")
+                    print(f"   Subject: {subject}")
                     self._signal_fan(fridge_id)
                     self.send_confirmation(fridge_id)
+                    # Mark as read and processed
+                    mail.store(eid, '+FLAGS', '\\Seen')
                     self.processed_emails.add(eid_str)
+                    self._save_processed_emails()
                     mail.logout()
                     return {"fan_on": True, "fridge_id": fridge_id}
-
-                self.processed_emails.add(eid_str)
+                else:
+                    print(f"   ❌ No YES found in email")
 
             mail.logout()
             return None
@@ -166,9 +288,12 @@ Please check the system manually or contact technical support."""
             }
             with open(self.state_file, "w") as f:
                 json.dump(state, f)
+            print(f"✅ Wrote state file: {self.state_file}")
+            print(f"   State: {state}")
             logger.info(f"Fan activation signaled for fridge {fridge_id}")
         except Exception as e:
             logger.error(f"Failed to write fan activation: {e}")
+            print(f"❌ Failed to write state file: {e}")
 
     def get_and_clear_state(self):
         """Read and clear state file"""
@@ -178,9 +303,11 @@ Please check the system manually or contact technical support."""
             with open(self.state_file, "r") as f:
                 state = json.load(f)
             os.remove(self.state_file)
+            print(f"📬 Read and cleared state file: {state}")
             return state
         except Exception as e:
             logger.error(f"State read error: {e}")
+            print(f"❌ Failed to read state file: {e}")
             return None
 
     # --- Background thread ---
@@ -200,15 +327,19 @@ Please check the system manually or contact technical support."""
         logger.info("Stopped email monitor")
 
     def _monitor_loop(self):
+        print("📧 Email monitoring thread started")
         while self.monitoring:
             try:
+                print("🔍 Checking inbox...")
                 result = self._check_email()
                 if result:
                     logger.info(f"Fan activation signal received: {result}")
-                time.sleep(30)
+                    print(f"✅ Fan signal sent: {result}")
+                time.sleep(10)  # Check every 10 seconds for faster response
             except Exception as e:
                 logger.error(f"Monitor loop error: {e}")
-                time.sleep(60)
+                print(f"❌ Email check error: {e}")
+                time.sleep(30)  # Retry after 30s on error
 
 # Global instance
 email_service = EmailService()

@@ -52,7 +52,7 @@
                     <tbody>
                         {% for item in items %}
                         <tr>
-                            <td>{{ item.products.name if item.products else 'Product' }}
+                            <td>{{ item.product_info.name if item.product_info else 'Product' }}
                             </td>
                             <td>${{ "%.2f"|format(item.price_at_purchase) }}
                             </td>
