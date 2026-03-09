@@ -1,3 +1,7 @@
+# services/email_service.py
+# Automated Temperature Alert System with Email Monitoring
+# Sends alerts when thresholds exceeded, monitors inbox for "YES" replies to activate fans
+
 import smtplib
 import ssl
 import imaplib
@@ -16,29 +20,27 @@ logger = logging.getLogger(__name__)
 
 class EmailService:
     def __init__(self):
-        # SMTP/IMAP setup
+        # Email server configuration
         self.smtp_host = "smtp.gmail.com"
         self.smtp_port = 465
         self.imap_host = "imap.gmail.com"
 
-        # Credentials (use .env)
+        # Load credentials from environment variables
         self.login = os.getenv("EMAIL_LOGIN", "example@gmail.com")
-        self.password = os.getenv("EMAIL_APP_PASSWORD", "")
+        self.password = os.getenv("EMAIL_APP_PASSWORD", "")  # Gmail app password required
         self.recipient = os.getenv("EMAIL_RECIPIENT", self.login)
 
-        # SSL context
         self.context = ssl.create_default_context()
 
-        # State handling - use absolute paths to ensure consistency
+        # State file for signaling dashboard to activate fan
         self.state_file = os.path.abspath("email_state.json")
         self.processed_emails_file = os.path.abspath("processed_emails.json")
         print(f"📧 Email state file: {self.state_file}")
-        # Don't load from disk - only track in current session to avoid blocking new replies
-        self.processed_emails = set()  # Fresh each restart
+        self.processed_emails = set()  # Track processed emails in current session
         
-        # Alert cooldown tracking (prevent spam)
+        # Alert cooldown to prevent spam (5 minutes per fridge)
         self.last_alert_time = {}  # {fridge_id: timestamp}
-        self.alert_cooldown = 300  # 5 minutes between alerts for same fridge
+        self.alert_cooldown = 300
 
         # Background thread
         self.monitoring = False
@@ -83,9 +85,8 @@ Reply 'NO' to ignore."""
         )
     
     def send_temperature_alert(self, fridge_id, current_temp, threshold, fridge_name=None):
-        """Send temperature alert email when threshold is exceeded.
-        Includes cooldown to prevent spam (5 min between alerts per fridge)."""
-        # Check cooldown
+        """Send alert email when temperature exceeds threshold (with cooldown protection)"""
+        # Check cooldown to prevent alert spam
         current_time = time.time()
         last_sent = self.last_alert_time.get(fridge_id, 0)
         
@@ -100,6 +101,7 @@ Reply 'NO' to ignore."""
         
         print(f"📧 Sending alert email for {fridge_name}: {current_temp}°C > {threshold}°C")
         
+        # Compose alert with YES/NO response instructions
         body = f"""⚠️ Temperature Alert!
 
 {fridge_name} exceeded its threshold.
@@ -237,13 +239,12 @@ Please check the system manually or contact technical support."""
                     print(f"   ⏭️ Not an alert reply (subject doesn't match), skipping")
                     continue
 
-                # Stricter YES matching - must be standalone word, not in instructions
+                # Detect standalone "YES" (not from instructions text)
                 body_upper = body.upper()
-                # Check if YES is a standalone reply (not part of "Reply 'YES' to activate")
                 is_yes_reply = False
                 for line in body_upper.split('\n'):
                     line_stripped = line.strip()
-                    # Match YES as standalone word or at start of line
+                    # Match YES as complete word, not within sentences
                     if line_stripped == 'YES' or line_stripped.startswith('YES ') or line_stripped.startswith('YES,'):
                         is_yes_reply = True
                         print(f"   ✅ Found YES in line: {line_stripped[:50]}")
@@ -279,8 +280,9 @@ Please check the system manually or contact technical support."""
         return 1
 
     def _signal_fan(self, fridge_id):
-        """Writes state file Flask can read"""
+        """Write state file that dashboard reads to trigger fan activation"""
         try:
+            # Create signal file with action and fridge_id for dashboard to process
             state = {
                 "action": "activate_fan",
                 "fridge_id": fridge_id,
@@ -327,6 +329,7 @@ Please check the system manually or contact technical support."""
         logger.info("Stopped email monitor")
 
     def _monitor_loop(self):
+        """Background thread that checks inbox every 10 seconds for YES replies"""
         print("📧 Email monitoring thread started")
         while self.monitoring:
             try:
@@ -335,11 +338,11 @@ Please check the system manually or contact technical support."""
                 if result:
                     logger.info(f"Fan activation signal received: {result}")
                     print(f"✅ Fan signal sent: {result}")
-                time.sleep(10)  # Check every 10 seconds for faster response
+                time.sleep(10)  # Check every 10 seconds
             except Exception as e:
                 logger.error(f"Monitor loop error: {e}")
                 print(f"❌ Email check error: {e}")
-                time.sleep(30)  # Retry after 30s on error
+                time.sleep(30)  # Wait longer after errors
 
 # Global instance
 email_service = EmailService()

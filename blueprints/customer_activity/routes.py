@@ -1,3 +1,6 @@
+# blueprints/customer_activity/routes.py
+# Customer Activity Report - Tracks new vs returning customers, guest purchases
+
 from flask import Blueprint, render_template, request, session, flash, redirect, url_for, send_file
 from datetime import datetime, timedelta
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
@@ -24,9 +27,9 @@ def admin_required(f):
 @customer_activity_bp.route('/')
 @admin_required
 def activity_report():
-    """Customer Activity Report - Admin View"""
+    """Customer activity analysis with date filtering (new, returning, guest purchases)"""
     
-    # Get date range - Default to year 2025 to match your purchase data
+    # Default to 2025 to match purchase data
     end_date = request.args.get('end_date', '2025-12-31')
     start_date = request.args.get('start_date', '2025-01-01')
     
@@ -44,7 +47,7 @@ def activity_report():
 @customer_activity_bp.route('/export_pdf')
 @admin_required
 def export_activity_pdf():
-    """Export Customer Activity Report as PDF"""
+    """Generate PDF report with customer metrics and percentages"""
     
     start_date = request.args.get('start_date', 
                                   (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d'))

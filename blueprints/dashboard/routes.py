@@ -1,4 +1,7 @@
-# blueprints/dashboard/routes.py - DATABASE VERSION
+# blueprints/dashboard/routes.py
+# Admin Dashboard - Temperature Monitoring, Fan Control, and Email Alerts
+# Provides real-time fridge monitoring and manual/automated fan activation
+
 from flask import Blueprint, render_template, jsonify, request, session, redirect, url_for, flash
 from datetime import datetime
 from functools import wraps
@@ -96,7 +99,7 @@ def dashboard():
 @dashboard_bp.route('/api/latest')
 @admin_required
 def api_latest():
-    """API endpoint for real-time fridge data updates from database"""
+    """Real-time data endpoint - polls every few seconds, triggers alerts if threshold exceeded"""
     data = {}
     current_fan_states = get_fan_state()
     
@@ -110,7 +113,7 @@ def api_latest():
                 'fan_on': current_fan_states[fridge_id]
             }
             
-            # Check threshold and send alert if exceeded
+            # Automatic alert when temperature exceeds threshold
             threshold = get_fridge_threshold(fridge_id)
             print(f"Dashboard: Fridge {fridge_id} - Temp: {temp}°C, Threshold: {threshold}°C")
             if temp > threshold:
@@ -119,11 +122,11 @@ def api_latest():
                     from services.email_service import email_service
                     from services.db_service import supabase
                     
-                    # Get fridge name
+                    # Get fridge name for email
                     resp = supabase.table("refrigerators").select("name").eq("fridge_id", fridge_id).execute()
                     fridge_name = resp.data[0].get("name") if resp.data else f"Refrigerator {fridge_id}"
                     
-                    # Send alert (email service handles its own duplicate prevention)
+                    # Send alert (email service handles cooldown)
                     result = email_service.send_temperature_alert(
                         fridge_id=fridge_id,
                         current_temp=temp,
@@ -159,16 +162,16 @@ def fan_states_endpoint():
 @dashboard_bp.route('/fan/<int:fridge_id>', methods=['POST'])
 @admin_required
 def toggle_fan(fridge_id):
-    """Toggle fan for a specific fridge"""
+    """Manual fan control - toggle on/off via dashboard switch"""
     if fridge_id not in [1, 2]:
         return jsonify({'success': False, 'error': 'Invalid fridge ID'}), 400
     
     try:
-        # Get current state from GPIO service
+        # Invert current state
         current_state = get_fan_state(fridge_id)
         new_state = not current_state
         
-        # Control fan hardware
+        # Control hardware via GPIO service
         if new_state:
             turn_fan_on(fridge_id)
         else:
@@ -215,7 +218,7 @@ def update_threshold_route(fridge_id):
 @dashboard_bp.route('/api/email/test', methods=['POST'])
 @admin_required
 def test_email():
-    """Send test email"""
+    """Test button - simulates alert to verify email system"""
     try:
         from services.email_service import email_service
         success = email_service.send_test()
@@ -233,9 +236,10 @@ def test_email():
 @dashboard_bp.route('/api/email/check-signals')
 @admin_required
 def check_email_signals():
-    """Check for email reply signals (YES to activate fan)"""
+    """Check for YES reply signals from email monitoring thread (polls every 5 seconds)"""
     try:
         from services.email_service import email_service
+        # Read and clear state file written by email thread
         state = email_service.get_and_clear_state()
         
         if state and state.get('action') == 'activate_fan':
@@ -243,12 +247,12 @@ def check_email_signals():
             print(f"🔔 Dashboard detected fan activation signal for fridge {fridge_id}")
             
             try:
-                # Turn on fan via GPIO service (tracks state automatically)
+                # Execute fan activation
                 print(f"🌀 Turning on fan for fridge {fridge_id}...")
                 turn_fan_on(fridge_id)
                 print(f"✅ Fan activated successfully")
                 
-                # Send success confirmation
+                # Send confirmation email
                 email_service.send_confirmation(fridge_id)
                 
                 return jsonify({

@@ -1,4 +1,7 @@
 # services/gpio_service.py
+# DC Motor Control for Refrigerator Cooling Fans
+# Manages GPIO hardware, fan state tracking, and LED/buzzer alerts
+
 import logging
 import time
 from unittest.mock import MagicMock
@@ -13,11 +16,11 @@ except ImportError:
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Hardware pin assignments
+# Raspberry Pi GPIO pin assignments for hardware components
 BLUE_LED_PIN = 21
 RED_LED_PIN = 20
 BUZZER_PIN = 16
-ENABLE_PIN = 22
+ENABLE_PIN = 22          # Motor enable control
 MOTOR_FORWARD_PIN = 17
 MOTOR_BACKWARD_PIN = 27
 
@@ -67,6 +70,7 @@ def _initialize_gpio():
 # Auto-initialize on import
 _initialize_gpio()
 
+# Track fan state for both refrigerators (shared motor)
 fan_states = {1: False, 2: False}
 
 
@@ -95,12 +99,12 @@ def blink(led_color: str, times: int = 3, delay: float = 0.3):
 
 
 def turn_fan_on(fridge_id=1):
-    """Turn on the fan motor for specified fridge"""
+    """Activate cooling fan motor for specified refrigerator"""
     try:
         if fridge_id not in fan_states:
             raise ValueError(f"Invalid fridge_id: {fridge_id}")
         
-        # Control hardware
+        # Activate motor (backward direction provides optimal airflow)
         enable.on()
         motor.backward()
         fan_states[fridge_id] = True
@@ -110,15 +114,14 @@ def turn_fan_on(fridge_id=1):
         raise
 
 def turn_fan_off(fridge_id=1):
-    """Turn off the fan motor for specified fridge"""
+    """Deactivate fan for specified refrigerator (smart shutdown)"""
     try:
         if fridge_id not in fan_states:
             raise ValueError(f"Invalid fridge_id: {fridge_id}")
         
-        # Update state first
         fan_states[fridge_id] = False
         
-        # Only stop motor if both fridges are off
+        # Only stop physical motor if both fridges are off (extends motor life)
         if not any(fan_states.values()):
             motor.stop()
             enable.off()

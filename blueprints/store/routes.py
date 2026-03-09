@@ -1,4 +1,7 @@
-# blueprints/store/routes.py - Customer Store & Cart System
+# blueprints/store/routes.py
+# Customer Self-Checkout System
+# Handles cart management, scanner integration (barcode/RFID), guest checkout, and point redemption
+
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session
 from datetime import datetime
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -10,24 +13,25 @@ from services.db_service import (
 
 store_bp = Blueprint("store", __name__, url_prefix="/store")
 
-# Session-based cart
+# ===== Session-Based Cart Management =====
+
 def get_cart():
-    """Get cart from session."""
+    """Get cart from session"""
     if 'cart' not in session:
         session['cart'] = []
     return session['cart']
 
 def save_cart(cart):
-    """Save cart to session."""
+    """Save cart to session"""
     session['cart'] = cart
     session.modified = True
 
 def calculate_cart_total(cart):
-    """Calculate total price of cart."""
+    """Calculate total price"""
     return sum(item['price'] * item['quantity'] for item in cart)
 
 def calculate_points(total_amount):
-    """Calculate loyalty points (1 point per $1 spent)."""
+    """Calculate loyalty points: 1 point per $1 spent"""
     return int(total_amount)
 
 # --- Customer Routes ---
@@ -92,7 +96,7 @@ def cart():
 
 @store_bp.route('/checkout', methods=['GET', 'POST'])
 def checkout():
-    """Self-checkout page with scanner integration. Supports guests."""
+    """Self-checkout page with invisible scanner input (captures barcode/RFID)"""
     role = session.get('role')
     guest_mode = session.get('guest_mode', False)
     
@@ -204,7 +208,7 @@ def api_clear_cart():
 # --- Guest Mode & Membership ---
 @store_bp.route('/api/guest/start', methods=['POST'])
 def api_start_guest_mode():
-    """Enable guest browsing mode."""
+    """Enable guest shopping without login"""
     session['guest_mode'] = True
     session['role'] = None
     session.modified = True
@@ -212,7 +216,7 @@ def api_start_guest_mode():
 
 @store_bp.route('/api/membership/verify', methods=['POST'])
 def api_verify_membership():
-    """Verify membership number and enable checkout with points."""
+    """Verify membership number for point redemption (no password required)"""
     data = request.get_json() or {}
     membership_number = data.get('membership_number', '').strip()
     
@@ -245,7 +249,7 @@ def api_verify_membership():
 
 @store_bp.route('/api/membership/verify-rfid', methods=['POST'])
 def verify_membership_rfid():
-    """Verify membership by scanning RFID card."""
+    """Verify membership by scanning RFID card"""
     from services.db_service import get_customer_by_rfid
     
     data = request.get_json() or {}
@@ -283,21 +287,20 @@ def verify_membership_rfid():
 # --- Scanner Integration ---
 @store_bp.route('/api/scan', methods=['POST'])
 def api_scan_product():
-    """Handle product barcode (UPC) or RFID (EPC) scan at checkout."""
+    """Auto-detect barcode (UPC: 8-14 digits) vs RFID (EPC: hex) and add to cart"""
     data = request.get_json() or {}
     code = data.get('code', '').strip()
     
     if not code:
         return jsonify({'success': False, 'error': 'No code provided'}), 400
     
-    # Determine if code is UPC (8-14 digits) or EPC (typically 24 hex chars)
-    # Try UPC first (barcode), then EPC (RFID)
+    # Auto-detection: UPC barcode vs EPC RFID
     product = None
     stock_id = None
     is_epc_scan = False
     
     if code.isdigit() and 8 <= len(code) <= 14:
-        # Barcode scan (UPC) - find product and allocate a random available stock item
+        # Barcode detected
         product = get_product_by_code(upc=code)
         if product:
             # Get stock_ids already in cart to exclude them
@@ -315,7 +318,7 @@ def api_scan_product():
             else:
                 return jsonify({'success': False, 'error': 'Product out of stock'}), 400
     else:
-        # RFID scan (EPC) - find specific stock item
+        # RFID detected - find specific stock item by EPC tag
         is_epc_scan = True
         product = get_product_by_code(epc=code)
         if product:
@@ -327,10 +330,10 @@ def api_scan_product():
     if product.get('total_quantity', 0) < 1:
         return jsonify({'success': False, 'error': 'Product out of stock'}), 400
     
-    # Add to cart with stock_id tracking
+    # Add to cart with stock tracking
     cart = get_cart()
     
-    # For EPC scans ONLY, check if this specific stock_id is already in cart
+    # Prevent duplicate RFID scans (same physical item)
     if is_epc_scan and stock_id:
         for item in cart:
             if 'stock_ids' in item and stock_id in item['stock_ids']:
@@ -372,11 +375,10 @@ def api_scan_product():
 # --- Purchase / Checkout ---
 @store_bp.route('/api/purchase', methods=['POST'])
 def api_complete_purchase():
-    """Complete purchase and generate receipt. Supports guest checkout and point redemption."""
+    """Complete purchase: apply point redemption (100pts = $1), calculate earnings, send receipt"""
     data = request.get_json() or {}
     
-    # Get customer_id - can be from session (logged in) or from membership verification (guest with member #)
-    customer_id = session.get('customer_id')
+    customer_id = session.get('customer_id')  # May be None for pure guests
     guest_mode = session.get('guest_mode', False)
     points_to_redeem = int(data.get('points_to_redeem', 0))
     
@@ -387,7 +389,7 @@ def api_complete_purchase():
     original_total = calculate_cart_total(cart)
     discount = 0
     
-    # Handle point redemption (only for logged-in or verified members)
+    # Point redemption: 100 points = $1 discount (only if customer logged in/verified)
     if customer_id and points_to_redeem > 0:
         from services.db_service import get_customer_by_id
         customer = get_customer_by_id(customer_id)
@@ -463,19 +465,19 @@ def api_complete_purchase():
 # --- Customer Account ---
 @store_bp.route('/account')
 def account():
-    """Customer account page with purchase history and reporting."""
+    """Customer account page with purchase history, spending analytics, and item search"""
     if session.get('role') != 'customer':
         flash('Please login as a customer', 'warning')
         return redirect(url_for('auth.login'))
     
     customer_id = session.get('customer_id')
     
-    # Get filter parameters
+    # Get filter parameters for reporting
     start_date = request.args.get('start_date', '')
     end_date = request.args.get('end_date', '')
     search_item = request.args.get('search_item', '')
     
-    # Get all customer purchases for analysis
+    # Fetch all purchases for analysis and filtering
     from services.db_service import supabase
     try:
         # Base query
@@ -497,11 +499,11 @@ def account():
         print(f"Error fetching purchases: {e}")
         all_purchases = []
     
-    # Calculate total spending in period
+    # Calculate summary metrics for period
     total_spending = sum(float(p.get('total_amount', 0)) for p in all_purchases)
     total_purchases_count = len(all_purchases)
     
-    # Process item search if provided
+    # Item-specific search and analysis
     item_search_results = []
     if search_item:
         search_lower = search_item.lower()
@@ -517,7 +519,7 @@ def account():
                         'price': float(item.get('price_at_purchase', 0))
                     })
     
-    # Group item search results
+    # Group and aggregate item search results by product name
     item_summary = {}
     if item_search_results:
         for result in item_search_results:
@@ -540,10 +542,10 @@ def account():
     customer = get_customer_by_email(session.get('username'))
     points = customer.get('points', 0) if customer else 0
     
-    # Prepare spending data for chart (group by month)
+    # Spending analytics: Group purchases by month for chart visualization
     spending_by_month = {}
     for purchase in all_purchases:
-        date_str = purchase.get('purchase_date', '')[:7]  # YYYY-MM
+        date_str = purchase.get('purchase_date', '')[:7]  # Extract YYYY-MM
         amount = float(purchase.get('total_amount', 0))
         spending_by_month[date_str] = spending_by_month.get(date_str, 0) + amount
     
